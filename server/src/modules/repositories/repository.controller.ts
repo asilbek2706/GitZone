@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import { AuthError } from '../auth/auth.errors.js';
+import { AppError } from '../../errors/app.error.js';
 import type { AuthenticatedRequest } from '../../middleware/auth.middleware.js';
 import {
   createRepository,
@@ -28,7 +28,7 @@ export const create = async (req: Request, res: Response): Promise<void> => {
   const parsed = createRepositorySchema.safeParse(req.body);
 
   if (!parsed.success) {
-    throw new AuthError('Invalid repository data', 400, 'INVALID_REPOSITORY_DATA');
+    throw new AppError('Invalid repository data', 400, 'INVALID_REPOSITORY_DATA');
   }
 
   const repository = await createRepository(authenticatedReq.userId, parsed.data);
@@ -45,7 +45,7 @@ export const listByUsername = async (req: Request, res: Response): Promise<void>
   const { username } = req.params;
 
   if (typeof username !== 'string') {
-    throw new AuthError('Username is required', 400, 'INVALID_USERNAME');
+    throw new AppError('Username is required', 400, 'INVALID_USERNAME');
   }
 
   const repositories = await getUserRepositories(username);
@@ -62,7 +62,7 @@ export const getOne = async (req: Request, res: Response): Promise<void> => {
   const { username, name } = req.params;
 
   if (typeof username !== 'string' || typeof name !== 'string') {
-    throw new AuthError(
+    throw new AppError(
       'Username and repository name are required',
       400,
       'INVALID_REPOSITORY_PARAMS',
@@ -84,7 +84,7 @@ export const update = async (req: Request, res: Response): Promise<void> => {
   const { username, name } = req.params;
 
   if (typeof username !== 'string' || typeof name !== 'string') {
-    throw new AuthError(
+    throw new AppError(
       'Username and repository name are required',
       400,
       'INVALID_REPOSITORY_PARAMS',
@@ -94,7 +94,7 @@ export const update = async (req: Request, res: Response): Promise<void> => {
   const parsed = updateRepositorySchema.safeParse(req.body);
 
   if (!parsed.success) {
-    throw new AuthError('Invalid repository data', 400, 'INVALID_REPOSITORY_DATA');
+    throw new AppError('Invalid repository data', 400, 'INVALID_REPOSITORY_DATA');
   }
 
   const repository = await updateRepository(authenticatedReq.userId, username, name, parsed.data);
@@ -112,7 +112,7 @@ export const remove = async (req: Request, res: Response): Promise<void> => {
   const { username, name } = req.params;
 
   if (typeof username !== 'string' || typeof name !== 'string') {
-    throw new AuthError(
+    throw new AppError(
       'Username and repository name are required',
       400,
       'INVALID_REPOSITORY_PARAMS',
@@ -133,7 +133,7 @@ export const addCollaborator = async (req: Request, res: Response): Promise<void
   const { username, name } = req.params;
 
   if (typeof username !== 'string' || typeof name !== 'string') {
-    throw new AuthError(
+    throw new AppError(
       'Username and repository name are required',
       400,
       'INVALID_REPOSITORY_PARAMS',
@@ -143,7 +143,7 @@ export const addCollaborator = async (req: Request, res: Response): Promise<void
   const parsed = addRepositoryCollaboratorSchema.safeParse(req.body);
 
   if (!parsed.success) {
-    throw new AuthError('Invalid collaborator data', 400, 'INVALID_COLLABORATOR_DATA');
+    throw new AppError('Invalid collaborator data', 400, 'INVALID_COLLABORATOR_DATA');
   }
 
   const collaborator = await addRepositoryCollaborator(
@@ -168,7 +168,7 @@ export const listCollaborators = async (req: Request, res: Response): Promise<vo
   const { username, name } = req.params;
 
   if (typeof username !== 'string' || typeof name !== 'string') {
-    throw new AuthError(
+    throw new AppError(
       'Username and repository name are required',
       400,
       'INVALID_REPOSITORY_PARAMS',
@@ -195,7 +195,7 @@ export const updateCollaborator = async (req: Request, res: Response): Promise<v
     typeof name !== 'string' ||
     typeof collaboratorUsername !== 'string'
   ) {
-    throw new AuthError(
+    throw new AppError(
       'Username, repository name and collaborator username are required',
       400,
       'INVALID_COLLABORATOR_PARAMS',
@@ -205,7 +205,7 @@ export const updateCollaborator = async (req: Request, res: Response): Promise<v
   const parsed = updateRepositoryCollaboratorSchema.safeParse(req.body);
 
   if (!parsed.success) {
-    throw new AuthError('Invalid collaborator data', 400, 'INVALID_COLLABORATOR_DATA');
+    throw new AppError('Invalid collaborator data', 400, 'INVALID_COLLABORATOR_DATA');
   }
 
   const collaborator = await updateRepositoryCollaborator(
@@ -234,7 +234,7 @@ export const removeCollaborator = async (req: Request, res: Response): Promise<v
     typeof name !== 'string' ||
     typeof collaboratorUsername !== 'string'
   ) {
-    throw new AuthError(
+    throw new AppError(
       'Username, repository name and collaborator username are required',
       400,
       'INVALID_COLLABORATOR_PARAMS',

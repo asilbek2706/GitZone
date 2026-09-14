@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 
 import prisma from '../../config/prisma.js';
-import { AuthError } from '../auth/auth.errors.js';
+import { AppError } from '../../errors/app.error.js';
 import { verifyPersonalAccessToken } from '../auth/pat.service.js';
 import {
   authorizeRepositoryAccess,
@@ -81,7 +81,7 @@ const getGitRepository = async (username: string, repositoryName: string) => {
   });
 
   if (!repository) {
-    throw new AuthError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
+    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
   }
 
   return repository;
@@ -110,7 +110,7 @@ const authenticateGitRequest = async (
   const credentials = parseBasicAuth(req);
 
   if (!credentials) {
-    throw new AuthError(
+    throw new AppError(
       'Git username and personal access token are required',
       401,
       'GIT_AUTH_REQUIRED',
@@ -124,7 +124,7 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
   const { username, repository } = req.params;
 
   if (typeof username !== 'string' || typeof repository !== 'string') {
-    throw new AuthError('Invalid Git repository path', 400, 'INVALID_GIT_REPOSITORY_PATH');
+    throw new AppError('Invalid Git repository path', 400, 'INVALID_GIT_REPOSITORY_PATH');
   }
 
   const gitRepository = await getGitRepository(username, repository);
@@ -171,7 +171,7 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
       console.log('[Git HTTP] Access:', access.permission);
     }
   } catch (error) {
-    if (error instanceof AuthError) {
+    if (error instanceof AppError) {
       if (error.statusCode === 401) {
         res.setHeader('WWW-Authenticate', 'Basic realm="GitZone"');
       }

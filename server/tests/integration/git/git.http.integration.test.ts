@@ -9,7 +9,7 @@ import app from '../../../src/app.js';
 
 import prisma from '../../../src/config/prisma.js';
 
-import { AuthError } from '../../../src/modules/auth/auth.errors.js';
+import { AppError } from '../../../src/errors/app.error.js';
 import { verifyPersonalAccessToken } from '../../../src/modules/auth/pat.service.js';
 
 import { authorizeRepositoryAccess } from '../../../src/modules/repositories/repository.authorization.service.js';
@@ -233,7 +233,7 @@ describe('Git HTTP integration', () => {
     });
 
     mockedAuthorizeRepositoryAccess.mockRejectedValue(
-      new AuthError('Repository access denied', 403, 'REPOSITORY_ACCESS_DENIED'),
+      new AppError('Repository access denied', 403, 'REPOSITORY_ACCESS_DENIED'),
     );
 
     const credentials = Buffer.from('testuser:gzp_testtoken').toString('base64');
@@ -333,7 +333,7 @@ describe('Git HTTP integration', () => {
     } as never);
 
     mockedVerifyPersonalAccessToken.mockRejectedValue(
-      new AuthError('Invalid personal access token', 401, 'INVALID_PERSONAL_ACCESS_TOKEN'),
+      new AppError('Invalid personal access token', 401, 'INVALID_PERSONAL_ACCESS_TOKEN'),
     );
 
     const credentials = Buffer.from('testuser:gzp_invalidtoken').toString('base64');

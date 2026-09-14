@@ -1,5 +1,5 @@
 import prisma from '../../config/prisma.js';
-import { AuthError } from '../auth/auth.errors.js';
+import { AppError } from '../../errors/app.error.js';
 import {
   createGitRepository,
   deleteGitRepository,
@@ -44,7 +44,7 @@ export const createRepository = async (
   });
 
   if (existingRepository) {
-    throw new AuthError(
+    throw new AppError(
       'Repository with this name already exists',
       409,
       'REPOSITORY_ALREADY_EXISTS',
@@ -71,7 +71,7 @@ export const createRepository = async (
     });
 
     if (!owner) {
-      throw new AuthError('Repository owner not found', 404, 'USER_NOT_FOUND');
+      throw new AppError('Repository owner not found', 404, 'USER_NOT_FOUND');
     }
 
     await createGitRepository(owner.username, repository.name);
@@ -129,7 +129,7 @@ export const getRepositoryByUsernameAndName = async (
   });
 
   if (!repository) {
-    throw new AuthError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
+    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
   }
 
   return {
@@ -161,11 +161,11 @@ export const updateRepository = async (
   });
 
   if (!repository) {
-    throw new AuthError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
+    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
   }
 
   if (repository.ownerId !== ownerId) {
-    throw new AuthError(
+    throw new AppError(
       'You do not have permission to modify this repository',
       403,
       'REPOSITORY_FORBIDDEN',
@@ -183,7 +183,7 @@ export const updateRepository = async (
     });
 
     if (existingRepository) {
-      throw new AuthError(
+      throw new AppError(
         'Repository with this name already exists',
         409,
         'REPOSITORY_ALREADY_EXISTS',
@@ -228,11 +228,11 @@ export const deleteRepository = async (
   });
 
   if (!repository) {
-    throw new AuthError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
+    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
   }
 
   if (repository.ownerId !== ownerId) {
-    throw new AuthError(
+    throw new AppError(
       'You do not have permission to delete this repository',
       403,
       'REPOSITORY_FORBIDDEN',

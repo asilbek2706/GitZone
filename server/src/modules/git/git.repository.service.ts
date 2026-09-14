@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 
-import { AuthError } from '../auth/auth.errors.js';
+import { AppError } from '../../errors/app.error.js';
 import { env } from '../../config/env.js';
 
 const execFileAsync = promisify(execFile);
@@ -25,7 +25,7 @@ export const createGitRepository = async (
 
     await execFileAsync('git', ['--git-dir', repositoryPath, 'config', 'http.receivepack', 'true']);
   } catch {
-    throw new AuthError('Failed to create Git repository', 500, 'GIT_REPOSITORY_CREATE_FAILED');
+    throw new AppError('Failed to create Git repository', 500, 'GIT_REPOSITORY_CREATE_FAILED');
   }
 
   return repositoryPath;
@@ -43,7 +43,7 @@ export const renameGitRepository = async (
   try {
     await fs.rename(oldRepositoryPath, newRepositoryPath);
   } catch {
-    throw new AuthError('Failed to rename Git repository', 500, 'GIT_REPOSITORY_RENAME_FAILED');
+    throw new AppError('Failed to rename Git repository', 500, 'GIT_REPOSITORY_RENAME_FAILED');
   }
 };
 
@@ -59,6 +59,6 @@ export const deleteGitRepository = async (
       force: true,
     });
   } catch {
-    throw new AuthError('Failed to delete Git repository', 500, 'GIT_REPOSITORY_DELETE_FAILED');
+    throw new AppError('Failed to delete Git repository', 500, 'GIT_REPOSITORY_DELETE_FAILED');
   }
 };

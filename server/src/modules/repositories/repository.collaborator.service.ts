@@ -1,5 +1,5 @@
 import prisma from '../../config/prisma.js';
-import { AuthError } from '../auth/auth.errors.js';
+import { AppError } from '../../errors/app.error.js';
 
 export type RepositoryCollaboratorPermission = 'READ' | 'WRITE';
 
@@ -31,11 +31,11 @@ const getOwnedRepository = async (ownerId: string, username: string, repositoryN
   });
 
   if (!repository) {
-    throw new AuthError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
+    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
   }
 
   if (repository.ownerId !== ownerId) {
-    throw new AuthError(
+    throw new AppError(
       'You do not have permission to manage collaborators for this repository',
       403,
       'REPOSITORY_FORBIDDEN',
@@ -65,11 +65,11 @@ export const addRepositoryCollaborator = async (
   });
 
   if (!collaboratorUser) {
-    throw new AuthError('Collaborator user not found', 404, 'COLLABORATOR_USER_NOT_FOUND');
+    throw new AppError('Collaborator user not found', 404, 'COLLABORATOR_USER_NOT_FOUND');
   }
 
   if (collaboratorUser.id === repository.ownerId) {
-    throw new AuthError(
+    throw new AppError(
       'Repository owner cannot be added as a collaborator',
       400,
       'OWNER_CANNOT_BE_COLLABORATOR',
@@ -86,7 +86,7 @@ export const addRepositoryCollaborator = async (
   });
 
   if (existingCollaborator) {
-    throw new AuthError('User is already a collaborator', 409, 'COLLABORATOR_ALREADY_EXISTS');
+    throw new AppError('User is already a collaborator', 409, 'COLLABORATOR_ALREADY_EXISTS');
   }
 
   const collaborator = await prisma.repositoryCollaborator.create({
@@ -166,7 +166,7 @@ export const updateRepositoryCollaborator = async (
   });
 
   if (!collaboratorUser) {
-    throw new AuthError('Collaborator user not found', 404, 'COLLABORATOR_USER_NOT_FOUND');
+    throw new AppError('Collaborator user not found', 404, 'COLLABORATOR_USER_NOT_FOUND');
   }
 
   const existingCollaborator = await prisma.repositoryCollaborator.findUnique({
@@ -179,7 +179,7 @@ export const updateRepositoryCollaborator = async (
   });
 
   if (!existingCollaborator) {
-    throw new AuthError('Repository collaborator not found', 404, 'COLLABORATOR_NOT_FOUND');
+    throw new AppError('Repository collaborator not found', 404, 'COLLABORATOR_NOT_FOUND');
   }
 
   const collaborator = await prisma.repositoryCollaborator.update({
@@ -226,7 +226,7 @@ export const removeRepositoryCollaborator = async (
   });
 
   if (!collaboratorUser) {
-    throw new AuthError('Collaborator user not found', 404, 'COLLABORATOR_USER_NOT_FOUND');
+    throw new AppError('Collaborator user not found', 404, 'COLLABORATOR_USER_NOT_FOUND');
   }
 
   const collaborator = await prisma.repositoryCollaborator.findUnique({
@@ -242,7 +242,7 @@ export const removeRepositoryCollaborator = async (
   });
 
   if (!collaborator) {
-    throw new AuthError('Repository collaborator not found', 404, 'COLLABORATOR_NOT_FOUND');
+    throw new AppError('Repository collaborator not found', 404, 'COLLABORATOR_NOT_FOUND');
   }
 
   await prisma.repositoryCollaborator.delete({

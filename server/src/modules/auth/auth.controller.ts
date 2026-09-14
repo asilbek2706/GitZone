@@ -8,8 +8,6 @@ import {
   setRefreshTokenCookie,
 } from './auth.cookies.js';
 
-import { AuthError } from './auth.errors.js';
-
 import {
   getCurrentUser,
   loginUser,
@@ -25,12 +23,13 @@ import {
 } from './pat.service.js';
 
 import { createPersonalAccessTokenSchema, loginSchema, registerSchema } from './auth.validation.js';
+import { AppError } from '../../errors/app.error.js';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   const result = registerSchema.safeParse(req.body);
 
   if (!result.success) {
-    throw new AuthError('Validation failed', 400, 'VALIDATION_ERROR');
+    throw new AppError('Validation failed', 400, 'VALIDATION_ERROR');
   }
 
   const auth = await registerUser({
@@ -55,7 +54,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   const result = loginSchema.safeParse(req.body);
 
   if (!result.success) {
-    throw new AuthError('Validation failed', 400, 'VALIDATION_ERROR');
+    throw new AppError('Validation failed', 400, 'VALIDATION_ERROR');
   }
 
   const auth = await loginUser(result.data);
@@ -75,7 +74,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
   const refreshToken = getRefreshTokenFromCookie(req);
 
   if (!refreshToken) {
-    throw new AuthError('Refresh token is required', 401, 'REFRESH_TOKEN_REQUIRED');
+    throw new AppError('Refresh token is required', 401, 'REFRESH_TOKEN_REQUIRED');
   }
 
   const auth = await refreshAuth(refreshToken);
@@ -129,7 +128,7 @@ export const createToken = async (req: Request, res: Response): Promise<void> =>
   const result = createPersonalAccessTokenSchema.safeParse(req.body);
 
   if (!result.success) {
-    throw new AuthError('Validation failed', 400, 'VALIDATION_ERROR');
+    throw new AppError('Validation failed', 400, 'VALIDATION_ERROR');
   }
 
   const personalAccessToken = await createPersonalAccessToken(
@@ -169,7 +168,7 @@ export const revokeToken = async (req: Request, res: Response): Promise<void> =>
   const tokenId = req.params.tokenId;
 
   if (typeof tokenId !== 'string') {
-    throw new AuthError(
+    throw new AppError(
       'Personal access token ID is required',
       400,
       'PERSONAL_ACCESS_TOKEN_ID_REQUIRED',

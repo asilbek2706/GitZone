@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 
 import prisma from '../../config/prisma.js';
-import { AuthError } from './auth.errors.js';
+import { AppError } from '../../errors/app.error.js';
 
 const PAT_PREFIX = 'gzp_';
 const TOKEN_BYTES = 32;
@@ -81,11 +81,7 @@ export const verifyPersonalAccessToken = async (
   });
 
   if (!user) {
-    throw new AuthError(
-      'Invalid username or personal access token',
-      401,
-      'INVALID_GIT_CREDENTIALS',
-    );
+    throw new AppError('Invalid username or personal access token', 401, 'INVALID_GIT_CREDENTIALS');
   }
 
   const tokenPrefix = token.slice(0, 12);
@@ -97,33 +93,21 @@ export const verifyPersonalAccessToken = async (
   });
 
   if (!personalAccessToken) {
-    throw new AuthError(
-      'Invalid username or personal access token',
-      401,
-      'INVALID_GIT_CREDENTIALS',
-    );
+    throw new AppError('Invalid username or personal access token', 401, 'INVALID_GIT_CREDENTIALS');
   }
 
   const tokenHash = hashPersonalAccessToken(token);
 
   if (!isTokenHashEqual(personalAccessToken.tokenHash, tokenHash)) {
-    throw new AuthError(
-      'Invalid username or personal access token',
-      401,
-      'INVALID_GIT_CREDENTIALS',
-    );
+    throw new AppError('Invalid username or personal access token', 401, 'INVALID_GIT_CREDENTIALS');
   }
 
   if (personalAccessToken.userId !== user.id) {
-    throw new AuthError(
-      'Invalid username or personal access token',
-      401,
-      'INVALID_GIT_CREDENTIALS',
-    );
+    throw new AppError('Invalid username or personal access token', 401, 'INVALID_GIT_CREDENTIALS');
   }
 
   if (personalAccessToken.expiresAt !== null && personalAccessToken.expiresAt <= new Date()) {
-    throw new AuthError('Personal access token has expired', 401, 'GIT_TOKEN_EXPIRED');
+    throw new AppError('Personal access token has expired', 401, 'GIT_TOKEN_EXPIRED');
   }
 
   await prisma.personalAccessToken.update({
@@ -180,6 +164,6 @@ export const revokePersonalAccessToken = async (userId: string, tokenId: string)
   });
 
   if (result.count === 0) {
-    throw new AuthError('Personal access token not found', 404, 'PERSONAL_ACCESS_TOKEN_NOT_FOUND');
+    throw new AppError('Personal access token not found', 404, 'PERSONAL_ACCESS_TOKEN_NOT_FOUND');
   }
 };

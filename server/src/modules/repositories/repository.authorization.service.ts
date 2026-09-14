@@ -1,7 +1,7 @@
 import type { RepositoryPermission } from '../../generated/prisma/enums.js';
 
 import prisma from '../../config/prisma.js';
-import { AuthError } from '../auth/auth.errors.js';
+import { AppError } from '../../errors/app.error.js';
 
 export type RepositoryAccessType = 'READ' | 'WRITE';
 
@@ -48,7 +48,7 @@ export const authorizeRepositoryAccess = async (
   });
 
   if (!repository) {
-    throw new AuthError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
+    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
   }
 
   if (userId && repository.ownerId === userId) {
@@ -101,7 +101,7 @@ export const authorizeRepositoryAccess = async (
     }
   }
 
-  throw new AuthError(
+  throw new AppError(
     'You do not have permission to access this repository',
     403,
     'REPOSITORY_ACCESS_DENIED',

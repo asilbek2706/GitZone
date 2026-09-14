@@ -7,7 +7,7 @@ import {
   authMiddleware,
 } from '../../../src/middleware/auth.middleware.js';
 
-import { AuthError } from '../../../src/modules/auth/auth.errors.js';
+import { AppError } from '../../../src/errors/app.error.js';
 import { verifyAccessToken } from '../../../src/modules/auth/auth.tokens.js';
 
 vi.mock('../../../src/modules/auth/auth.tokens.js', () => ({
@@ -41,7 +41,7 @@ describe('authMiddleware', () => {
     const next = vi.fn() as NextFunction;
 
     expect(() => authMiddleware(req, res, next)).toThrowError(
-      new AuthError('Authorization header is required', 401, 'AUTHORIZATION_REQUIRED'),
+      new AppError('Authorization header is required', 401, 'AUTHORIZATION_REQUIRED'),
     );
 
     expect(mockedVerifyAccessToken).not.toHaveBeenCalled();
@@ -54,7 +54,7 @@ describe('authMiddleware', () => {
     const next = vi.fn() as NextFunction;
 
     expect(() => authMiddleware(req, res, next)).toThrowError(
-      new AuthError('Invalid authorization header', 401, 'INVALID_AUTHORIZATION_HEADER'),
+      new AppError('Invalid authorization header', 401, 'INVALID_AUTHORIZATION_HEADER'),
     );
 
     expect(mockedVerifyAccessToken).not.toHaveBeenCalled();
@@ -67,7 +67,7 @@ describe('authMiddleware', () => {
     const next = vi.fn() as NextFunction;
 
     expect(() => authMiddleware(req, res, next)).toThrowError(
-      new AuthError('Invalid authorization header', 401, 'INVALID_AUTHORIZATION_HEADER'),
+      new AppError('Invalid authorization header', 401, 'INVALID_AUTHORIZATION_HEADER'),
     );
 
     expect(mockedVerifyAccessToken).not.toHaveBeenCalled();
@@ -84,7 +84,7 @@ describe('authMiddleware', () => {
     });
 
     expect(() => authMiddleware(req, res, next)).toThrowError(
-      new AuthError('Invalid or expired access token', 401, 'INVALID_ACCESS_TOKEN'),
+      new AppError('Invalid or expired access token', 401, 'INVALID_ACCESS_TOKEN'),
     );
 
     expect(mockedVerifyAccessToken).toHaveBeenCalledWith('invalid-token');
@@ -101,7 +101,7 @@ describe('authMiddleware', () => {
     });
 
     expect(() => authMiddleware(req, res, next)).toThrowError(
-      new AuthError('Invalid or expired access token', 401, 'INVALID_ACCESS_TOKEN'),
+      new AppError('Invalid or expired access token', 401, 'INVALID_ACCESS_TOKEN'),
     );
 
     expect(mockedVerifyAccessToken).toHaveBeenCalledWith('expired-token');
