@@ -375,4 +375,21 @@ describe('auth API integration', () => {
       message: 'Personal access token revoked successfully',
     });
   });
+
+  it('returns 400 for malformed JSON payload', async () => {
+    const response = await request(app)
+      .post('/api/auth/login')
+      .set('Content-Type', 'application/json')
+      .send('{"email":"test@example.com"');
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'INVALID_JSON',
+        message: 'Invalid JSON payload',
+      },
+    });
+  });
 });
