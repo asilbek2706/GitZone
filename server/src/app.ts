@@ -11,6 +11,8 @@ import repositoryRoutes from './modules/repositories/repository.routes.js';
 
 import { gitHttpController } from './modules/git/git.http.controller.js';
 
+import { env } from './config/env.js';
+
 const app = express();
 
 app.use(helmet());
@@ -24,8 +26,13 @@ app.use(
 
 app.use('/:username/:repository.git', gitHttpController);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: env.BODY_LIMIT }));
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: env.BODY_LIMIT,
+  }),
+);
 app.use(cookieParser());
 
 app.get('/api/health', (_req, res) => {

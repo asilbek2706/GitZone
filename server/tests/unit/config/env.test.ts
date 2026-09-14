@@ -5,6 +5,7 @@ const originalEnv = { ...process.env };
 const setValidEnv = (): void => {
   process.env.NODE_ENV = 'test';
   process.env.PORT = '5000';
+  process.env.BODY_LIMIT = '1mb';
   process.env.DATABASE_URL = 'postgresql://user:password@localhost:5432/gitzone';
   process.env.JWT_ACCESS_SECRET = 'test-access-secret';
   process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
@@ -36,6 +37,7 @@ describe('environment configuration', () => {
     expect(env).toMatchObject({
       NODE_ENV: 'test',
       PORT: 5000,
+      BODY_LIMIT: '1mb',
       DATABASE_URL: 'postgresql://user:password@localhost:5432/gitzone',
       JWT_ACCESS_SECRET: 'test-access-secret',
       JWT_REFRESH_SECRET: 'test-refresh-secret',
@@ -45,14 +47,16 @@ describe('environment configuration', () => {
     });
   });
 
-  it('uses default NODE_ENV and PORT values', async () => {
+  it('uses default NODE_ENV, PORT, and BODY_LIMIT values', async () => {
     delete process.env.NODE_ENV;
     delete process.env.PORT;
+    delete process.env.BODY_LIMIT;
 
     const { env } = await loadEnv();
 
     expect(env.NODE_ENV).toBe('development');
     expect(env.PORT).toBe(5000);
+    expect(env.BODY_LIMIT).toBe('1mb');
   });
 
   it('converts PORT to a number', async () => {
@@ -83,6 +87,12 @@ describe('environment configuration', () => {
 
   it('rejects a PORT above the valid range', async () => {
     process.env.PORT = '65536';
+
+    await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
+  });
+
+  it('rejects an invalid BODY_LIMIT', async () => {
+    process.env.BODY_LIMIT = 'invalid';
 
     await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
   });

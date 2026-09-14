@@ -6,6 +6,11 @@ type JsonParseError = SyntaxError & {
   type?: string;
 };
 
+type PayloadTooLargeError = Error & {
+  status?: number;
+  type?: string;
+};
+
 export const errorMiddleware: ErrorRequestHandler = (error, _req, res, _next): void => {
   if (error instanceof AppError) {
     res.status(error.statusCode).json({
@@ -25,6 +30,22 @@ export const errorMiddleware: ErrorRequestHandler = (error, _req, res, _next): v
       error: {
         code: 'INVALID_JSON',
         message: 'Invalid JSON payload',
+      },
+    });
+
+    return;
+  }
+
+  if (
+    error instanceof Error &&
+    (error as PayloadTooLargeError).status === 413 &&
+    (error as PayloadTooLargeError).type === 'entity.too.large'
+  ) {
+    res.status(413).json({
+      success: false,
+      error: {
+        code: 'PAYLOAD_TOO_LARGE',
+        message: 'Request body is too large',
       },
     });
 

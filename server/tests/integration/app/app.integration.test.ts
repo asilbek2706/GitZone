@@ -17,4 +17,22 @@ describe('App integration', () => {
       },
     });
   });
+
+  it('rejects request bodies larger than the configured limit', async () => {
+    const largePayload = {
+      content: 'a'.repeat(1024 * 1024 + 1),
+    };
+
+    const response = await request(app).post('/api/auth/login').send(largePayload);
+
+    expect(response.status).toBe(413);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'PAYLOAD_TOO_LARGE',
+        message: 'Request body is too large',
+      },
+    });
+  });
 });

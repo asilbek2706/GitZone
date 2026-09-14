@@ -7,6 +7,12 @@ const envSchema = z.object({
 
   PORT: z.coerce.number().int().min(1).max(65535).default(5000),
 
+  BODY_LIMIT: z
+    .string()
+    .trim()
+    .regex(/^[1-9]\d*(b|kb|mb|gb)$/i, 'BODY_LIMIT must be a valid size such as 100kb or 1mb')
+    .default('1mb'),
+
   DATABASE_URL: z.string().trim().min(1, 'DATABASE_URL is required'),
 
   JWT_ACCESS_SECRET: z.string().trim().min(1, 'JWT_ACCESS_SECRET is required'),
