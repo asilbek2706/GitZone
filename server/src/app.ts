@@ -4,6 +4,7 @@ import express from 'express';
 import helmet from 'helmet';
 
 import { errorMiddleware } from './middleware/error.middleware.js';
+import { notFoundMiddleware } from './middleware/not-found.middleware.js';
 
 import authRoutes from './modules/auth/auth.routes.js';
 import repositoryRoutes from './modules/repositories/repository.routes.js';
@@ -37,6 +38,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/repositories', repositoryRoutes);
 
+app.use(notFoundMiddleware);
 app.use(errorMiddleware);
 
 export default app;
