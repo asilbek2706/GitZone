@@ -15,12 +15,16 @@ import repositoryRoutes from './modules/repositories/repository.routes.js';
 
 const app = express();
 
+if (env.TRUST_PROXY) {
+  app.set('trust proxy', 1);
+}
+
 app.use(requestIdMiddleware);
 app.use(helmet());
 
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: env.CORS_ORIGIN,
     credentials: true,
   }),
 );

@@ -5,6 +5,8 @@ const originalEnv = { ...process.env };
 const setValidEnv = (): void => {
   process.env.NODE_ENV = 'test';
   process.env.PORT = '5000';
+  process.env.CORS_ORIGIN = 'http://localhost:5173';
+  process.env.TRUST_PROXY = 'false';
   process.env.BODY_LIMIT = '1mb';
   process.env.DATABASE_URL = 'postgresql://user:password@localhost:5432/gitzone';
   process.env.JWT_ACCESS_SECRET = 'test-access-secret';
@@ -37,6 +39,8 @@ describe('environment configuration', () => {
     expect(env).toMatchObject({
       NODE_ENV: 'test',
       PORT: 5000,
+      CORS_ORIGIN: 'http://localhost:5173',
+      TRUST_PROXY: false,
       BODY_LIMIT: '1mb',
       DATABASE_URL: 'postgresql://user:password@localhost:5432/gitzone',
       JWT_ACCESS_SECRET: 'test-access-secret',
@@ -47,15 +51,19 @@ describe('environment configuration', () => {
     });
   });
 
-  it('uses default NODE_ENV, PORT, and BODY_LIMIT values', async () => {
+  it('uses default NODE_ENV, PORT, CORS_ORIGIN, TRUST_PROXY, and BODY_LIMIT values', async () => {
     delete process.env.NODE_ENV;
     delete process.env.PORT;
+    delete process.env.CORS_ORIGIN;
+    delete process.env.TRUST_PROXY;
     delete process.env.BODY_LIMIT;
 
     const { env } = await loadEnv();
 
     expect(env.NODE_ENV).toBe('development');
     expect(env.PORT).toBe(5000);
+    expect(env.CORS_ORIGIN).toBe('http://localhost:5173');
+    expect(env.TRUST_PROXY).toBe(false);
     expect(env.BODY_LIMIT).toBe('1mb');
   });
 
@@ -65,6 +73,22 @@ describe('environment configuration', () => {
     const { env } = await loadEnv();
 
     expect(env.PORT).toBe(8080);
+  });
+
+  it('converts TRUST_PROXY true to boolean true', async () => {
+    process.env.TRUST_PROXY = 'true';
+
+    const { env } = await loadEnv();
+
+    expect(env.TRUST_PROXY).toBe(true);
+  });
+
+  it('converts non-true TRUST_PROXY values to false', async () => {
+    process.env.TRUST_PROXY = 'false';
+
+    const { env } = await loadEnv();
+
+    expect(env.TRUST_PROXY).toBe(false);
   });
 
   it('rejects an invalid NODE_ENV', async () => {
@@ -87,6 +111,12 @@ describe('environment configuration', () => {
 
   it('rejects a PORT above the valid range', async () => {
     process.env.PORT = '65536';
+
+    await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
+  });
+
+  it('rejects an invalid CORS_ORIGIN', async () => {
+    process.env.CORS_ORIGIN = 'invalid-url';
 
     await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
   });
