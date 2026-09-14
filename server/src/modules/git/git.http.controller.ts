@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
+import { env } from '../../config/env.js';
+import { logger } from '../../config/logger.js';
 import prisma from '../../config/prisma.js';
 import { AppError } from '../../errors/app.error.js';
 import { verifyPersonalAccessToken } from '../auth/pat.service.js';
@@ -9,8 +11,6 @@ import {
   authorizeRepositoryAccess,
   type RepositoryAccessType,
 } from '../repositories/repository.authorization.service.js';
-
-import { env } from '../../config/env.js';
 
 const GIT_PROJECT_ROOT = path.resolve(process.cwd(), env.GIT_STORAGE_PATH);
 
@@ -141,16 +141,19 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
 
   const authenticationRequired = gitRepository.isPrivate || writeRequest;
 
-  console.log('[Git HTTP]', {
-    method: req.method,
-    path: req.path,
-    username: repositoryOwner,
-    repository: repositoryName,
-    pathInfo,
-    isPrivate: gitRepository.isPrivate,
-    writeRequest,
-    authenticationRequired,
-  });
+  logger.info(
+    {
+      method: req.method,
+      path: req.path,
+      username: repositoryOwner,
+      repository: repositoryName,
+      pathInfo,
+      isPrivate: gitRepository.isPrivate,
+      writeRequest,
+      authenticationRequired,
+    },
+    'Git HTTP request received',
+  );
 
   try {
     if (authenticationRequired) {
@@ -162,13 +165,32 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
         authenticatedUser.userId,
       );
 
-      console.log('[Git HTTP] Authenticated:', authenticatedUser.username);
+      logger.info(
+        {
+          username: authenticatedUser.username,
+        },
+        'Git HTTP user authenticated',
+      );
 
-      console.log('[Git HTTP] Access:', access.permission);
+      logger.info(
+        {
+          permission: access.permission,
+          repository: repositoryName,
+          username: repositoryOwner,
+        },
+        'Git HTTP access authorized',
+      );
     } else {
       const access = await authorizeRepositoryAccess(gitRepository.id, accessType);
 
-      console.log('[Git HTTP] Access:', access.permission);
+      logger.info(
+        {
+          permission: access.permission,
+          repository: repositoryName,
+          username: repositoryOwner,
+        },
+        'Git HTTP access authorized',
+      );
     }
   } catch (error) {
     if (error instanceof AppError) {
@@ -255,11 +277,25 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
   });
 
   child.stderr.on('data', (chunk: Buffer) => {
-    console.error('[git-http-backend]', chunk.toString());
+    logger.error(
+      {
+        stderr: chunk.toString(),
+        repository: repositoryName,
+        username: repositoryOwner,
+      },
+      'git-http-backend stderr output',
+    );
   });
 
   child.on('error', (error) => {
-    console.error('[git-http-backend] process error:', error);
+    logger.error(
+      {
+        err: error,
+        repository: repositoryName,
+        username: repositoryOwner,
+      },
+      'git-http-backend process error',
+    );
 
     if (!res.headersSent) {
       res.status(500).json({

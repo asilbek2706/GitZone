@@ -1,19 +1,30 @@
 import app from './app.js';
 import { env } from './config/env.js';
+import { logger } from './config/logger.js';
 import prisma from './config/prisma.js';
 
 const server = app.listen(env.PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${env.PORT}`);
+  logger.info(
+    {
+      port: env.PORT,
+    },
+    'Server started',
+  );
 });
 
 const shutdown = async (signal: string): Promise<void> => {
-  console.log(`\n${signal} received. Shutting down gracefully...`);
+  logger.info(
+    {
+      signal,
+    },
+    'Graceful shutdown started',
+  );
 
   server.close(async () => {
     await prisma.$disconnect();
 
-    console.log('✅ Database connection closed');
-    console.log('👋 Server stopped');
+    logger.info('Database connection closed');
+    logger.info('Server stopped');
 
     process.exit(0);
   });
