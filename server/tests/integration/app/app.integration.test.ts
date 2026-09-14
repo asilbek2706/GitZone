@@ -35,4 +35,12 @@ describe('App integration', () => {
       },
     });
   });
+
+  it('adds a unique request id to responses', async () => {
+    const response = await request(app).get('/api/does-not-exist');
+
+    expect(response.headers['x-request-id']).toBeDefined();
+    expect(typeof response.headers['x-request-id']).toBe('string');
+    expect(response.headers['x-request-id']).not.toHaveLength(0);
+  });
 });

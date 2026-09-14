@@ -5,6 +5,7 @@ import helmet from 'helmet';
 
 import { errorMiddleware } from './middleware/error.middleware.js';
 import { notFoundMiddleware } from './middleware/not-found.middleware.js';
+import { requestIdMiddleware } from './middleware/request-id.middleware.js';
 
 import authRoutes from './modules/auth/auth.routes.js';
 import repositoryRoutes from './modules/repositories/repository.routes.js';
@@ -15,17 +16,15 @@ import { env } from './config/env.js';
 
 const app = express();
 
+app.use(requestIdMiddleware);
 app.use(helmet());
-
 app.use(
   cors({
     origin: 'http://localhost:5173',
     credentials: true,
   }),
 );
-
 app.use('/:username/:repository.git', gitHttpController);
-
 app.use(express.json({ limit: env.BODY_LIMIT }));
 app.use(
   express.urlencoded({
