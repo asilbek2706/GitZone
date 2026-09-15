@@ -286,6 +286,21 @@ export const revokeOtherSessions = async (
 ): Promise<number> => {
   const currentRefreshTokenHash = hashRefreshToken(currentRefreshToken);
 
+  const currentSession = await prisma.session.findUnique({
+    where: {
+      refreshTokenHash: currentRefreshTokenHash,
+    },
+  });
+
+  if (
+    !currentSession ||
+    currentSession.userId !== userId ||
+    currentSession.revokedAt !== null ||
+    currentSession.expiresAt <= new Date()
+  ) {
+    throw new AppError('Current refresh session is invalid', 401, 'INVALID_REFRESH_SESSION');
+  }
+
   const result = await prisma.session.updateMany({
     where: {
       userId,
@@ -293,8 +308,8 @@ export const revokeOtherSessions = async (
       expiresAt: {
         gt: new Date(),
       },
-      refreshTokenHash: {
-        not: currentRefreshTokenHash,
+      id: {
+        not: currentSession.id,
       },
     },
     data: {

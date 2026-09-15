@@ -266,10 +266,7 @@ describe('auth API integration', () => {
 
     expect(mockedVerifyAccessToken).toHaveBeenCalledWith('test-access-token');
 
-    expect(mockedRevokeOtherSessions).toHaveBeenCalledWith(
-      'user-1',
-      'current-refresh-token',
-    );
+    expect(mockedRevokeOtherSessions).toHaveBeenCalledWith('user-1', 'current-refresh-token');
 
     expect(response.body).toEqual({
       success: true,
@@ -298,6 +295,35 @@ describe('auth API integration', () => {
       error: {
         code: 'REFRESH_TOKEN_REQUIRED',
         message: 'Refresh token is required',
+      },
+    });
+  });
+
+  it('rejects revoking other sessions when the current refresh session is invalid', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedRevokeOtherSessions.mockRejectedValue(
+      new AppError('Current refresh session is invalid', 401, 'INVALID_REFRESH_SESSION'),
+    );
+
+    const response = await request(app)
+      .delete('/api/auth/sessions')
+      .set('Authorization', 'Bearer test-access-token')
+      .set('Cookie', 'refreshToken=stale-refresh-token');
+
+    expect(response.status).toBe(401);
+
+    expect(mockedVerifyAccessToken).toHaveBeenCalledWith('test-access-token');
+
+    expect(mockedRevokeOtherSessions).toHaveBeenCalledWith('user-1', 'stale-refresh-token');
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'INVALID_REFRESH_SESSION',
+        message: 'Current refresh session is invalid',
       },
     });
   });

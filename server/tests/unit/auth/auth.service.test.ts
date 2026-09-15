@@ -491,6 +491,21 @@ describe('auth service', () => {
   });
 
   it('revokes all other active sessions while preserving the current session', async () => {
+    mockedHashRefreshToken.mockReturnValue('current-refresh-hash');
+
+    mockedSessionFindUnique.mockResolvedValue({
+      id: 'session-1',
+      userId: 'user-1',
+      refreshTokenHash: 'current-refresh-hash',
+      userAgent: 'Chrome',
+      ipAddress: '127.0.0.1',
+      lastUsedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60_000),
+      revokedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+
     mockedSessionUpdateMany.mockResolvedValue({
       count: 3,
     } as never);
@@ -499,6 +514,14 @@ describe('auth service', () => {
 
     expect(result).toBe(3);
 
+    expect(mockedHashRefreshToken).toHaveBeenCalledWith('current-refresh-token');
+
+    expect(mockedSessionFindUnique).toHaveBeenCalledWith({
+      where: {
+        refreshTokenHash: 'current-refresh-hash',
+      },
+    });
+
     expect(mockedSessionUpdateMany).toHaveBeenCalledWith({
       where: {
         userId: 'user-1',
@@ -506,14 +529,109 @@ describe('auth service', () => {
         expiresAt: {
           gt: expect.any(Date),
         },
-        refreshTokenHash: {
-          not: hashRefreshToken('current-refresh-token'),
+        id: {
+          not: 'session-1',
         },
       },
       data: {
         revokedAt: expect.any(Date),
       },
     });
+  });
+
+  it('rejects revoking other sessions when the current refresh session is invalid', async () => {
+    mockedHashRefreshToken.mockReturnValue('current-refresh-hash');
+
+    mockedSessionFindUnique.mockResolvedValue(null as never);
+
+    await expect(revokeOtherSessions('user-1', 'current-refresh-token')).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_REFRESH_SESSION',
+      message: 'Current refresh session is invalid',
+    });
+
+    expect(mockedSessionFindUnique).toHaveBeenCalledWith({
+      where: {
+        refreshTokenHash: 'current-refresh-hash',
+      },
+    });
+
+    expect(mockedSessionUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects revoking other sessions when the current refresh session belongs to another user', async () => {
+    mockedHashRefreshToken.mockReturnValue('current-refresh-hash');
+
+    mockedSessionFindUnique.mockResolvedValue({
+      id: 'session-1',
+      userId: 'other-user',
+      refreshTokenHash: 'current-refresh-hash',
+      userAgent: 'Chrome',
+      ipAddress: '127.0.0.1',
+      lastUsedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60_000),
+      revokedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+
+    await expect(revokeOtherSessions('user-1', 'current-refresh-token')).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_REFRESH_SESSION',
+      message: 'Current refresh session is invalid',
+    });
+
+    expect(mockedSessionUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects revoking other sessions when the current refresh session is revoked', async () => {
+    mockedHashRefreshToken.mockReturnValue('current-refresh-hash');
+
+    mockedSessionFindUnique.mockResolvedValue({
+      id: 'session-1',
+      userId: 'user-1',
+      refreshTokenHash: 'current-refresh-hash',
+      userAgent: 'Chrome',
+      ipAddress: '127.0.0.1',
+      lastUsedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60_000),
+      revokedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+
+    await expect(revokeOtherSessions('user-1', 'current-refresh-token')).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_REFRESH_SESSION',
+      message: 'Current refresh session is invalid',
+    });
+
+    expect(mockedSessionUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects revoking other sessions when the current refresh session is expired', async () => {
+    mockedHashRefreshToken.mockReturnValue('current-refresh-hash');
+
+    mockedSessionFindUnique.mockResolvedValue({
+      id: 'session-1',
+      userId: 'user-1',
+      refreshTokenHash: 'current-refresh-hash',
+      userAgent: 'Chrome',
+      ipAddress: '127.0.0.1',
+      lastUsedAt: new Date(),
+      expiresAt: new Date(Date.now() - 60_000),
+      revokedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+
+    await expect(revokeOtherSessions('user-1', 'current-refresh-token')).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_REFRESH_SESSION',
+      message: 'Current refresh session is invalid',
+    });
+
+    expect(mockedSessionUpdateMany).not.toHaveBeenCalled();
   });
 
   it('logs out by revoking active refresh session', async () => {
