@@ -2,6 +2,8 @@ import bcrypt from 'bcrypt';
 
 import prisma from '../../config/prisma.js';
 import { AppError } from '../../errors/app.error.js';
+import { env } from '../../config/env.js';
+import { parseDurationToMilliseconds } from '../../utils/duration.js';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -11,7 +13,7 @@ import {
 import type { AuthResponse, AuthUser, LoginInput, RegisterInput } from './auth.types.js';
 
 const SALT_ROUNDS = 12;
-const REFRESH_TOKEN_EXPIRES_IN_DAYS = 7;
+const REFRESH_TOKEN_EXPIRES_IN_MS = parseDurationToMilliseconds(env.JWT_REFRESH_EXPIRES_IN);
 
 const toAuthUser = (user: {
   id: string;
@@ -34,11 +36,7 @@ const toAuthUser = (user: {
 });
 
 const getRefreshTokenExpiresAt = (): Date => {
-  const expiresAt = new Date();
-
-  expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRES_IN_DAYS);
-
-  return expiresAt;
+  return new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN_MS);
 };
 
 export const registerUser = async (input: RegisterInput): Promise<AuthResponse> => {
