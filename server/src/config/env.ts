@@ -10,8 +10,9 @@ const envSchema = z.object({
   CORS_ORIGIN: z.url('CORS_ORIGIN must be a valid URL').default('http://localhost:5173'),
 
   TRUST_PROXY: z
-    .string()
-    .trim()
+    .enum(['true', 'false'], {
+      error: 'TRUST_PROXY must be either true or false',
+    })
     .default('false')
     .transform((value) => value === 'true'),
 

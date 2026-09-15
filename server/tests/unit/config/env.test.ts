@@ -91,6 +91,12 @@ describe('environment configuration', () => {
     expect(env.TRUST_PROXY).toBe(false);
   });
 
+  it('rejects an invalid TRUST_PROXY value', async () => {
+    process.env.TRUST_PROXY = 'invalid';
+
+    await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
+  });
+
   it('rejects an invalid NODE_ENV', async () => {
     process.env.NODE_ENV = 'invalid';
 
