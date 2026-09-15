@@ -9,11 +9,14 @@ import {
 } from './auth.cookies.js';
 
 import {
+  getActiveSessions,
   getCurrentUser,
   loginUser,
   logoutUser,
   refreshAuth,
   registerUser,
+  revokeOtherSessions,
+  revokeSession,
 } from './auth.service.js';
 
 import {
@@ -24,6 +27,12 @@ import {
 
 import { createPersonalAccessTokenSchema, loginSchema, registerSchema } from './auth.validation.js';
 import { AppError } from '../../errors/app.error.js';
+import type { SessionMetadata } from './auth.types.js';
+
+const getSessionMetadata = (req: Request): SessionMetadata => ({
+  userAgent: req.get('user-agent') ?? null,
+  ipAddress: req.ip ?? null,
+});
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   const result = registerSchema.safeParse(req.body);
@@ -32,12 +41,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     throw new AppError('Validation failed', 400, 'VALIDATION_ERROR');
   }
 
-  const auth = await registerUser({
-    username: result.data.username,
-    email: result.data.email,
-    password: result.data.password,
-    ...(result.data.name !== undefined ? { name: result.data.name } : {}),
-  });
+  const auth = await registerUser(
+    {
+      username: result.data.username,
+      email: result.data.email,
+      password: result.data.password,
+      ...(result.data.name !== undefined ? { name: result.data.name } : {}),
+    },
+    getSessionMetadata(req),
+  );
 
   setRefreshTokenCookie(res, auth.refreshToken);
 
@@ -57,7 +69,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     throw new AppError('Validation failed', 400, 'VALIDATION_ERROR');
   }
 
-  const auth = await loginUser(result.data);
+  const auth = await loginUser(result.data, getSessionMetadata(req));
 
   setRefreshTokenCookie(res, auth.refreshToken);
 
@@ -77,7 +89,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     throw new AppError('Refresh token is required', 401, 'REFRESH_TOKEN_REQUIRED');
   }
 
-  const auth = await refreshAuth(refreshToken);
+  const auth = await refreshAuth(refreshToken, getSessionMetadata(req));
 
   setRefreshTokenCookie(res, auth.refreshToken);
 
@@ -104,6 +116,59 @@ export const me = async (req: Request, res: Response): Promise<void> => {
     data: {
       user,
     },
+  });
+};
+
+export const getSessions = async (req: Request, res: Response): Promise<void> => {
+  const authenticatedReq = req as AuthenticatedRequest;
+
+  const sessions = await getActiveSessions(authenticatedReq.userId);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      sessions,
+    },
+  });
+};
+
+export const revokeSessionById = async (
+  req: Request<{ sessionId: string }>,
+  res: Response,
+): Promise<void> => {
+  const { sessionId } = req.params;
+  const { userId } = req as Request<{ sessionId: string }> & { userId: string };
+
+  await revokeSession(userId, sessionId);
+
+  res.status(200).json({
+    success: true,
+    message: 'Session revoked successfully',
+  });
+};
+
+export const revokeAllOtherSessions = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const authenticatedReq = req as AuthenticatedRequest;
+  const refreshToken = getRefreshTokenFromCookie(req);
+
+  if (!refreshToken) {
+    throw new AppError('Refresh token is required', 401, 'REFRESH_TOKEN_REQUIRED');
+  }
+
+  const revokedSessions = await revokeOtherSessions(
+    authenticatedReq.userId,
+    refreshToken,
+  );
+
+  res.status(200).json({
+    success: true,
+    data: {
+      revokedSessions,
+    },
+    message: 'Other sessions revoked successfully',
   });
 };
 

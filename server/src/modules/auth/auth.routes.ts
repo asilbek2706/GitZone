@@ -3,12 +3,15 @@ import { Router } from 'express';
 import { authMiddleware } from '../../middleware/auth.middleware.js';
 import {
   createToken,
+  getSessions,
   listTokens,
   login,
   logout,
   me,
   refresh,
   register,
+  revokeAllOtherSessions,
+  revokeSessionById,
   revokeToken,
 } from './auth.controller.js';
 
@@ -19,6 +22,9 @@ router.post('/login', login);
 router.post('/logout', logout);
 router.post('/refresh', refresh);
 router.get('/me', authMiddleware, me);
+router.get('/sessions', authMiddleware, getSessions);
+router.delete('/sessions', authMiddleware, revokeAllOtherSessions);
+router.delete('/sessions/:sessionId', authMiddleware, revokeSessionById);
 
 router.get('/tokens', authMiddleware, listTokens);
 router.post('/tokens', authMiddleware, createToken);

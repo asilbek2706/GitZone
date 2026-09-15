@@ -10,6 +10,11 @@ export interface LoginInput {
   password: string;
 }
 
+export interface SessionMetadata {
+  userAgent: string | null;
+  ipAddress: string | null;
+}
+
 export interface AuthUser {
   id: string;
   username: string;
@@ -25,4 +30,13 @@ export interface AuthResponse {
   user: AuthUser;
   accessToken: string;
   refreshToken: string;
+}
+
+export interface AuthSession {
+  id: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  lastUsedAt: Date;
+  expiresAt: Date;
+  createdAt: Date;
 }

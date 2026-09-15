@@ -2,13 +2,17 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../../src/app.js';
+import { AppError } from '../../../src/errors/app.error.js';
 
 import {
+  getActiveSessions,
   getCurrentUser,
   loginUser,
   logoutUser,
   refreshAuth,
   registerUser,
+  revokeOtherSessions,
+  revokeSession,
 } from '../../../src/modules/auth/auth.service.js';
 
 import { verifyAccessToken } from '../../../src/modules/auth/auth.tokens.js';
@@ -23,6 +27,9 @@ vi.mock('../../../src/modules/auth/auth.service.js', () => ({
   loginUser: vi.fn(),
   refreshAuth: vi.fn(),
   getCurrentUser: vi.fn(),
+  getActiveSessions: vi.fn(),
+  revokeOtherSessions: vi.fn(),
+  revokeSession: vi.fn(),
   logoutUser: vi.fn(),
 }));
 
@@ -47,6 +54,12 @@ const mockedLoginUser = vi.mocked(loginUser);
 const mockedRefreshAuth = vi.mocked(refreshAuth);
 
 const mockedGetCurrentUser = vi.mocked(getCurrentUser);
+
+const mockedGetActiveSessions = vi.mocked(getActiveSessions);
+
+const mockedRevokeOtherSessions = vi.mocked(revokeOtherSessions);
+
+const mockedRevokeSession = vi.mocked(revokeSession);
 
 const mockedLogoutUser = vi.mocked(logoutUser);
 
@@ -82,12 +95,15 @@ describe('auth API integration', () => {
       refreshToken: 'refresh-token-1',
     });
 
-    const response = await request(app).post('/api/auth/register').send({
-      username: 'asil',
-      email: 'asil@example.com',
-      password: 'Password123!',
-      name: 'Asil',
-    });
+    const response = await request(app)
+      .post('/api/auth/register')
+      .set('User-Agent', 'GitZone-Test-Agent/1.0')
+      .send({
+        username: 'asil',
+        email: 'asil@example.com',
+        password: 'Password123!',
+        name: 'Asil',
+      });
 
     expect(response.status).toBe(201);
 
@@ -105,12 +121,18 @@ describe('auth API integration', () => {
 
     expect(response.headers['set-cookie']).toBeDefined();
 
-    expect(mockedRegisterUser).toHaveBeenCalledWith({
-      username: 'asil',
-      email: 'asil@example.com',
-      password: 'Password123!',
-      name: 'Asil',
-    });
+    expect(mockedRegisterUser).toHaveBeenCalledWith(
+      {
+        username: 'asil',
+        email: 'asil@example.com',
+        password: 'Password123!',
+        name: 'Asil',
+      },
+      {
+        userAgent: 'GitZone-Test-Agent/1.0',
+        ipAddress: '::ffff:127.0.0.1',
+      },
+    );
   });
 
   it('logs in a user', async () => {
@@ -140,10 +162,16 @@ describe('auth API integration', () => {
 
     expect(response.headers['set-cookie']).toBeDefined();
 
-    expect(mockedLoginUser).toHaveBeenCalledWith({
-      email: 'asil@example.com',
-      password: 'Password123!',
-    });
+    expect(mockedLoginUser).toHaveBeenCalledWith(
+      {
+        email: 'asil@example.com',
+        password: 'Password123!',
+      },
+      {
+        userAgent: null,
+        ipAddress: '::ffff:127.0.0.1',
+      },
+    );
   });
 
   it('returns current authenticated user', async () => {
@@ -173,6 +201,170 @@ describe('auth API integration', () => {
         },
       },
     });
+  });
+
+  it('returns active sessions for authenticated user', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    const sessions = [
+      {
+        id: 'session-1',
+        userAgent: 'GitZone-Test-Agent/1.0',
+        ipAddress: '127.0.0.1',
+        lastUsedAt: new Date('2026-09-15T10:00:00.000Z'),
+        expiresAt: new Date('2026-09-22T10:00:00.000Z'),
+        createdAt: new Date('2026-09-15T09:00:00.000Z'),
+      },
+    ];
+
+    mockedGetActiveSessions.mockResolvedValue(sessions);
+
+    const response = await request(app)
+      .get('/api/auth/sessions')
+      .set('Authorization', 'Bearer test-access-token');
+
+    expect(response.status).toBe(200);
+
+    expect(mockedVerifyAccessToken).toHaveBeenCalledWith('test-access-token');
+
+    expect(mockedGetActiveSessions).toHaveBeenCalledWith('user-1');
+
+    expect(response.body).toMatchObject({
+      success: true,
+      data: {
+        sessions: [
+          {
+            id: 'session-1',
+            userAgent: 'GitZone-Test-Agent/1.0',
+            ipAddress: '127.0.0.1',
+            lastUsedAt: '2026-09-15T10:00:00.000Z',
+            expiresAt: '2026-09-22T10:00:00.000Z',
+            createdAt: '2026-09-15T09:00:00.000Z',
+          },
+        ],
+      },
+    });
+
+    expect(response.body.data.sessions[0]).not.toHaveProperty('refreshTokenHash');
+  });
+
+  it('revokes all other active sessions while preserving the current session', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedRevokeOtherSessions.mockResolvedValue(3);
+
+    const response = await request(app)
+      .delete('/api/auth/sessions')
+      .set('Authorization', 'Bearer test-access-token')
+      .set('Cookie', 'refreshToken=current-refresh-token');
+
+    expect(response.status).toBe(200);
+
+    expect(mockedVerifyAccessToken).toHaveBeenCalledWith('test-access-token');
+
+    expect(mockedRevokeOtherSessions).toHaveBeenCalledWith(
+      'user-1',
+      'current-refresh-token',
+    );
+
+    expect(response.body).toEqual({
+      success: true,
+      data: {
+        revokedSessions: 3,
+      },
+      message: 'Other sessions revoked successfully',
+    });
+  });
+
+  it('rejects revoking other sessions without refresh cookie', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    const response = await request(app)
+      .delete('/api/auth/sessions')
+      .set('Authorization', 'Bearer test-access-token');
+
+    expect(response.status).toBe(401);
+
+    expect(mockedRevokeOtherSessions).not.toHaveBeenCalled();
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'REFRESH_TOKEN_REQUIRED',
+        message: 'Refresh token is required',
+      },
+    });
+  });
+
+  it('revokes an active session for authenticated user', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedRevokeSession.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .delete('/api/auth/sessions/session-1')
+      .set('Authorization', 'Bearer test-access-token');
+
+    expect(response.status).toBe(200);
+
+    expect(mockedVerifyAccessToken).toHaveBeenCalledWith('test-access-token');
+
+    expect(mockedRevokeSession).toHaveBeenCalledWith('user-1', 'session-1');
+
+    expect(response.body).toEqual({
+      success: true,
+      message: 'Session revoked successfully',
+    });
+  });
+
+  it('rejects session revocation without authentication', async () => {
+    const response = await request(app).delete('/api/auth/sessions/session-1');
+
+    expect(response.status).toBe(401);
+
+    expect(mockedRevokeSession).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when session cannot be revoked', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedRevokeSession.mockRejectedValue(
+      new AppError('Session not found', 404, 'SESSION_NOT_FOUND'),
+    );
+
+    const response = await request(app)
+      .delete('/api/auth/sessions/session-999')
+      .set('Authorization', 'Bearer test-access-token');
+
+    expect(response.status).toBe(404);
+
+    expect(mockedRevokeSession).toHaveBeenCalledWith('user-1', 'session-999');
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'SESSION_NOT_FOUND',
+        message: 'Session not found',
+      },
+    });
+  });
+
+  it('rejects sessions request without authentication', async () => {
+    const response = await request(app).get('/api/auth/sessions');
+
+    expect(response.status).toBe(401);
+
+    expect(mockedGetActiveSessions).not.toHaveBeenCalled();
   });
 
   it('refreshes authentication using refresh cookie', async () => {
@@ -212,7 +404,10 @@ describe('auth API integration', () => {
       },
     });
 
-    expect(mockedRefreshAuth).toHaveBeenCalledWith('refresh-token-2');
+    expect(mockedRefreshAuth).toHaveBeenCalledWith('refresh-token-2', {
+      userAgent: null,
+      ipAddress: '::ffff:127.0.0.1',
+    });
 
     expect(refreshResponse.headers['set-cookie']).toBeDefined();
   });

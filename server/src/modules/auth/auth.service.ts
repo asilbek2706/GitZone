@@ -10,7 +10,14 @@ import {
   hashRefreshToken,
   verifyRefreshToken,
 } from './auth.tokens.js';
-import type { AuthResponse, AuthUser, LoginInput, RegisterInput } from './auth.types.js';
+import type {
+  AuthResponse,
+  AuthSession,
+  AuthUser,
+  LoginInput,
+  RegisterInput,
+  SessionMetadata,
+} from './auth.types.js';
 
 const SALT_ROUNDS = 12;
 const REFRESH_TOKEN_EXPIRES_IN_MS = parseDurationToMilliseconds(env.JWT_REFRESH_EXPIRES_IN);
@@ -39,7 +46,10 @@ const getRefreshTokenExpiresAt = (): Date => {
   return new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN_MS);
 };
 
-export const registerUser = async (input: RegisterInput): Promise<AuthResponse> => {
+export const registerUser = async (
+  input: RegisterInput,
+  metadata: SessionMetadata,
+): Promise<AuthResponse> => {
   const existingUser = await prisma.user.findFirst({
     where: {
       OR: [{ username: input.username }, { email: input.email }],
@@ -72,6 +82,9 @@ export const registerUser = async (input: RegisterInput): Promise<AuthResponse> 
     data: {
       userId: user.id,
       refreshTokenHash: refreshToken.tokenHash,
+      userAgent: metadata.userAgent,
+      ipAddress: metadata.ipAddress,
+      lastUsedAt: new Date(),
       expiresAt: getRefreshTokenExpiresAt(),
     },
   });
@@ -83,7 +96,10 @@ export const registerUser = async (input: RegisterInput): Promise<AuthResponse> 
   };
 };
 
-export const loginUser = async (input: LoginInput): Promise<AuthResponse> => {
+export const loginUser = async (
+  input: LoginInput,
+  metadata: SessionMetadata,
+): Promise<AuthResponse> => {
   const user = await prisma.user.findUnique({
     where: {
       email: input.email,
@@ -107,6 +123,9 @@ export const loginUser = async (input: LoginInput): Promise<AuthResponse> => {
     data: {
       userId: user.id,
       refreshTokenHash: refreshToken.tokenHash,
+      userAgent: metadata.userAgent,
+      ipAddress: metadata.ipAddress,
+      lastUsedAt: new Date(),
       expiresAt: getRefreshTokenExpiresAt(),
     },
   });
@@ -118,7 +137,10 @@ export const loginUser = async (input: LoginInput): Promise<AuthResponse> => {
   };
 };
 
-export const refreshAuth = async (refreshToken: string): Promise<AuthResponse> => {
+export const refreshAuth = async (
+  refreshToken: string,
+  metadata: SessionMetadata,
+): Promise<AuthResponse> => {
   const payload = verifyRefreshToken(refreshToken);
 
   const refreshTokenHash = hashRefreshToken(refreshToken);
@@ -172,6 +194,9 @@ export const refreshAuth = async (refreshToken: string): Promise<AuthResponse> =
       data: {
         userId: user.id,
         refreshTokenHash: newRefreshToken.tokenHash,
+        userAgent: metadata.userAgent,
+        ipAddress: metadata.ipAddress,
+        lastUsedAt: new Date(),
         expiresAt: getRefreshTokenExpiresAt(),
       },
     }),
@@ -210,4 +235,72 @@ export const logoutUser = async (refreshToken: string): Promise<void> => {
       revokedAt: new Date(),
     },
   });
+};
+
+export const getActiveSessions = async (userId: string): Promise<AuthSession[]> => {
+  return prisma.session.findMany({
+    where: {
+      userId,
+      revokedAt: null,
+      expiresAt: {
+        gt: new Date(),
+      },
+    },
+    select: {
+      id: true,
+      userAgent: true,
+      ipAddress: true,
+      lastUsedAt: true,
+      expiresAt: true,
+      createdAt: true,
+    },
+    orderBy: {
+      lastUsedAt: 'desc',
+    },
+  });
+};
+
+export const revokeSession = async (userId: string, sessionId: string): Promise<void> => {
+  const result = await prisma.session.updateMany({
+    where: {
+      id: sessionId,
+      userId,
+      revokedAt: null,
+      expiresAt: {
+        gt: new Date(),
+      },
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+
+  if (result.count === 0) {
+    throw new AppError('Session not found', 404, 'SESSION_NOT_FOUND');
+  }
+};
+
+export const revokeOtherSessions = async (
+  userId: string,
+  currentRefreshToken: string,
+): Promise<number> => {
+  const currentRefreshTokenHash = hashRefreshToken(currentRefreshToken);
+
+  const result = await prisma.session.updateMany({
+    where: {
+      userId,
+      revokedAt: null,
+      expiresAt: {
+        gt: new Date(),
+      },
+      refreshTokenHash: {
+        not: currentRefreshTokenHash,
+      },
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+
+  return result.count;
 };
