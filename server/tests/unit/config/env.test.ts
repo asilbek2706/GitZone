@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const originalEnv = { ...process.env };
 
+const TEST_ACCESS_SECRET = 'test-access-secret-at-least-32-characters';
+const TEST_REFRESH_SECRET = 'test-refresh-secret-at-least-32-characters';
+
 const setValidEnv = (): void => {
   process.env.NODE_ENV = 'test';
   process.env.PORT = '5000';
@@ -9,8 +12,8 @@ const setValidEnv = (): void => {
   process.env.TRUST_PROXY = 'false';
   process.env.BODY_LIMIT = '1mb';
   process.env.DATABASE_URL = 'postgresql://user:password@localhost:5432/gitzone';
-  process.env.JWT_ACCESS_SECRET = 'test-access-secret';
-  process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+  process.env.JWT_ACCESS_SECRET = TEST_ACCESS_SECRET;
+  process.env.JWT_REFRESH_SECRET = TEST_REFRESH_SECRET;
   process.env.JWT_ACCESS_EXPIRES_IN = '15m';
   process.env.JWT_REFRESH_EXPIRES_IN = '7d';
   process.env.GIT_STORAGE_PATH = './storage/test-repositories';
@@ -43,8 +46,8 @@ describe('environment configuration', () => {
       TRUST_PROXY: false,
       BODY_LIMIT: '1mb',
       DATABASE_URL: 'postgresql://user:password@localhost:5432/gitzone',
-      JWT_ACCESS_SECRET: 'test-access-secret',
-      JWT_REFRESH_SECRET: 'test-refresh-secret',
+      JWT_ACCESS_SECRET: TEST_ACCESS_SECRET,
+      JWT_REFRESH_SECRET: TEST_REFRESH_SECRET,
       JWT_ACCESS_EXPIRES_IN: '15m',
       JWT_REFRESH_EXPIRES_IN: '7d',
       GIT_STORAGE_PATH: './storage/test-repositories',
@@ -150,5 +153,21 @@ describe('environment configuration', () => {
     delete process.env.DATABASE_URL;
 
     await expect(loadEnv()).rejects.toThrow('DATABASE_URL');
+  });
+
+  it('rejects a weak JWT access secret', async () => {
+    process.env.JWT_ACCESS_SECRET = 'too-short';
+
+    await expect(loadEnv()).rejects.toThrow(
+      'JWT_ACCESS_SECRET must be at least 32 characters long',
+    );
+  });
+
+  it('rejects a weak JWT refresh secret', async () => {
+    process.env.JWT_REFRESH_SECRET = 'too-short';
+
+    await expect(loadEnv()).rejects.toThrow(
+      'JWT_REFRESH_SECRET must be at least 32 characters long',
+    );
   });
 });

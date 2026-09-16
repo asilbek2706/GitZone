@@ -24,9 +24,15 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string().trim().min(1, 'DATABASE_URL is required'),
 
-  JWT_ACCESS_SECRET: z.string().trim().min(1, 'JWT_ACCESS_SECRET is required'),
+  JWT_ACCESS_SECRET: z
+    .string()
+    .trim()
+    .min(32, 'JWT_ACCESS_SECRET must be at least 32 characters long'),
 
-  JWT_REFRESH_SECRET: z.string().trim().min(1, 'JWT_REFRESH_SECRET is required'),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .trim()
+    .min(32, 'JWT_REFRESH_SECRET must be at least 32 characters long'),
 
   JWT_ACCESS_EXPIRES_IN: z.string().trim().min(1, 'JWT_ACCESS_EXPIRES_IN is required'),
 
