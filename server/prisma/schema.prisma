@@ -29,19 +29,33 @@ model Session {
   id               String    @id @default(cuid())
   userId           String
   refreshTokenHash String    @unique
+  refreshTokenJti  String    @unique
+  tokenFamilyId    String
+  parentSessionId  String?
+  replacedById     String?   @unique
   userAgent        String?
   ipAddress        String?
   lastUsedAt       DateTime  @default(now())
   expiresAt        DateTime
   revokedAt        DateTime?
+  rotatedAt        DateTime?
+  reuseDetectedAt  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  parentSession Session?  @relation("SessionRotation", fields: [parentSessionId], references: [id], onDelete: SetNull)
+  childSessions Session[] @relation("SessionRotation")
+
+  replacedBy      Session? @relation("SessionReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
+  replacedSession Session? @relation("SessionReplacement")
+
   @@index([userId])
   @@index([expiresAt])
+  @@index([tokenFamilyId])
+  @@index([parentSessionId])
 }
 
 model PersonalAccessToken {

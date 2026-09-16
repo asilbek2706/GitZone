@@ -55,33 +55,22 @@ vi.mock('../../../src/modules/auth/auth.tokens.js', () => ({
 }));
 
 const mockedUserFindFirst = vi.mocked(prisma.user.findFirst);
-
 const mockedUserFindUnique = vi.mocked(prisma.user.findUnique);
-
 const mockedUserCreate = vi.mocked(prisma.user.create);
 
 const mockedSessionCreate = vi.mocked(prisma.session.create);
-
 const mockedSessionFindUnique = vi.mocked(prisma.session.findUnique);
-
 const mockedSessionFindMany = vi.mocked(prisma.session.findMany);
-
-const mockedSessionUpdate = vi.mocked(prisma.session.update);
-
 const mockedSessionUpdateMany = vi.mocked(prisma.session.updateMany);
 
 const mockedTransaction = vi.mocked(prisma.$transaction);
 
 const mockedBcryptHash = vi.mocked(bcrypt.hash);
-
 const mockedBcryptCompare = vi.mocked(bcrypt.compare);
 
 const mockedGenerateAccessToken = vi.mocked(generateAccessToken);
-
 const mockedGenerateRefreshToken = vi.mocked(generateRefreshToken);
-
 const mockedHashRefreshToken = vi.mocked(hashRefreshToken);
-
 const mockedVerifyRefreshToken = vi.mocked(verifyRefreshToken);
 
 const baseUser = {
@@ -101,6 +90,33 @@ const sessionMetadata = {
   ipAddress: '127.0.0.1',
 };
 
+const createSession = (overrides: Record<string, unknown> = {}) => ({
+  id: 'session-1',
+  userId: 'user-1',
+
+  refreshTokenHash: 'refresh-hash',
+  refreshTokenJti: 'refresh-jti',
+  tokenFamilyId: 'family-1',
+
+  parentSessionId: null,
+  replacedById: null,
+
+  userAgent: sessionMetadata.userAgent,
+  ipAddress: sessionMetadata.ipAddress,
+
+  lastUsedAt: new Date(),
+  expiresAt: new Date(Date.now() + 60_000),
+
+  revokedAt: null,
+  rotatedAt: null,
+  reuseDetectedAt: null,
+
+  createdAt: new Date(),
+  updatedAt: new Date(),
+
+  ...overrides,
+});
+
 describe('auth service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -110,7 +126,14 @@ describe('auth service', () => {
     mockedGenerateRefreshToken.mockReturnValue({
       token: 'refresh-token',
       tokenHash: 'refresh-hash',
-    } as never);
+      jti: 'refresh-jti',
+    });
+
+    mockedVerifyRefreshToken.mockReturnValue({
+      sub: 'user-1',
+      jti: 'refresh-jti',
+      type: 'refresh',
+    });
 
     mockedHashRefreshToken.mockReturnValue('refresh-hash');
   });
@@ -135,15 +158,15 @@ describe('auth service', () => {
     );
 
     expect(result.user.username).toBe('asil');
-
     expect(result.accessToken).toBe('access-token');
-
     expect(result.refreshToken).toBe('refresh-token');
 
     expect(mockedSessionCreate).toHaveBeenCalledWith({
       data: {
         userId: 'user-1',
         refreshTokenHash: 'refresh-hash',
+        refreshTokenJti: 'refresh-jti',
+        tokenFamilyId: 'refresh-jti',
         userAgent: sessionMetadata.userAgent,
         ipAddress: sessionMetadata.ipAddress,
         lastUsedAt: expect.any(Date),
@@ -169,6 +192,8 @@ describe('auth service', () => {
       statusCode: 409,
       code: 'USERNAME_TAKEN',
     });
+
+    expect(mockedSessionCreate).not.toHaveBeenCalled();
   });
 
   it('rejects duplicate email', async () => {
@@ -191,6 +216,8 @@ describe('auth service', () => {
       statusCode: 409,
       code: 'EMAIL_ALREADY_REGISTERED',
     });
+
+    expect(mockedSessionCreate).not.toHaveBeenCalled();
   });
 
   it('logs in user with valid credentials', async () => {
@@ -210,11 +237,14 @@ describe('auth service', () => {
 
     expect(result.user.id).toBe('user-1');
     expect(result.accessToken).toBe('access-token');
+    expect(result.refreshToken).toBe('refresh-token');
 
     expect(mockedSessionCreate).toHaveBeenCalledWith({
       data: {
         userId: 'user-1',
         refreshTokenHash: 'refresh-hash',
+        refreshTokenJti: 'refresh-jti',
+        tokenFamilyId: 'refresh-jti',
         userAgent: sessionMetadata.userAgent,
         ipAddress: sessionMetadata.ipAddress,
         lastUsedAt: expect.any(Date),
@@ -238,6 +268,9 @@ describe('auth service', () => {
       statusCode: 401,
       code: 'INVALID_CREDENTIALS',
     });
+
+    expect(mockedBcryptCompare).not.toHaveBeenCalled();
+    expect(mockedSessionCreate).not.toHaveBeenCalled();
   });
 
   it('rejects login with invalid password', async () => {
@@ -257,6 +290,8 @@ describe('auth service', () => {
       statusCode: 401,
       code: 'INVALID_CREDENTIALS',
     });
+
+    expect(mockedSessionCreate).not.toHaveBeenCalled();
   });
 
   it('returns current user', async () => {
@@ -278,112 +313,165 @@ describe('auth service', () => {
   });
 
   it('rejects refresh when session does not exist', async () => {
-    mockedVerifyRefreshToken.mockReturnValue({
-      sub: 'user-1',
-    } as never);
-
     mockedSessionFindUnique.mockResolvedValue(null as never);
 
     await expect(refreshAuth('refresh-token', sessionMetadata)).rejects.toMatchObject({
       statusCode: 401,
       code: 'INVALID_REFRESH_TOKEN',
     });
+
+    expect(mockedUserFindUnique).not.toHaveBeenCalled();
+    expect(mockedTransaction).not.toHaveBeenCalled();
   });
 
-  it('rejects revoked refresh token', async () => {
-    mockedVerifyRefreshToken.mockReturnValue({
-      sub: 'user-1',
-    } as never);
-
-    mockedSessionFindUnique.mockResolvedValue({
-      id: 'session-1',
-      userId: 'user-1',
-      refreshTokenHash: 'refresh-hash',
-      expiresAt: new Date(Date.now() + 60_000),
-      revokedAt: new Date(),
-      createdAt: new Date(),
-    } as never);
+  it('rejects revoked refresh token without treating normal revocation as replay', async () => {
+    mockedSessionFindUnique.mockResolvedValue(
+      createSession({
+        revokedAt: new Date(),
+      }) as never,
+    );
 
     await expect(refreshAuth('refresh-token', sessionMetadata)).rejects.toMatchObject({
       statusCode: 401,
       code: 'REFRESH_TOKEN_REVOKED',
     });
+
+    expect(mockedUserFindUnique).not.toHaveBeenCalled();
+    expect(mockedTransaction).not.toHaveBeenCalled();
   });
 
   it('rejects expired refresh token', async () => {
-    mockedVerifyRefreshToken.mockReturnValue({
-      sub: 'user-1',
-    } as never);
-
-    mockedSessionFindUnique.mockResolvedValue({
-      id: 'session-1',
-      userId: 'user-1',
-      refreshTokenHash: 'refresh-hash',
-      expiresAt: new Date(Date.now() - 60_000),
-      revokedAt: null,
-      createdAt: new Date(),
-    } as never);
+    mockedSessionFindUnique.mockResolvedValue(
+      createSession({
+        expiresAt: new Date(Date.now() - 60_000),
+      }) as never,
+    );
 
     await expect(refreshAuth('refresh-token', sessionMetadata)).rejects.toMatchObject({
       statusCode: 401,
       code: 'REFRESH_TOKEN_EXPIRED',
     });
+
+    expect(mockedUserFindUnique).not.toHaveBeenCalled();
+    expect(mockedTransaction).not.toHaveBeenCalled();
   });
 
   it('rejects refresh token when subject does not match session user', async () => {
     mockedVerifyRefreshToken.mockReturnValue({
       sub: 'other-user',
-    } as never);
+      jti: 'refresh-jti',
+      type: 'refresh',
+    });
 
-    mockedSessionFindUnique.mockResolvedValue({
-      id: 'session-1',
-      userId: 'user-1',
-      refreshTokenHash: 'refresh-hash',
-      expiresAt: new Date(Date.now() + 60_000),
-      revokedAt: null,
-      createdAt: new Date(),
-    } as never);
+    mockedSessionFindUnique.mockResolvedValue(createSession() as never);
 
     await expect(refreshAuth('refresh-token', sessionMetadata)).rejects.toMatchObject({
       statusCode: 401,
       code: 'INVALID_REFRESH_TOKEN',
     });
+
+    expect(mockedUserFindUnique).not.toHaveBeenCalled();
+    expect(mockedTransaction).not.toHaveBeenCalled();
   });
 
-  it('refreshes authentication successfully', async () => {
+  it('rejects refresh token when JWT jti does not match the stored session jti', async () => {
     mockedVerifyRefreshToken.mockReturnValue({
       sub: 'user-1',
-    } as never);
+      jti: 'attacker-jti',
+      type: 'refresh',
+    });
 
-    mockedSessionFindUnique.mockResolvedValue({
-      id: 'session-1',
-      userId: 'user-1',
-      refreshTokenHash: 'refresh-hash',
-      expiresAt: new Date(Date.now() + 60_000),
-      revokedAt: null,
-      createdAt: new Date(),
-    } as never);
+    mockedSessionFindUnique.mockResolvedValue(createSession() as never);
+
+    await expect(refreshAuth('refresh-token', sessionMetadata)).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_REFRESH_TOKEN',
+    });
+
+    expect(mockedUserFindUnique).not.toHaveBeenCalled();
+    expect(mockedTransaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects refresh when the session user no longer exists', async () => {
+    mockedSessionFindUnique.mockResolvedValue(createSession() as never);
+
+    mockedUserFindUnique.mockResolvedValue(null as never);
+
+    await expect(refreshAuth('refresh-token', sessionMetadata)).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'USER_NOT_FOUND',
+    });
+
+    expect(mockedTransaction).not.toHaveBeenCalled();
+  });
+
+  it('refreshes authentication successfully with atomic token rotation', async () => {
+    mockedSessionFindUnique.mockResolvedValue(createSession() as never);
 
     mockedUserFindUnique.mockResolvedValue(baseUser as never);
 
-    mockedSessionUpdate.mockReturnValue({} as never);
+    mockedGenerateRefreshToken.mockReturnValue({
+      token: 'new-refresh-token',
+      tokenHash: 'new-refresh-hash',
+      jti: 'new-refresh-jti',
+    });
 
-    mockedSessionCreate.mockReturnValue({} as never);
+    const txSessionUpdateMany = vi.fn().mockResolvedValue({
+      count: 1,
+    });
 
-    mockedTransaction.mockResolvedValue([] as never);
+    const txSessionCreate = vi.fn().mockResolvedValue({
+      id: 'session-2',
+    });
+
+    const txSessionUpdate = vi.fn().mockResolvedValue({});
+
+    mockedTransaction.mockImplementation(async (callback) => {
+      if (typeof callback !== 'function') {
+        throw new Error('Expected interactive transaction');
+      }
+
+      return callback({
+        session: {
+          updateMany: txSessionUpdateMany,
+          create: txSessionCreate,
+          update: txSessionUpdate,
+        },
+      } as never);
+    });
 
     const result = await refreshAuth('refresh-token', sessionMetadata);
 
     expect(result.user.id).toBe('user-1');
-
     expect(result.accessToken).toBe('access-token');
+    expect(result.refreshToken).toBe('new-refresh-token');
 
-    expect(result.refreshToken).toBe('refresh-token');
-
-    expect(mockedSessionCreate).toHaveBeenCalledWith({
-      data: {
+    expect(txSessionUpdateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'session-1',
         userId: 'user-1',
         refreshTokenHash: 'refresh-hash',
+        revokedAt: null,
+        rotatedAt: null,
+        replacedById: null,
+        expiresAt: {
+          gt: expect.any(Date),
+        },
+      },
+      data: {
+        revokedAt: expect.any(Date),
+        rotatedAt: expect.any(Date),
+        lastUsedAt: expect.any(Date),
+      },
+    });
+
+    expect(txSessionCreate).toHaveBeenCalledWith({
+      data: {
+        userId: 'user-1',
+        refreshTokenHash: 'new-refresh-hash',
+        refreshTokenJti: 'new-refresh-jti',
+        tokenFamilyId: 'family-1',
+        parentSessionId: 'session-1',
         userAgent: sessionMetadata.userAgent,
         ipAddress: sessionMetadata.ipAddress,
         lastUsedAt: expect.any(Date),
@@ -391,7 +479,187 @@ describe('auth service', () => {
       },
     });
 
+    expect(txSessionUpdate).toHaveBeenCalledWith({
+      where: {
+        id: 'session-1',
+      },
+      data: {
+        replacedById: 'session-2',
+      },
+    });
+
     expect(mockedTransaction).toHaveBeenCalledOnce();
+  });
+
+  it('accepts a legacy session jti during its first migration refresh', async () => {
+    mockedSessionFindUnique.mockResolvedValue(
+      createSession({
+        refreshTokenJti: 'legacy:session-1',
+        tokenFamilyId: 'legacy:session-1',
+      }) as never,
+    );
+
+    mockedUserFindUnique.mockResolvedValue(baseUser as never);
+
+    mockedGenerateRefreshToken.mockReturnValue({
+      token: 'new-refresh-token',
+      tokenHash: 'new-refresh-hash',
+      jti: 'new-refresh-jti',
+    });
+
+    const txSessionUpdateMany = vi.fn().mockResolvedValue({
+      count: 1,
+    });
+
+    const txSessionCreate = vi.fn().mockResolvedValue({
+      id: 'session-2',
+    });
+
+    const txSessionUpdate = vi.fn().mockResolvedValue({});
+
+    mockedTransaction.mockImplementation(async (callback) => {
+      if (typeof callback !== 'function') {
+        throw new Error('Expected interactive transaction');
+      }
+
+      return callback({
+        session: {
+          updateMany: txSessionUpdateMany,
+          create: txSessionCreate,
+          update: txSessionUpdate,
+        },
+      } as never);
+    });
+
+    const result = await refreshAuth('refresh-token', sessionMetadata);
+
+    expect(result.refreshToken).toBe('new-refresh-token');
+
+    expect(txSessionCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'user-1',
+        refreshTokenHash: 'new-refresh-hash',
+        refreshTokenJti: 'new-refresh-jti',
+        tokenFamilyId: 'legacy:session-1',
+        parentSessionId: 'session-1',
+      }),
+    });
+  });
+
+  it('detects reuse of an already rotated refresh token and revokes its token family', async () => {
+    mockedSessionFindUnique.mockResolvedValue(
+      createSession({
+        revokedAt: new Date(),
+        rotatedAt: new Date(),
+        replacedById: 'session-2',
+      }) as never,
+    );
+
+    mockedSessionUpdateMany
+      .mockResolvedValueOnce({
+        count: 1,
+      } as never)
+      .mockResolvedValueOnce({
+        count: 1,
+      } as never);
+
+    mockedTransaction.mockResolvedValue([] as never);
+
+    await expect(refreshAuth('refresh-token', sessionMetadata)).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'REFRESH_TOKEN_REUSE_DETECTED',
+      message: 'Refresh token reuse detected',
+    });
+
+    expect(mockedSessionUpdateMany).toHaveBeenNthCalledWith(1, {
+      where: {
+        tokenFamilyId: 'family-1',
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: expect.any(Date),
+      },
+    });
+
+    expect(mockedSessionUpdateMany).toHaveBeenNthCalledWith(2, {
+      where: {
+        id: 'session-1',
+        reuseDetectedAt: null,
+      },
+      data: {
+        reuseDetectedAt: expect.any(Date),
+      },
+    });
+
+    expect(mockedUserFindUnique).not.toHaveBeenCalled();
+    expect(mockedTransaction).toHaveBeenCalledOnce();
+  });
+
+  it('treats a lost atomic rotation claim as refresh-token reuse', async () => {
+    mockedSessionFindUnique.mockResolvedValue(createSession() as never);
+
+    mockedUserFindUnique.mockResolvedValue(baseUser as never);
+
+    mockedGenerateRefreshToken.mockReturnValue({
+      token: 'new-refresh-token',
+      tokenHash: 'new-refresh-hash',
+      jti: 'new-refresh-jti',
+    });
+
+    const txSessionUpdateMany = vi.fn().mockResolvedValue({
+      count: 0,
+    });
+
+    mockedTransaction
+      .mockImplementationOnce(async (callback) => {
+        if (typeof callback !== 'function') {
+          throw new Error('Expected interactive transaction');
+        }
+
+        return callback({
+          session: {
+            updateMany: txSessionUpdateMany,
+          },
+        } as never);
+      })
+      .mockResolvedValueOnce([] as never);
+
+    mockedSessionUpdateMany
+      .mockResolvedValueOnce({
+        count: 1,
+      } as never)
+      .mockResolvedValueOnce({
+        count: 1,
+      } as never);
+
+    await expect(refreshAuth('refresh-token', sessionMetadata)).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'REFRESH_TOKEN_REUSE_DETECTED',
+    });
+
+    expect(txSessionUpdateMany).toHaveBeenCalledOnce();
+
+    expect(mockedSessionUpdateMany).toHaveBeenNthCalledWith(1, {
+      where: {
+        tokenFamilyId: 'family-1',
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: expect.any(Date),
+      },
+    });
+
+    expect(mockedSessionUpdateMany).toHaveBeenNthCalledWith(2, {
+      where: {
+        id: 'session-1',
+        reuseDetectedAt: null,
+      },
+      data: {
+        reuseDetectedAt: expect.any(Date),
+      },
+    });
+
+    expect(mockedTransaction).toHaveBeenCalledTimes(2);
   });
 
   it('returns active sessions without exposing sensitive fields', async () => {
@@ -493,18 +761,11 @@ describe('auth service', () => {
   it('revokes all other active sessions while preserving the current session', async () => {
     mockedHashRefreshToken.mockReturnValue('current-refresh-hash');
 
-    mockedSessionFindUnique.mockResolvedValue({
-      id: 'session-1',
-      userId: 'user-1',
-      refreshTokenHash: 'current-refresh-hash',
-      userAgent: 'Chrome',
-      ipAddress: '127.0.0.1',
-      lastUsedAt: new Date(),
-      expiresAt: new Date(Date.now() + 60_000),
-      revokedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as never);
+    mockedSessionFindUnique.mockResolvedValue(
+      createSession({
+        refreshTokenHash: 'current-refresh-hash',
+      }) as never,
+    );
 
     mockedSessionUpdateMany.mockResolvedValue({
       count: 3,
@@ -550,30 +811,18 @@ describe('auth service', () => {
       message: 'Current refresh session is invalid',
     });
 
-    expect(mockedSessionFindUnique).toHaveBeenCalledWith({
-      where: {
-        refreshTokenHash: 'current-refresh-hash',
-      },
-    });
-
     expect(mockedSessionUpdateMany).not.toHaveBeenCalled();
   });
 
   it('rejects revoking other sessions when the current refresh session belongs to another user', async () => {
     mockedHashRefreshToken.mockReturnValue('current-refresh-hash');
 
-    mockedSessionFindUnique.mockResolvedValue({
-      id: 'session-1',
-      userId: 'other-user',
-      refreshTokenHash: 'current-refresh-hash',
-      userAgent: 'Chrome',
-      ipAddress: '127.0.0.1',
-      lastUsedAt: new Date(),
-      expiresAt: new Date(Date.now() + 60_000),
-      revokedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as never);
+    mockedSessionFindUnique.mockResolvedValue(
+      createSession({
+        userId: 'other-user',
+        refreshTokenHash: 'current-refresh-hash',
+      }) as never,
+    );
 
     await expect(revokeOtherSessions('user-1', 'current-refresh-token')).rejects.toMatchObject({
       statusCode: 401,
@@ -587,18 +836,12 @@ describe('auth service', () => {
   it('rejects revoking other sessions when the current refresh session is revoked', async () => {
     mockedHashRefreshToken.mockReturnValue('current-refresh-hash');
 
-    mockedSessionFindUnique.mockResolvedValue({
-      id: 'session-1',
-      userId: 'user-1',
-      refreshTokenHash: 'current-refresh-hash',
-      userAgent: 'Chrome',
-      ipAddress: '127.0.0.1',
-      lastUsedAt: new Date(),
-      expiresAt: new Date(Date.now() + 60_000),
-      revokedAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as never);
+    mockedSessionFindUnique.mockResolvedValue(
+      createSession({
+        refreshTokenHash: 'current-refresh-hash',
+        revokedAt: new Date(),
+      }) as never,
+    );
 
     await expect(revokeOtherSessions('user-1', 'current-refresh-token')).rejects.toMatchObject({
       statusCode: 401,
@@ -612,18 +855,12 @@ describe('auth service', () => {
   it('rejects revoking other sessions when the current refresh session is expired', async () => {
     mockedHashRefreshToken.mockReturnValue('current-refresh-hash');
 
-    mockedSessionFindUnique.mockResolvedValue({
-      id: 'session-1',
-      userId: 'user-1',
-      refreshTokenHash: 'current-refresh-hash',
-      userAgent: 'Chrome',
-      ipAddress: '127.0.0.1',
-      lastUsedAt: new Date(),
-      expiresAt: new Date(Date.now() - 60_000),
-      revokedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as never);
+    mockedSessionFindUnique.mockResolvedValue(
+      createSession({
+        refreshTokenHash: 'current-refresh-hash',
+        expiresAt: new Date(Date.now() - 60_000),
+      }) as never,
+    );
 
     await expect(revokeOtherSessions('user-1', 'current-refresh-token')).rejects.toMatchObject({
       statusCode: 401,
@@ -641,6 +878,16 @@ describe('auth service', () => {
 
     await expect(logoutUser('refresh-token')).resolves.toBeUndefined();
 
-    expect(mockedSessionUpdateMany).toHaveBeenCalledOnce();
+    expect(mockedHashRefreshToken).toHaveBeenCalledWith('refresh-token');
+
+    expect(mockedSessionUpdateMany).toHaveBeenCalledWith({
+      where: {
+        refreshTokenHash: 'refresh-hash',
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: expect.any(Date),
+      },
+    });
   });
 });

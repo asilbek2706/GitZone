@@ -438,6 +438,31 @@ describe('auth API integration', () => {
     expect(refreshResponse.headers['set-cookie']).toBeDefined();
   });
 
+  it('returns 401 when refresh token reuse is detected', async () => {
+    mockedRefreshAuth.mockRejectedValue(
+      new AppError('Refresh token reuse detected', 401, 'REFRESH_TOKEN_REUSE_DETECTED'),
+    );
+
+    const response = await request(app)
+      .post('/api/auth/refresh')
+      .set('Cookie', 'refreshToken=reused-refresh-token');
+
+    expect(response.status).toBe(401);
+
+    expect(mockedRefreshAuth).toHaveBeenCalledWith('reused-refresh-token', {
+      userAgent: null,
+      ipAddress: '::ffff:127.0.0.1',
+    });
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'REFRESH_TOKEN_REUSE_DETECTED',
+        message: 'Refresh token reuse detected',
+      },
+    });
+  });
+
   it('rejects refresh without refresh cookie', async () => {
     const response = await request(app).post('/api/auth/refresh');
 
