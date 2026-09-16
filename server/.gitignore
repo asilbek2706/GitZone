@@ -9,3 +9,5 @@ dist/
 /.claude
 /.windsurf
 /skills-lock.json
+
+coverage/

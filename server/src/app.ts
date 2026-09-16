@@ -4,6 +4,8 @@ import express from 'express';
 import helmet from 'helmet';
 
 import { env } from './config/env.js';
+import type { CorsOptions } from 'cors';
+
 import { errorMiddleware } from './middleware/error.middleware.js';
 import { notFoundMiddleware } from './middleware/not-found.middleware.js';
 import { requestIdMiddleware } from './middleware/request-id.middleware.js';
@@ -13,6 +15,17 @@ import { gitHttpController } from './modules/git/git.http.controller.js';
 import { getHealth, getLiveness, getReadiness } from './modules/health/health.controller.js';
 import repositoryRoutes from './modules/repositories/repository.routes.js';
 
+const corsOptions: CorsOptions = {
+  origin(origin, callback) {
+    if (origin === undefined || origin === env.CORS_ORIGIN) {
+      callback(null, true);
+      return;
+    }
+
+    callback(null, false);
+  },
+  credentials: true,
+};
 const app = express();
 
 if (env.TRUST_PROXY) {
@@ -22,12 +35,7 @@ if (env.TRUST_PROXY) {
 app.use(requestIdMiddleware);
 app.use(helmet());
 
-app.use(
-  cors({
-    origin: env.CORS_ORIGIN,
-    credentials: true,
-  }),
-);
+app.use(cors(corsOptions));
 
 app.use('/:username/:repository.git', gitHttpController);
 
