@@ -34,6 +34,14 @@ const envSchema = z.object({
     .trim()
     .min(32, 'JWT_REFRESH_SECRET must be at least 32 characters long'),
 
+  TWO_FACTOR_ENCRYPTION_KEY: z
+    .string()
+    .trim()
+    .regex(
+      /^[0-9a-fA-F]{64}$/,
+      'TWO_FACTOR_ENCRYPTION_KEY must be exactly 32 bytes encoded as 64 hexadecimal characters',
+    ),
+
   JWT_ACCESS_EXPIRES_IN: z.string().trim().min(1, 'JWT_ACCESS_EXPIRES_IN is required'),
 
   JWT_REFRESH_EXPIRES_IN: z.string().trim().min(1, 'JWT_REFRESH_EXPIRES_IN is required'),

@@ -4,6 +4,7 @@ const originalEnv = { ...process.env };
 
 const TEST_ACCESS_SECRET = 'test-access-secret-at-least-32-characters';
 const TEST_REFRESH_SECRET = 'test-refresh-secret-at-least-32-characters';
+const TEST_TWO_FACTOR_ENCRYPTION_KEY = 'a'.repeat(64);
 
 const setValidEnv = (): void => {
   process.env.NODE_ENV = 'test';
@@ -14,6 +15,7 @@ const setValidEnv = (): void => {
   process.env.DATABASE_URL = 'postgresql://user:password@localhost:5432/gitzone';
   process.env.JWT_ACCESS_SECRET = TEST_ACCESS_SECRET;
   process.env.JWT_REFRESH_SECRET = TEST_REFRESH_SECRET;
+  process.env.TWO_FACTOR_ENCRYPTION_KEY = TEST_TWO_FACTOR_ENCRYPTION_KEY;
   process.env.JWT_ACCESS_EXPIRES_IN = '15m';
   process.env.JWT_REFRESH_EXPIRES_IN = '7d';
   process.env.GIT_STORAGE_PATH = './storage/test-repositories';
@@ -48,6 +50,7 @@ describe('environment configuration', () => {
       DATABASE_URL: 'postgresql://user:password@localhost:5432/gitzone',
       JWT_ACCESS_SECRET: TEST_ACCESS_SECRET,
       JWT_REFRESH_SECRET: TEST_REFRESH_SECRET,
+      TWO_FACTOR_ENCRYPTION_KEY: TEST_TWO_FACTOR_ENCRYPTION_KEY,
       JWT_ACCESS_EXPIRES_IN: '15m',
       JWT_REFRESH_EXPIRES_IN: '7d',
       GIT_STORAGE_PATH: './storage/test-repositories',
@@ -140,6 +143,7 @@ describe('environment configuration', () => {
     'DATABASE_URL',
     'JWT_ACCESS_SECRET',
     'JWT_REFRESH_SECRET',
+    'TWO_FACTOR_ENCRYPTION_KEY',
     'JWT_ACCESS_EXPIRES_IN',
     'JWT_REFRESH_EXPIRES_IN',
     'GIT_STORAGE_PATH',
@@ -168,6 +172,22 @@ describe('environment configuration', () => {
 
     await expect(loadEnv()).rejects.toThrow(
       'JWT_REFRESH_SECRET must be at least 32 characters long',
+    );
+  });
+
+  it('rejects a two-factor encryption key with the wrong length', async () => {
+    process.env.TWO_FACTOR_ENCRYPTION_KEY = 'a'.repeat(63);
+
+    await expect(loadEnv()).rejects.toThrow(
+      'TWO_FACTOR_ENCRYPTION_KEY must be exactly 32 bytes encoded as 64 hexadecimal characters',
+    );
+  });
+
+  it('rejects a non-hexadecimal two-factor encryption key', async () => {
+    process.env.TWO_FACTOR_ENCRYPTION_KEY = 'z'.repeat(64);
+
+    await expect(loadEnv()).rejects.toThrow(
+      'TWO_FACTOR_ENCRYPTION_KEY must be exactly 32 bytes encoded as 64 hexadecimal characters',
     );
   });
 });
