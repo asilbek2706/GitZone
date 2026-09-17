@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../../src/app.js';
 import { AppError } from '../../../src/errors/app.error.js';
+import { setupTwoFactorAuthentication } from '../../../src/modules/auth/two-factor/two-factor.service.js';
 
 import {
   getActiveSessions,
@@ -47,6 +48,10 @@ vi.mock('../../../src/modules/git/git.http.controller.js', () => ({
   gitHttpController: vi.fn(),
 }));
 
+vi.mock('../../../src/modules/auth/two-factor/two-factor.service.js', () => ({
+  setupTwoFactorAuthentication: vi.fn(),
+}));
+
 const mockedRegisterUser = vi.mocked(registerUser);
 
 const mockedLoginUser = vi.mocked(loginUser);
@@ -68,6 +73,8 @@ const mockedVerifyAccessToken = vi.mocked(verifyAccessToken);
 const mockedGetPersonalAccessTokens = vi.mocked(getPersonalAccessTokens);
 
 const mockedRevokePersonalAccessToken = vi.mocked(revokePersonalAccessToken);
+
+const mockedSetupTwoFactorAuthentication = vi.mocked(setupTwoFactorAuthentication);
 
 const createdAt = new Date();
 const updatedAt = new Date();
@@ -199,6 +206,103 @@ describe('auth API integration', () => {
           username: 'asil',
           email: 'asil@example.com',
         },
+      },
+    });
+  });
+
+  it('creates a two-factor authentication setup for authenticated user', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedSetupTwoFactorAuthentication.mockResolvedValue({
+      secret: 'JBSWY3DPEHPK3PXP',
+      provisioningUri:
+        'otpauth://totp/GitZone:asil%40example.com?issuer=GitZone&secret=JBSWY3DPEHPK3PXP&algorithm=SHA1&digits=6&period=30',
+      qrCodeDataUrl: 'data:image/png;base64,test-qr-code',
+    });
+
+    const response = await request(app)
+      .post('/api/auth/2fa/setup')
+      .set('Authorization', 'Bearer test-access-token');
+
+    expect(response.status).toBe(200);
+
+    expect(mockedVerifyAccessToken).toHaveBeenCalledWith('test-access-token');
+
+    expect(mockedSetupTwoFactorAuthentication).toHaveBeenCalledWith('user-1');
+
+    expect(response.body).toEqual({
+      success: true,
+      data: {
+        secret: 'JBSWY3DPEHPK3PXP',
+        provisioningUri:
+          'otpauth://totp/GitZone:asil%40example.com?issuer=GitZone&secret=JBSWY3DPEHPK3PXP&algorithm=SHA1&digits=6&period=30',
+        qrCodeDataUrl: 'data:image/png;base64,test-qr-code',
+      },
+    });
+  });
+
+  it('rejects two-factor setup without authentication', async () => {
+    const response = await request(app).post('/api/auth/2fa/setup');
+
+    expect(response.status).toBe(401);
+
+    expect(mockedSetupTwoFactorAuthentication).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when two-factor setup user does not exist', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'missing-user',
+    } as never);
+
+    mockedSetupTwoFactorAuthentication.mockRejectedValue(
+      new AppError('User not found', 404, 'USER_NOT_FOUND'),
+    );
+
+    const response = await request(app)
+      .post('/api/auth/2fa/setup')
+      .set('Authorization', 'Bearer test-access-token');
+
+    expect(response.status).toBe(404);
+
+    expect(mockedSetupTwoFactorAuthentication).toHaveBeenCalledWith('missing-user');
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'USER_NOT_FOUND',
+        message: 'User not found',
+      },
+    });
+  });
+
+  it('returns 409 when two-factor authentication is already enabled', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedSetupTwoFactorAuthentication.mockRejectedValue(
+      new AppError(
+        'Two-factor authentication is already enabled',
+        409,
+        'TWO_FACTOR_ALREADY_ENABLED',
+      ),
+    );
+
+    const response = await request(app)
+      .post('/api/auth/2fa/setup')
+      .set('Authorization', 'Bearer test-access-token');
+
+    expect(response.status).toBe(409);
+
+    expect(mockedSetupTwoFactorAuthentication).toHaveBeenCalledWith('user-1');
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'TWO_FACTOR_ALREADY_ENABLED',
+        message: 'Two-factor authentication is already enabled',
       },
     });
   });

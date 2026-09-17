@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 
 import type { AuthenticatedRequest } from '../../middleware/auth.middleware.js';
 
+import { setupTwoFactorAuthentication } from './two-factor/two-factor.service.js';
+
 import {
   clearRefreshTokenCookie,
   getRefreshTokenCookieName,
@@ -147,10 +149,7 @@ export const revokeSessionById = async (
   });
 };
 
-export const revokeAllOtherSessions = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const revokeAllOtherSessions = async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;
   const refreshToken = getRefreshTokenFromCookie(req);
 
@@ -158,10 +157,7 @@ export const revokeAllOtherSessions = async (
     throw new AppError('Refresh token is required', 401, 'REFRESH_TOKEN_REQUIRED');
   }
 
-  const revokedSessions = await revokeOtherSessions(
-    authenticatedReq.userId,
-    refreshToken,
-  );
+  const revokedSessions = await revokeOtherSessions(authenticatedReq.userId, refreshToken);
 
   res.status(200).json({
     success: true,
@@ -245,5 +241,16 @@ export const revokeToken = async (req: Request, res: Response): Promise<void> =>
   res.status(200).json({
     success: true,
     message: 'Personal access token revoked successfully',
+  });
+};
+
+export const setupTwoFactor = async (req: Request, res: Response): Promise<void> => {
+  const authenticatedReq = req as AuthenticatedRequest;
+
+  const setup = await setupTwoFactorAuthentication(authenticatedReq.userId);
+
+  res.status(200).json({
+    success: true,
+    data: setup,
   });
 };
