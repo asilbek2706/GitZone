@@ -20,6 +20,7 @@ import {
   revokeSessionById,
   revokeToken,
   setupTwoFactor,
+  verifyTwoFactor,
 } from './auth.controller.js';
 
 const router = Router();
@@ -32,6 +33,7 @@ router.post('/refresh', refreshRateLimiter, refresh);
 router.get('/me', authMiddleware, me);
 
 router.post('/2fa/setup', authMiddleware, securityActionRateLimiter, setupTwoFactor);
+router.post('/2fa/verify', authMiddleware, securityActionRateLimiter, verifyTwoFactor);
 
 router.get('/sessions', authMiddleware, getSessions);
 router.delete('/sessions', authMiddleware, securityActionRateLimiter, revokeAllOtherSessions);

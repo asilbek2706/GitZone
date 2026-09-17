@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../../src/app.js';
 import { AppError } from '../../../src/errors/app.error.js';
-import { setupTwoFactorAuthentication } from '../../../src/modules/auth/two-factor/two-factor.service.js';
+import {
+  setupTwoFactorAuthentication,
+  verifyTwoFactorSetup,
+} from '../../../src/modules/auth/two-factor/two-factor.service.js';
 
 import {
   getActiveSessions,
@@ -50,6 +53,7 @@ vi.mock('../../../src/modules/git/git.http.controller.js', () => ({
 
 vi.mock('../../../src/modules/auth/two-factor/two-factor.service.js', () => ({
   setupTwoFactorAuthentication: vi.fn(),
+  verifyTwoFactorSetup: vi.fn(),
 }));
 
 const mockedRegisterUser = vi.mocked(registerUser);
@@ -75,6 +79,7 @@ const mockedGetPersonalAccessTokens = vi.mocked(getPersonalAccessTokens);
 const mockedRevokePersonalAccessToken = vi.mocked(revokePersonalAccessToken);
 
 const mockedSetupTwoFactorAuthentication = vi.mocked(setupTwoFactorAuthentication);
+const mockedVerifyTwoFactorSetup = vi.mocked(verifyTwoFactorSetup);
 
 const createdAt = new Date();
 const updatedAt = new Date();
@@ -297,6 +302,173 @@ describe('auth API integration', () => {
     expect(response.status).toBe(409);
 
     expect(mockedSetupTwoFactorAuthentication).toHaveBeenCalledWith('user-1');
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'TWO_FACTOR_ALREADY_ENABLED',
+        message: 'Two-factor authentication is already enabled',
+      },
+    });
+  });
+
+  it('verifies two-factor setup for authenticated user', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedVerifyTwoFactorSetup.mockResolvedValue({
+      recoveryCodes: ['11111111111111111111111111111111', '22222222222222222222222222222222'],
+    });
+
+    const response = await request(app)
+      .post('/api/auth/2fa/verify')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        code: '123456',
+      });
+
+    expect(response.status).toBe(200);
+
+    expect(mockedVerifyAccessToken).toHaveBeenCalledWith('test-access-token');
+
+    expect(mockedVerifyTwoFactorSetup).toHaveBeenCalledWith('user-1', '123456');
+
+    expect(response.body).toEqual({
+      success: true,
+      data: {
+        recoveryCodes: ['11111111111111111111111111111111', '22222222222222222222222222222222'],
+      },
+    });
+  });
+
+  it('rejects two-factor verification without authentication', async () => {
+    const response = await request(app).post('/api/auth/2fa/verify').send({
+      code: '123456',
+    });
+
+    expect(response.status).toBe(401);
+
+    expect(mockedVerifyTwoFactorSetup).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed two-factor verification code', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    const response = await request(app)
+      .post('/api/auth/2fa/verify')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        code: '12345',
+      });
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+      },
+    });
+
+    expect(mockedVerifyTwoFactorSetup).not.toHaveBeenCalled();
+  });
+
+  it('rejects non-numeric two-factor verification code', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    const response = await request(app)
+      .post('/api/auth/2fa/verify')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        code: '12ab56',
+      });
+
+    expect(response.status).toBe(400);
+
+    expect(mockedVerifyTwoFactorSetup).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 for an invalid two-factor authentication code', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedVerifyTwoFactorSetup.mockRejectedValue(
+      new AppError('Invalid two-factor authentication code', 401, 'INVALID_TWO_FACTOR_CODE'),
+    );
+
+    const response = await request(app)
+      .post('/api/auth/2fa/verify')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        code: '123456',
+      });
+
+    expect(response.status).toBe(401);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'INVALID_TWO_FACTOR_CODE',
+        message: 'Invalid two-factor authentication code',
+      },
+    });
+  });
+
+  it('returns 404 when two-factor setup does not exist during verification', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedVerifyTwoFactorSetup.mockRejectedValue(
+      new AppError('Two-factor authentication setup not found', 404, 'TWO_FACTOR_SETUP_NOT_FOUND'),
+    );
+
+    const response = await request(app)
+      .post('/api/auth/2fa/verify')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        code: '123456',
+      });
+
+    expect(response.status).toBe(404);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'TWO_FACTOR_SETUP_NOT_FOUND',
+        message: 'Two-factor authentication setup not found',
+      },
+    });
+  });
+
+  it('returns 409 when two-factor authentication is already enabled during verification', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedVerifyTwoFactorSetup.mockRejectedValue(
+      new AppError(
+        'Two-factor authentication is already enabled',
+        409,
+        'TWO_FACTOR_ALREADY_ENABLED',
+      ),
+    );
+
+    const response = await request(app)
+      .post('/api/auth/2fa/verify')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        code: '123456',
+      });
+
+    expect(response.status).toBe(409);
 
     expect(response.body).toEqual({
       success: false,

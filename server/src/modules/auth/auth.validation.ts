@@ -44,8 +44,17 @@ export const createPersonalAccessTokenSchema = z.object({
   expiresAt: z.string().datetime().optional(),
 });
 
+export const verifyTwoFactorSetupSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'Two-factor authentication code must be exactly 6 digits'),
+});
+
 export type RegisterSchemaInput = z.infer<typeof registerSchema>;
 
 export type LoginSchemaInput = z.infer<typeof loginSchema>;
 
 export type CreatePersonalAccessTokenSchemaInput = z.infer<typeof createPersonalAccessTokenSchema>;
+
+export type VerifyTwoFactorSetupSchemaInput = z.infer<typeof verifyTwoFactorSetupSchema>;
