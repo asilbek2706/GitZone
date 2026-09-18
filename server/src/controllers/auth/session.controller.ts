@@ -7,7 +7,7 @@ import {
   getActiveSessions,
   revokeOtherSessions,
   revokeSession,
-} from '../../services/auth/auth.service.js';
+} from '../../services/auth/session.service.js';
 
 export const getSessions = async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;

@@ -4,13 +4,11 @@ import type { AuthenticatedRequest } from '../../middleware/auth.middleware.js';
 import { AppError } from '../../errors/app.error.js';
 import { clearRefreshTokenCookie, setRefreshTokenCookie } from '../../utils/auth/cookies.js';
 import { getRefreshTokenFromCookie, getSessionMetadata } from '../../utils/auth/request.js';
-import {
-  getCurrentUser,
-  loginUser,
-  logoutUser,
-  refreshAuth,
-  registerUser,
-} from '../../services/auth/auth.service.js';
+import { getCurrentUser } from '../../services/auth/current-user.service.js';
+import { loginUser } from '../../services/auth/login.service.js';
+import { logoutUser } from '../../services/auth/logout.service.js';
+import { refreshAuth } from '../../services/auth/refresh.service.js';
+import { registerUser } from '../../services/auth/register.service.js';
 import { loginSchema, registerSchema } from '../../validations/auth/auth.validation.js';
 
 export const register = async (req: Request, res: Response): Promise<void> => {

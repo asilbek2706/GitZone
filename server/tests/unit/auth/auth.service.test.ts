@@ -11,16 +11,16 @@ import {
   verifyRefreshToken,
 } from '../../../src/utils/auth/tokens.js';
 
+import { getCurrentUser } from '../../../src/services/auth/current-user.service.js';
+import { loginUser } from '../../../src/services/auth/login.service.js';
+import { logoutUser } from '../../../src/services/auth/logout.service.js';
+import { refreshAuth } from '../../../src/services/auth/refresh.service.js';
+import { registerUser } from '../../../src/services/auth/register.service.js';
 import {
   getActiveSessions,
-  getCurrentUser,
-  loginUser,
-  logoutUser,
-  refreshAuth,
-  registerUser,
   revokeOtherSessions,
   revokeSession,
-} from '../../../src/services/auth/auth.service.js';
+} from '../../../src/services/auth/session.service.js';
 
 import { generateTwoFactorChallengeToken } from '../../../src/utils/auth/two-factor/challenge.js';
 
