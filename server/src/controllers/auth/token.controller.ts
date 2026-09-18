@@ -7,7 +7,7 @@ import {
   getPersonalAccessTokens,
   revokePersonalAccessToken,
 } from '../../services/auth/pat.service.js';
-import { createPersonalAccessTokenSchema } from '../../validations/auth/auth.validation.js';
+import { createPersonalAccessTokenSchema } from '../../validations/auth/token.validation.js';
 
 export const createToken = async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;

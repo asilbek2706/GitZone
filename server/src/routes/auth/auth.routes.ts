@@ -5,7 +5,11 @@ import {
   refreshRateLimiter,
   registerRateLimiter,
 } from '../../middleware/rate-limit.middleware.js';
-import { login, logout, me, refresh, register } from '../../controllers/auth/auth.controller.js';
+import { me } from '../../controllers/auth/current-user.controller.js';
+import { login } from '../../controllers/auth/login.controller.js';
+import { logout } from '../../controllers/auth/logout.controller.js';
+import { refresh } from '../../controllers/auth/refresh.controller.js';
+import { register } from '../../controllers/auth/register.controller.js';
 import { authMiddleware } from '../../middleware/auth.middleware.js';
 
 const router = Router();
