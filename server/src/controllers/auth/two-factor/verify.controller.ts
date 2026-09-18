@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 
 import { AppError } from '../../../errors/app.error.js';
 import type { AuthenticatedRequest } from '../../../middleware/auth.middleware.js';
-import { verifyTwoFactorSetup } from '../../../services/auth/two-factor/two-factor.service.js';
+import { verifyTwoFactorSetup } from '../../../services/auth/two-factor/verify.service.js';
 import { verifyTwoFactorSetupSchema } from '../../../validations/auth/two-factor/verify.validation.js';
 
 export const verifyTwoFactor = async (req: Request, res: Response): Promise<void> => {

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import prisma from '../../../../src/config/prisma.js';
 import { decryptTwoFactorSecret } from '../../../../src/utils/auth/two-factor/crypto.js';
 import { generateRecoveryCodes } from '../../../../src/utils/auth/two-factor/recovery-code.js';
-import { verifyTwoFactorSetup } from '../../../../src/services/auth/two-factor/two-factor.service.js';
+import { verifyTwoFactorSetup } from '../../../../src/services/auth/two-factor/verify.service.js';
 
 vi.mock('../../../../src/config/prisma.js', () => ({
   default: {

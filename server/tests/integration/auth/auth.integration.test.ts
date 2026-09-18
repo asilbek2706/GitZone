@@ -3,10 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../../src/app.js';
 import { AppError } from '../../../src/errors/app.error.js';
-import {
-  setupTwoFactorAuthentication,
-  verifyTwoFactorSetup,
-} from '../../../src/services/auth/two-factor/two-factor.service.js';
+import { setupTwoFactorAuthentication } from '../../../src/services/auth/two-factor/setup.service.js';
+import { verifyTwoFactorSetup } from '../../../src/services/auth/two-factor/verify.service.js';
 
 import { getCurrentUser } from '../../../src/services/auth/current-user.service.js';
 import { loginUser } from '../../../src/services/auth/login.service.js';
@@ -66,8 +64,11 @@ vi.mock('../../../src/controllers/git/git-http.controller.js', () => ({
   gitHttpController: vi.fn(),
 }));
 
-vi.mock('../../../src/services/auth/two-factor/two-factor.service.js', () => ({
+vi.mock('../../../src/services/auth/two-factor/setup.service.js', () => ({
   setupTwoFactorAuthentication: vi.fn(),
+}));
+
+vi.mock('../../../src/services/auth/two-factor/verify.service.js', () => ({
   verifyTwoFactorSetup: vi.fn(),
 }));
 

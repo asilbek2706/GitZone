@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 
 import type { AuthenticatedRequest } from '../../../middleware/auth.middleware.js';
-import { setupTwoFactorAuthentication } from '../../../services/auth/two-factor/two-factor.service.js';
+import { setupTwoFactorAuthentication } from '../../../services/auth/two-factor/setup.service.js';
 
 export const setupTwoFactor = async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;

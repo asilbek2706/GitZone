@@ -4,7 +4,7 @@ import prisma from '../../../../src/config/prisma.js';
 
 import { encryptTwoFactorSecret } from '../../../../src/utils/auth/two-factor/crypto.js';
 
-import { setupTwoFactorAuthentication } from '../../../../src/services/auth/two-factor/two-factor.service.js';
+import { setupTwoFactorAuthentication } from '../../../../src/services/auth/two-factor/setup.service.js';
 
 vi.mock('../../../../src/config/prisma.js', () => ({
   default: {
@@ -27,7 +27,7 @@ const mockedTwoFactorUpsert = vi.mocked(prisma.twoFactorAuthentication.upsert);
 
 const mockedEncryptTwoFactorSecret = vi.mocked(encryptTwoFactorSecret);
 
-describe('two-factor authentication service', () => {
+describe('two-factor setup service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
