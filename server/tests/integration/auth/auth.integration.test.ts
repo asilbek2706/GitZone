@@ -149,6 +149,7 @@ describe('auth API integration', () => {
 
   it('logs in a user', async () => {
     mockedLoginUser.mockResolvedValue({
+      requiresTwoFactor: false,
       user,
       accessToken: 'access-token-2',
       refreshToken: 'refresh-token-2',
@@ -164,6 +165,7 @@ describe('auth API integration', () => {
     expect(response.body).toMatchObject({
       success: true,
       data: {
+        requiresTwoFactor: false,
         user: {
           id: 'user-1',
           username: 'asil',
@@ -173,6 +175,65 @@ describe('auth API integration', () => {
     });
 
     expect(response.headers['set-cookie']).toBeDefined();
+
+    expect(mockedLoginUser).toHaveBeenCalledWith(
+      {
+        email: 'asil@example.com',
+        password: 'Password123!',
+      },
+      {
+        userAgent: null,
+        ipAddress: '::ffff:127.0.0.1',
+      },
+    );
+  });
+
+  it('returns a two-factor challenge without authenticated session data', async () => {
+    const expiresAt = new Date('2026-09-18T06:00:00.000Z');
+
+    mockedLoginUser.mockResolvedValue({
+      requiresTwoFactor: true,
+      challengeToken: 'two-factor-challenge-token',
+      expiresAt,
+    });
+
+    const response = await request(app)
+      .post('/api/auth/login')
+      .set('Cookie', ['refreshToken=old-refresh-token'])
+      .send({
+        email: 'asil@example.com',
+        password: 'Password123!',
+      });
+
+    expect(response.status).toBe(200);
+
+    expect(response.body).toEqual({
+      success: true,
+      data: {
+        requiresTwoFactor: true,
+        challengeToken: 'two-factor-challenge-token',
+        expiresAt: expiresAt.toISOString(),
+      },
+    });
+
+    expect(response.body.data).not.toHaveProperty('user');
+
+    expect(response.body.data).not.toHaveProperty('accessToken');
+
+    const setCookie = response.headers['set-cookie'];
+
+    expect(setCookie).toBeDefined();
+
+    const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
+
+    expect(
+      cookies.some(
+        (cookie) =>
+          cookie.startsWith('refreshToken=;') &&
+          cookie.includes('Path=/api/auth') &&
+          cookie.includes('HttpOnly'),
+      ),
+    ).toBe(true);
 
     expect(mockedLoginUser).toHaveBeenCalledWith(
       {
@@ -671,6 +732,7 @@ describe('auth API integration', () => {
 
   it('refreshes authentication using refresh cookie', async () => {
     mockedLoginUser.mockResolvedValue({
+      requiresTwoFactor: false,
       user,
       accessToken: 'access-token-2',
       refreshToken: 'refresh-token-2',
@@ -757,6 +819,7 @@ describe('auth API integration', () => {
 
   it('logs out and clears refresh cookie', async () => {
     mockedLoginUser.mockResolvedValue({
+      requiresTwoFactor: false,
       user,
       accessToken: 'access-token-2',
       refreshToken: 'refresh-token-2',

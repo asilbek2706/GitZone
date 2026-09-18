@@ -81,11 +81,27 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
   const auth = await loginUser(result.data, getSessionMetadata(req));
 
+  if (auth.requiresTwoFactor) {
+    clearRefreshTokenCookie(res);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        requiresTwoFactor: true,
+        challengeToken: auth.challengeToken,
+        expiresAt: auth.expiresAt,
+      },
+    });
+
+    return;
+  }
+
   setRefreshTokenCookie(res, auth.refreshToken);
 
   res.status(200).json({
     success: true,
     data: {
+      requiresTwoFactor: false,
       user: auth.user,
       accessToken: auth.accessToken,
     },

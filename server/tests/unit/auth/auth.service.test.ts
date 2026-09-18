@@ -22,6 +22,8 @@ import {
   revokeSession,
 } from '../../../src/modules/auth/auth.service.js';
 
+import { generateTwoFactorChallengeToken } from '../../../src/modules/auth/two-factor/two-factor.challenge.js';
+
 vi.mock('bcrypt', () => ({
   default: {
     hash: vi.fn(),
@@ -34,6 +36,9 @@ vi.mock('../../../src/config/prisma.js', () => ({
     user: {
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+      create: vi.fn(),
+    },
+    twoFactorChallenge: {
       create: vi.fn(),
     },
     session: {
@@ -54,9 +59,15 @@ vi.mock('../../../src/modules/auth/auth.tokens.js', () => ({
   verifyRefreshToken: vi.fn(),
 }));
 
+vi.mock('../../../src/modules/auth/two-factor/two-factor.challenge.js', () => ({
+  generateTwoFactorChallengeToken: vi.fn(),
+}));
+
 const mockedUserFindFirst = vi.mocked(prisma.user.findFirst);
 const mockedUserFindUnique = vi.mocked(prisma.user.findUnique);
 const mockedUserCreate = vi.mocked(prisma.user.create);
+
+const mockedTwoFactorChallengeCreate = vi.mocked(prisma.twoFactorChallenge.create);
 
 const mockedSessionCreate = vi.mocked(prisma.session.create);
 const mockedSessionFindUnique = vi.mocked(prisma.session.findUnique);
@@ -72,6 +83,8 @@ const mockedGenerateAccessToken = vi.mocked(generateAccessToken);
 const mockedGenerateRefreshToken = vi.mocked(generateRefreshToken);
 const mockedHashRefreshToken = vi.mocked(hashRefreshToken);
 const mockedVerifyRefreshToken = vi.mocked(verifyRefreshToken);
+
+const mockedGenerateTwoFactorChallengeToken = vi.mocked(generateTwoFactorChallengeToken);
 
 const baseUser = {
   id: 'user-1',
@@ -136,6 +149,12 @@ describe('auth service', () => {
     });
 
     mockedHashRefreshToken.mockReturnValue('refresh-hash');
+
+    mockedGenerateTwoFactorChallengeToken.mockReturnValue({
+      token: 'two-factor-challenge-token',
+      tokenHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      expiresAt: new Date('2026-09-18T06:00:00.000Z'),
+    });
   });
 
   it('registers a new user', async () => {
@@ -220,8 +239,11 @@ describe('auth service', () => {
     expect(mockedSessionCreate).not.toHaveBeenCalled();
   });
 
-  it('logs in user with valid credentials', async () => {
-    mockedUserFindUnique.mockResolvedValue(baseUser as never);
+  it('logs in user with valid credentials when two-factor authentication is disabled', async () => {
+    mockedUserFindUnique.mockResolvedValue({
+      ...baseUser,
+      twoFactorAuthentication: null,
+    } as never);
 
     mockedBcryptCompare.mockResolvedValue(true as never);
 
@@ -234,6 +256,12 @@ describe('auth service', () => {
       },
       sessionMetadata,
     );
+
+    expect(result.requiresTwoFactor).toBe(false);
+
+    if (result.requiresTwoFactor) {
+      throw new Error('Expected authenticated login response');
+    }
 
     expect(result.user.id).toBe('user-1');
     expect(result.accessToken).toBe('access-token');
@@ -251,9 +279,120 @@ describe('auth service', () => {
         expiresAt: expect.any(Date),
       },
     });
+
+    expect(mockedGenerateAccessToken).toHaveBeenCalledWith('user-1');
+    expect(mockedGenerateRefreshToken).toHaveBeenCalledWith('user-1');
+
+    expect(mockedGenerateTwoFactorChallengeToken).not.toHaveBeenCalled();
+
+    expect(mockedTwoFactorChallengeCreate).not.toHaveBeenCalled();
   });
 
-  it('rejects login when user does not exist', async () => {
+  it('allows normal login while two-factor authentication setup is pending', async () => {
+    mockedUserFindUnique.mockResolvedValue({
+      ...baseUser,
+      twoFactorAuthentication: {
+        enabledAt: null,
+      },
+    } as never);
+
+    mockedBcryptCompare.mockResolvedValue(true as never);
+
+    mockedSessionCreate.mockResolvedValue({} as never);
+
+    const result = await loginUser(
+      {
+        email: 'asil@example.com',
+        password: 'password123',
+      },
+      sessionMetadata,
+    );
+
+    expect(result.requiresTwoFactor).toBe(false);
+
+    if (result.requiresTwoFactor) {
+      throw new Error('Expected authenticated login response');
+    }
+
+    expect(result.user.id).toBe('user-1');
+    expect(result.accessToken).toBe('access-token');
+    expect(result.refreshToken).toBe('refresh-token');
+
+    expect(mockedSessionCreate).toHaveBeenCalledTimes(1);
+
+    expect(mockedGenerateAccessToken).toHaveBeenCalledWith('user-1');
+
+    expect(mockedGenerateRefreshToken).toHaveBeenCalledWith('user-1');
+
+    expect(mockedGenerateTwoFactorChallengeToken).not.toHaveBeenCalled();
+
+    expect(mockedTwoFactorChallengeCreate).not.toHaveBeenCalled();
+  });
+
+  it('creates a two-factor challenge without issuing authenticated credentials when two-factor authentication is enabled', async () => {
+    const enabledAt = new Date('2026-09-18T05:00:00.000Z');
+
+    const expiresAt = new Date('2026-09-18T06:00:00.000Z');
+
+    mockedUserFindUnique.mockResolvedValue({
+      ...baseUser,
+      twoFactorAuthentication: {
+        enabledAt,
+      },
+    } as never);
+
+    mockedBcryptCompare.mockResolvedValue(true as never);
+
+    mockedGenerateTwoFactorChallengeToken.mockReturnValue({
+      token: 'two-factor-challenge-token',
+      tokenHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      expiresAt,
+    });
+
+    mockedTwoFactorChallengeCreate.mockResolvedValue({} as never);
+
+    const result = await loginUser(
+      {
+        email: 'asil@example.com',
+        password: 'password123',
+      },
+      sessionMetadata,
+    );
+
+    expect(result).toEqual({
+      requiresTwoFactor: true,
+      challengeToken: 'two-factor-challenge-token',
+      expiresAt,
+    });
+
+    expect(mockedGenerateTwoFactorChallengeToken).toHaveBeenCalledTimes(1);
+
+    expect(mockedTwoFactorChallengeCreate).toHaveBeenCalledTimes(1);
+
+    expect(mockedTwoFactorChallengeCreate).toHaveBeenCalledWith({
+      data: {
+        userId: 'user-1',
+        tokenHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        expiresAt,
+      },
+    });
+
+    expect(mockedTwoFactorChallengeCreate).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          tokenHash: 'two-factor-challenge-token',
+        }),
+      }),
+    );
+
+    expect(mockedSessionCreate).not.toHaveBeenCalled();
+
+    expect(mockedGenerateAccessToken).not.toHaveBeenCalled();
+
+    expect(mockedGenerateRefreshToken).not.toHaveBeenCalled();
+  });
+
+  it('rejects login when user does not exist without creating authentication credentials or a challenge', async () => {
     mockedUserFindUnique.mockResolvedValue(null as never);
 
     await expect(
@@ -270,11 +409,25 @@ describe('auth service', () => {
     });
 
     expect(mockedBcryptCompare).not.toHaveBeenCalled();
+
+    expect(mockedGenerateTwoFactorChallengeToken).not.toHaveBeenCalled();
+
+    expect(mockedTwoFactorChallengeCreate).not.toHaveBeenCalled();
+
+    expect(mockedGenerateAccessToken).not.toHaveBeenCalled();
+
+    expect(mockedGenerateRefreshToken).not.toHaveBeenCalled();
+
     expect(mockedSessionCreate).not.toHaveBeenCalled();
   });
 
-  it('rejects login with invalid password', async () => {
-    mockedUserFindUnique.mockResolvedValue(baseUser as never);
+  it('rejects login with invalid password without creating authentication credentials or a challenge', async () => {
+    mockedUserFindUnique.mockResolvedValue({
+      ...baseUser,
+      twoFactorAuthentication: {
+        enabledAt: new Date('2026-09-18T05:00:00.000Z'),
+      },
+    } as never);
 
     mockedBcryptCompare.mockResolvedValue(false as never);
 
@@ -290,6 +443,14 @@ describe('auth service', () => {
       statusCode: 401,
       code: 'INVALID_CREDENTIALS',
     });
+
+    expect(mockedGenerateTwoFactorChallengeToken).not.toHaveBeenCalled();
+
+    expect(mockedTwoFactorChallengeCreate).not.toHaveBeenCalled();
+
+    expect(mockedGenerateAccessToken).not.toHaveBeenCalled();
+
+    expect(mockedGenerateRefreshToken).not.toHaveBeenCalled();
 
     expect(mockedSessionCreate).not.toHaveBeenCalled();
   });

@@ -17,7 +17,9 @@ import type {
   LoginInput,
   RegisterInput,
   SessionMetadata,
+  LoginResponse,
 } from './auth.types.js';
+import { generateTwoFactorChallengeToken } from './two-factor/two-factor.challenge.js';
 
 const SALT_ROUNDS = 12;
 const REFRESH_TOKEN_EXPIRES_IN_MS = parseDurationToMilliseconds(env.JWT_REFRESH_EXPIRES_IN);
@@ -138,10 +140,17 @@ export const registerUser = async (
 export const loginUser = async (
   input: LoginInput,
   metadata: SessionMetadata,
-): Promise<AuthResponse> => {
+): Promise<LoginResponse> => {
   const user = await prisma.user.findUnique({
     where: {
       email: input.email,
+    },
+    include: {
+      twoFactorAuthentication: {
+        select: {
+          enabledAt: true,
+        },
+      },
     },
   });
 
@@ -153,6 +162,28 @@ export const loginUser = async (
 
   if (!passwordMatches) {
     throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
+  }
+
+  const twoFactorEnabled =
+    user.twoFactorAuthentication?.enabledAt !== null &&
+    user.twoFactorAuthentication?.enabledAt !== undefined;
+
+  if (twoFactorEnabled) {
+    const challenge = generateTwoFactorChallengeToken();
+
+    await prisma.twoFactorChallenge.create({
+      data: {
+        userId: user.id,
+        tokenHash: challenge.tokenHash,
+        expiresAt: challenge.expiresAt,
+      },
+    });
+
+    return {
+      requiresTwoFactor: true,
+      challengeToken: challenge.token,
+      expiresAt: challenge.expiresAt,
+    };
   }
 
   const accessToken = generateAccessToken(user.id);
@@ -172,6 +203,7 @@ export const loginUser = async (
   });
 
   return {
+    requiresTwoFactor: false,
     user: toAuthUser(user),
     accessToken,
     refreshToken: refreshToken.token,

@@ -40,3 +40,15 @@ export interface AuthSession {
   expiresAt: Date;
   createdAt: Date;
 }
+
+export interface TwoFactorLoginChallengeResponse {
+  requiresTwoFactor: true;
+  challengeToken: string;
+  expiresAt: Date;
+}
+
+export interface AuthenticatedLoginResponse extends AuthResponse {
+  requiresTwoFactor: false;
+}
+
+export type LoginResponse = AuthenticatedLoginResponse | TwoFactorLoginChallengeResponse;
