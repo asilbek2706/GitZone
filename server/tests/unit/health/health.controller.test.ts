@@ -7,7 +7,7 @@ import {
   getHealth,
   getLiveness,
   getReadiness,
-} from '../../../src/modules/health/health.controller.js';
+} from '../../../src/controllers/health/health.controller.js';
 
 vi.mock('../../../src/config/prisma.js', () => ({
   default: {

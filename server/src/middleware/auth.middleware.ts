@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 
 import { AppError } from '../errors/app.error.js';
-import { verifyAccessToken } from '../modules/auth/auth.tokens.js';
+import { verifyAccessToken } from '../utils/auth/tokens.js';
 
 export interface AuthenticatedRequest extends Request {
   userId: string;

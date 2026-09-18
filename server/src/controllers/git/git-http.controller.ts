@@ -6,11 +6,11 @@ import { env } from '../../config/env.js';
 import { logger } from '../../config/logger.js';
 import prisma from '../../config/prisma.js';
 import { AppError } from '../../errors/app.error.js';
-import { verifyPersonalAccessToken } from '../auth/pat.service.js';
+import { verifyPersonalAccessToken } from '../../services/auth/pat.service.js';
 import {
   authorizeRepositoryAccess,
   type RepositoryAccessType,
-} from '../repositories/repository.authorization.service.js';
+} from '../../services/repositories/repository-authorization.service.js';
 
 const GIT_PROJECT_ROOT = path.resolve(process.cwd(), env.GIT_STORAGE_PATH);
 

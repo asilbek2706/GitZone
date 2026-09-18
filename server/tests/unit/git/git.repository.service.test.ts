@@ -20,7 +20,7 @@ vi.mock('node:fs/promises', () => ({
 process.env.GIT_STORAGE_PATH = './storage/test-repositories';
 
 const { createGitRepository, renameGitRepository, deleteGitRepository } =
-  await import('../../../src/modules/git/git.repository.service.js');
+  await import('../../../src/services/git/git-repository.service.js');
 
 describe('git repository service', () => {
   beforeEach(() => {

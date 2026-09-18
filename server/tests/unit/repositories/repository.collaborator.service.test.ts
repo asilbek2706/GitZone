@@ -7,7 +7,7 @@ import {
   getRepositoryCollaborators,
   removeRepositoryCollaborator,
   updateRepositoryCollaborator,
-} from '../../../src/modules/repositories/repository.collaborator.service.js';
+} from '../../../src/services/repositories/repository-collaborator.service.js';
 
 vi.mock('../../../src/config/prisma.js', () => ({
   default: {

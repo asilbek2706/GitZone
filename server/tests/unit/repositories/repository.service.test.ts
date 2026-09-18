@@ -6,7 +6,7 @@ import {
   createGitRepository,
   deleteGitRepository,
   renameGitRepository,
-} from '../../../src/modules/git/git.repository.service.js';
+} from '../../../src/services/git/git-repository.service.js';
 
 import {
   createRepository,
@@ -14,7 +14,7 @@ import {
   getRepositoryByUsernameAndName,
   getUserRepositories,
   updateRepository,
-} from '../../../src/modules/repositories/repository.service.js';
+} from '../../../src/services/repositories/repository.service.js';
 
 vi.mock('../../../src/config/prisma.js', () => ({
   default: {
@@ -32,7 +32,7 @@ vi.mock('../../../src/config/prisma.js', () => ({
   },
 }));
 
-vi.mock('../../../src/modules/git/git.repository.service.js', () => ({
+vi.mock('../../../src/services/git/git-repository.service.js', () => ({
   createGitRepository: vi.fn(),
   deleteGitRepository: vi.fn(),
   renameGitRepository: vi.fn(),

@@ -10,9 +10,9 @@ import app from '../../../src/app.js';
 import prisma from '../../../src/config/prisma.js';
 
 import { AppError } from '../../../src/errors/app.error.js';
-import { verifyPersonalAccessToken } from '../../../src/modules/auth/pat.service.js';
+import { verifyPersonalAccessToken } from '../../../src/services/auth/pat.service.js';
 
-import { authorizeRepositoryAccess } from '../../../src/modules/repositories/repository.authorization.service.js';
+import { authorizeRepositoryAccess } from '../../../src/services/repositories/repository-authorization.service.js';
 
 vi.mock('../../../src/config/prisma.js', () => ({
   default: {
@@ -22,11 +22,11 @@ vi.mock('../../../src/config/prisma.js', () => ({
   },
 }));
 
-vi.mock('../../../src/modules/auth/pat.service.js', () => ({
+vi.mock('../../../src/services/auth/pat.service.js', () => ({
   verifyPersonalAccessToken: vi.fn(),
 }));
 
-vi.mock('../../../src/modules/repositories/repository.authorization.service.js', () => ({
+vi.mock('../../../src/services/repositories/repository-authorization.service.js', () => ({
   authorizeRepositoryAccess: vi.fn(),
 }));
 

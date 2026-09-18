@@ -2,9 +2,9 @@ import * as OTPAuth from 'otpauth';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import prisma from '../../../../src/config/prisma.js';
-import { decryptTwoFactorSecret } from '../../../../src/modules/auth/two-factor/two-factor.crypto.js';
-import { generateRecoveryCodes } from '../../../../src/modules/auth/two-factor/recovery-code.js';
-import { verifyTwoFactorSetup } from '../../../../src/modules/auth/two-factor/two-factor.service.js';
+import { decryptTwoFactorSecret } from '../../../../src/utils/auth/two-factor/crypto.js';
+import { generateRecoveryCodes } from '../../../../src/utils/auth/two-factor/recovery-code.js';
+import { verifyTwoFactorSetup } from '../../../../src/services/auth/two-factor/two-factor.service.js';
 
 vi.mock('../../../../src/config/prisma.js', () => ({
   default: {
@@ -15,12 +15,12 @@ vi.mock('../../../../src/config/prisma.js', () => ({
   },
 }));
 
-vi.mock('../../../../src/modules/auth/two-factor/two-factor.crypto.js', () => ({
+vi.mock('../../../../src/utils/auth/two-factor/crypto.js', () => ({
   decryptTwoFactorSecret: vi.fn(),
   encryptTwoFactorSecret: vi.fn(),
 }));
 
-vi.mock('../../../../src/modules/auth/two-factor/recovery-code.js', () => ({
+vi.mock('../../../../src/utils/auth/two-factor/recovery-code.js', () => ({
   generateRecoveryCodes: vi.fn(),
 }));
 

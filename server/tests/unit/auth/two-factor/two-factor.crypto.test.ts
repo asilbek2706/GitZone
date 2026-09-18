@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   decryptTwoFactorSecret,
   encryptTwoFactorSecret,
-} from '../../../../src/modules/auth/two-factor/two-factor.crypto.js';
+} from '../../../../src/utils/auth/two-factor/crypto.js';
 
 describe('two-factor crypto', () => {
   it('encrypts and decrypts a two-factor secret', () => {

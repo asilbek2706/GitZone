@@ -1,9 +1,9 @@
 import { Router } from 'express';
 
-import authRoutes from './routes/auth.routes.js';
-import sessionRoutes from './routes/session.routes.js';
-import tokenRoutes from './routes/token.routes.js';
-import twoFactorRoutes from './routes/two-factor.routes.js';
+import authRoutes from './auth/auth.routes.js';
+import sessionRoutes from './auth/session.routes.js';
+import tokenRoutes from './auth/token.routes.js';
+import twoFactorRoutes from './auth/two-factor.routes.js';
 
 const router = Router();
 

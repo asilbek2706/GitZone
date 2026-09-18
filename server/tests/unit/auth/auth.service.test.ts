@@ -9,7 +9,7 @@ import {
   generateRefreshToken,
   hashRefreshToken,
   verifyRefreshToken,
-} from '../../../src/modules/auth/auth.tokens.js';
+} from '../../../src/utils/auth/tokens.js';
 
 import {
   getActiveSessions,
@@ -20,9 +20,9 @@ import {
   registerUser,
   revokeOtherSessions,
   revokeSession,
-} from '../../../src/modules/auth/auth.service.js';
+} from '../../../src/services/auth/auth.service.js';
 
-import { generateTwoFactorChallengeToken } from '../../../src/modules/auth/two-factor/two-factor.challenge.js';
+import { generateTwoFactorChallengeToken } from '../../../src/utils/auth/two-factor/challenge.js';
 
 vi.mock('bcrypt', () => ({
   default: {
@@ -52,14 +52,14 @@ vi.mock('../../../src/config/prisma.js', () => ({
   },
 }));
 
-vi.mock('../../../src/modules/auth/auth.tokens.js', () => ({
+vi.mock('../../../src/utils/auth/tokens.js', () => ({
   generateAccessToken: vi.fn(),
   generateRefreshToken: vi.fn(),
   hashRefreshToken: vi.fn(),
   verifyRefreshToken: vi.fn(),
 }));
 
-vi.mock('../../../src/modules/auth/two-factor/two-factor.challenge.js', () => ({
+vi.mock('../../../src/utils/auth/two-factor/challenge.js', () => ({
   generateTwoFactorChallengeToken: vi.fn(),
 }));
 

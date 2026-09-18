@@ -1,7 +1,7 @@
 import type { Response } from 'express';
 
 import { env } from '../../config/env.js';
-import { parseDurationToMilliseconds } from '../../utils/duration.js';
+import { parseDurationToMilliseconds } from '../duration.js';
 
 const REFRESH_TOKEN_COOKIE = 'refreshToken';
 

@@ -1,8 +1,12 @@
 import { Router } from 'express';
 
-import { authMiddleware } from '../../../middleware/auth.middleware.js';
-import { securityActionRateLimiter } from '../../../middleware/rate-limit.middleware.js';
-import { getSessions, revokeAllOtherSessions, revokeSessionById } from '../auth.controller.js';
+import { authMiddleware } from '../../middleware/auth.middleware.js';
+import { securityActionRateLimiter } from '../../middleware/rate-limit.middleware.js';
+import {
+  getSessions,
+  revokeAllOtherSessions,
+  revokeSessionById,
+} from '../../controllers/auth/session.controller.js';
 
 const router = Router();
 

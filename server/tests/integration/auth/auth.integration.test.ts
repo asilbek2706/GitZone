@@ -6,7 +6,7 @@ import { AppError } from '../../../src/errors/app.error.js';
 import {
   setupTwoFactorAuthentication,
   verifyTwoFactorSetup,
-} from '../../../src/modules/auth/two-factor/two-factor.service.js';
+} from '../../../src/services/auth/two-factor/two-factor.service.js';
 
 import {
   getActiveSessions,
@@ -17,16 +17,16 @@ import {
   registerUser,
   revokeOtherSessions,
   revokeSession,
-} from '../../../src/modules/auth/auth.service.js';
+} from '../../../src/services/auth/auth.service.js';
 
-import { verifyAccessToken } from '../../../src/modules/auth/auth.tokens.js';
+import { verifyAccessToken } from '../../../src/utils/auth/tokens.js';
 
 import {
   getPersonalAccessTokens,
   revokePersonalAccessToken,
-} from '../../../src/modules/auth/pat.service.js';
+} from '../../../src/services/auth/pat.service.js';
 
-vi.mock('../../../src/modules/auth/auth.service.js', () => ({
+vi.mock('../../../src/services/auth/auth.service.js', () => ({
   registerUser: vi.fn(),
   loginUser: vi.fn(),
   refreshAuth: vi.fn(),
@@ -37,21 +37,21 @@ vi.mock('../../../src/modules/auth/auth.service.js', () => ({
   logoutUser: vi.fn(),
 }));
 
-vi.mock('../../../src/modules/auth/pat.service.js', () => ({
+vi.mock('../../../src/services/auth/pat.service.js', () => ({
   createPersonalAccessToken: vi.fn(),
   getPersonalAccessTokens: vi.fn(),
   revokePersonalAccessToken: vi.fn(),
 }));
 
-vi.mock('../../../src/modules/auth/auth.tokens.js', () => ({
+vi.mock('../../../src/utils/auth/tokens.js', () => ({
   verifyAccessToken: vi.fn(),
 }));
 
-vi.mock('../../../src/modules/git/git.http.controller.js', () => ({
+vi.mock('../../../src/controllers/git/git-http.controller.js', () => ({
   gitHttpController: vi.fn(),
 }));
 
-vi.mock('../../../src/modules/auth/two-factor/two-factor.service.js', () => ({
+vi.mock('../../../src/services/auth/two-factor/two-factor.service.js', () => ({
   setupTwoFactorAuthentication: vi.fn(),
   verifyTwoFactorSetup: vi.fn(),
 }));

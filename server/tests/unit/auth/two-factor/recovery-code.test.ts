@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   generateRecoveryCodes,
   hashRecoveryCode,
-} from '../../../../src/modules/auth/two-factor/recovery-code.js';
+} from '../../../../src/utils/auth/two-factor/recovery-code.js';
 
 describe('recovery code utilities', () => {
   it('generates ten unique recovery codes', () => {

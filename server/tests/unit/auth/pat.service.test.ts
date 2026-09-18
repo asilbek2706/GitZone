@@ -7,7 +7,7 @@ import {
   getPersonalAccessTokens,
   revokePersonalAccessToken,
   verifyPersonalAccessToken,
-} from '../../../src/modules/auth/pat.service.js';
+} from '../../../src/services/auth/pat.service.js';
 
 vi.mock('../../../src/config/prisma.js', () => ({
   default: {

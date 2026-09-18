@@ -4,9 +4,9 @@ import {
   createGitRepository,
   deleteGitRepository,
   renameGitRepository,
-} from '../git/git.repository.service.js';
-import type { CreateRepositoryInput, UpdateRepositoryInput } from './repository.validation.js';
-import type { RepositoryResponse, RepositoryWithOwner } from './repository.types.js';
+} from '../git/git-repository.service.js';
+import type { CreateRepositoryInput, UpdateRepositoryInput } from '../../validations/repositories/repository.validation.js';
+import type { RepositoryResponse, RepositoryWithOwner } from '../../types/repository.types.js';
 
 const toRepositoryResponse = (repository: {
   id: string;

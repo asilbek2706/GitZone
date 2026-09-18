@@ -8,9 +8,9 @@ import {
 } from '../../../src/middleware/auth.middleware.js';
 
 import { AppError } from '../../../src/errors/app.error.js';
-import { verifyAccessToken } from '../../../src/modules/auth/auth.tokens.js';
+import { verifyAccessToken } from '../../../src/utils/auth/tokens.js';
 
-vi.mock('../../../src/modules/auth/auth.tokens.js', () => ({
+vi.mock('../../../src/utils/auth/tokens.js', () => ({
   verifyAccessToken: vi.fn(),
 }));
 

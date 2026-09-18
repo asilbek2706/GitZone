@@ -10,13 +10,13 @@ import {
   getRepositoryCollaborators,
   removeRepositoryCollaborator,
   updateRepositoryCollaborator,
-} from '../../../src/modules/repositories/repository.collaborator.service.js';
+} from '../../../src/services/repositories/repository-collaborator.service.js';
 
-vi.mock('../../../src/modules/git/git.http.controller.js', () => ({
+vi.mock('../../../src/controllers/git/git-http.controller.js', () => ({
   gitHttpController: vi.fn(),
 }));
 
-vi.mock('../../../src/modules/repositories/repository.service.js', () => ({
+vi.mock('../../../src/services/repositories/repository.service.js', () => ({
   createRepository: vi.fn(),
   deleteRepository: vi.fn(),
   getRepositoryByUsernameAndName: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock('../../../src/modules/repositories/repository.service.js', () => ({
   updateRepository: vi.fn(),
 }));
 
-vi.mock('../../../src/modules/repositories/repository.collaborator.service.js', () => ({
+vi.mock('../../../src/services/repositories/repository-collaborator.service.js', () => ({
   addRepositoryCollaborator: vi.fn(),
   getRepositoryCollaborators: vi.fn(),
   updateRepositoryCollaborator: vi.fn(),

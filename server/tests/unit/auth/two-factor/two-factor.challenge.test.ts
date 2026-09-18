@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   generateTwoFactorChallengeToken,
   hashTwoFactorChallengeToken,
-} from '../../../../src/modules/auth/two-factor/two-factor.challenge.js';
+} from '../../../../src/utils/auth/two-factor/challenge.js';
 
 describe('two-factor challenge token utilities', () => {
   it('generates a cryptographically strong opaque challenge token', () => {

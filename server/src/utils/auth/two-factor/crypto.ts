@@ -24,10 +24,7 @@ export const encryptTwoFactorSecret = (secret: string): string => {
     authTagLength: AUTH_TAG_LENGTH,
   });
 
-  const ciphertext = Buffer.concat([
-    cipher.update(secret, 'utf8'),
-    cipher.final(),
-  ]);
+  const ciphertext = Buffer.concat([cipher.update(secret, 'utf8'), cipher.final()]);
 
   const authTag = cipher.getAuthTag();
 
@@ -48,12 +45,7 @@ export const decryptTwoFactorSecret = (encryptedValue: string): string => {
 
   const [version, ivEncoded, authTagEncoded, ciphertextEncoded] = parts;
 
-  if (
-    version !== ENCRYPTED_VALUE_VERSION ||
-    !ivEncoded ||
-    !authTagEncoded ||
-    !ciphertextEncoded
-  ) {
+  if (version !== ENCRYPTED_VALUE_VERSION || !ivEncoded || !authTagEncoded || !ciphertextEncoded) {
     throw new Error('Invalid encrypted two-factor secret');
   }
 
@@ -66,25 +58,16 @@ export const decryptTwoFactorSecret = (encryptedValue: string): string => {
   }
 
   try {
-    const decipher = crypto.createDecipheriv(
-      ALGORITHM,
-      encryptionKey,
-      iv,
-      {
-        authTagLength: AUTH_TAG_LENGTH,
-      },
-    );
+    const decipher = crypto.createDecipheriv(ALGORITHM, encryptionKey, iv, {
+      authTagLength: AUTH_TAG_LENGTH,
+    });
 
     decipher.setAuthTag(authTag);
 
-    const plaintext = Buffer.concat([
-      decipher.update(ciphertext),
-      decipher.final(),
-    ]);
+    const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 
     return plaintext.toString('utf8');
   } catch {
     throw new Error('Unable to decrypt two-factor secret');
   }
 };
-

@@ -10,10 +10,10 @@ import { errorMiddleware } from './middleware/error.middleware.js';
 import { notFoundMiddleware } from './middleware/not-found.middleware.js';
 import { requestIdMiddleware } from './middleware/request-id.middleware.js';
 
-import authRoutes from './modules/auth/auth.routes.js';
-import { gitHttpController } from './modules/git/git.http.controller.js';
-import { getHealth, getLiveness, getReadiness } from './modules/health/health.controller.js';
-import repositoryRoutes from './modules/repositories/repository.routes.js';
+import authRoutes from './routes/index.js';
+import { gitHttpController } from './controllers/git/git-http.controller.js';
+import { getHealth, getLiveness, getReadiness } from './controllers/health/health.controller.js';
+import repositoryRoutes from './routes/repository.routes.js';
 
 const corsOptions: CorsOptions = {
   origin(origin, callback) {

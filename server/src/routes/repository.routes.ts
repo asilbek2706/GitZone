@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { authMiddleware } from '../../middleware/auth.middleware.js';
+import { authMiddleware } from '../middleware/auth.middleware.js';
 import {
   addCollaborator,
   create,
@@ -11,7 +11,7 @@ import {
   update,
   updateCollaborator,
   removeCollaborator,
-} from './repository.controller.js';
+} from '../controllers/repositories/repository.controller.js';
 
 const router = Router();
 

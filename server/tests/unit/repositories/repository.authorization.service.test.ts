@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import prisma from '../../../src/config/prisma.js';
 
-import { authorizeRepositoryAccess } from '../../../src/modules/repositories/repository.authorization.service.js';
+import { authorizeRepositoryAccess } from '../../../src/services/repositories/repository-authorization.service.js';
 
 vi.mock('../../../src/config/prisma.js', () => ({
   default: {

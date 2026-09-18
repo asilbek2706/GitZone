@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import prisma from '../../../../src/config/prisma.js';
 
-import { encryptTwoFactorSecret } from '../../../../src/modules/auth/two-factor/two-factor.crypto.js';
+import { encryptTwoFactorSecret } from '../../../../src/utils/auth/two-factor/crypto.js';
 
-import { setupTwoFactorAuthentication } from '../../../../src/modules/auth/two-factor/two-factor.service.js';
+import { setupTwoFactorAuthentication } from '../../../../src/services/auth/two-factor/two-factor.service.js';
 
 vi.mock('../../../../src/config/prisma.js', () => ({
   default: {
@@ -17,7 +17,7 @@ vi.mock('../../../../src/config/prisma.js', () => ({
   },
 }));
 
-vi.mock('../../../../src/modules/auth/two-factor/two-factor.crypto.js', () => ({
+vi.mock('../../../../src/utils/auth/two-factor/crypto.js', () => ({
   encryptTwoFactorSecret: vi.fn(),
 }));
 

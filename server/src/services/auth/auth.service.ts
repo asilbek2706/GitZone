@@ -9,7 +9,7 @@ import {
   generateRefreshToken,
   hashRefreshToken,
   verifyRefreshToken,
-} from './auth.tokens.js';
+} from '../../utils/auth/tokens.js';
 import type {
   AuthResponse,
   AuthSession,
@@ -18,8 +18,8 @@ import type {
   RegisterInput,
   SessionMetadata,
   LoginResponse,
-} from './auth.types.js';
-import { generateTwoFactorChallengeToken } from './two-factor/two-factor.challenge.js';
+} from '../../types/auth.types.js';
+import { generateTwoFactorChallengeToken } from '../../utils/auth/two-factor/challenge.js';
 
 const SALT_ROUNDS = 12;
 const REFRESH_TOKEN_EXPIRES_IN_MS = parseDurationToMilliseconds(env.JWT_REFRESH_EXPIRES_IN);

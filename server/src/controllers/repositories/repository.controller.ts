@@ -8,19 +8,19 @@ import {
   getRepositoryByUsernameAndName,
   getUserRepositories,
   updateRepository,
-} from './repository.service.js';
+} from '../../services/repositories/repository.service.js';
 import {
   addRepositoryCollaborator,
   getRepositoryCollaborators,
   updateRepositoryCollaborator,
   removeRepositoryCollaborator,
-} from './repository.collaborator.service.js';
+} from '../../services/repositories/repository-collaborator.service.js';
 import {
   addRepositoryCollaboratorSchema,
   createRepositorySchema,
   updateRepositoryCollaboratorSchema,
   updateRepositorySchema,
-} from './repository.validation.js';
+} from '../../validations/repositories/repository.validation.js';
 
 export const create = async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;

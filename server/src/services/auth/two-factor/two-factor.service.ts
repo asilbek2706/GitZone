@@ -3,8 +3,11 @@ import QRCode from 'qrcode';
 
 import prisma from '../../../config/prisma.js';
 import { AppError } from '../../../errors/app.error.js';
-import { decryptTwoFactorSecret, encryptTwoFactorSecret } from './two-factor.crypto.js';
-import { generateRecoveryCodes } from './recovery-code.js';
+import {
+  decryptTwoFactorSecret,
+  encryptTwoFactorSecret,
+} from '../../../utils/auth/two-factor/crypto.js';
+import { generateRecoveryCodes } from '../../../utils/auth/two-factor/recovery-code.js';
 
 const TOTP_ISSUER = 'GitZone';
 const TOTP_ALGORITHM = 'SHA1';
