@@ -8,7 +8,6 @@ import { verifyTwoFactor } from '../../controllers/auth/two-factor/verify.contro
 const router = Router();
 
 router.post('/setup', authMiddleware, securityActionRateLimiter, setupTwoFactor);
-
 router.post('/verify', authMiddleware, securityActionRateLimiter, verifyTwoFactor);
 
 export default router;

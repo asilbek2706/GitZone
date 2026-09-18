@@ -11,9 +11,7 @@ import {
 const router = Router();
 
 router.get('/', authMiddleware, getSessions);
-
 router.delete('/', authMiddleware, securityActionRateLimiter, revokeAllOtherSessions);
-
 router.delete('/:sessionId', authMiddleware, securityActionRateLimiter, revokeSessionById);
 
 export default router;
