@@ -1,5 +1,7 @@
-import prisma from '../../config/prisma.js';
+import type { Prisma } from '../../generated/prisma/client.js';
+
 import { env } from '../../config/env.js';
+import prisma from '../../config/prisma.js';
 import type { AuthResponse, AuthUser, SessionMetadata } from '../../types/auth.types.js';
 import { generateAccessToken, generateRefreshToken } from '../../utils/auth/tokens.js';
 import { parseDurationToMilliseconds } from '../../utils/duration.js';
@@ -16,6 +18,8 @@ type SessionUser = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+type SessionDatabaseClient = Pick<Prisma.TransactionClient, 'session'>;
 
 export const toAuthUser = (user: SessionUser): AuthUser => ({
   id: user.id,
@@ -35,11 +39,12 @@ export const getRefreshTokenExpiresAt = (): Date => {
 export const issueAuthSession = async (
   user: SessionUser,
   metadata: SessionMetadata,
+  database: SessionDatabaseClient = prisma,
 ): Promise<AuthResponse> => {
   const accessToken = generateAccessToken(user.id);
   const refreshToken = generateRefreshToken(user.id);
 
-  await prisma.session.create({
+  await database.session.create({
     data: {
       userId: user.id,
       refreshTokenHash: refreshToken.tokenHash,

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../../src/app.js';
 import { AppError } from '../../../src/errors/app.error.js';
+import { verifyTwoFactorLoginChallenge } from '../../../src/services/auth/two-factor/login-challenge.service.js';
 import { setupTwoFactorAuthentication } from '../../../src/services/auth/two-factor/setup.service.js';
 import { verifyTwoFactorSetup } from '../../../src/services/auth/two-factor/verify.service.js';
 
@@ -64,6 +65,10 @@ vi.mock('../../../src/controllers/git/git-http.controller.js', () => ({
   gitHttpController: vi.fn(),
 }));
 
+vi.mock('../../../src/services/auth/two-factor/login-challenge.service.js', () => ({
+  verifyTwoFactorLoginChallenge: vi.fn(),
+}));
+
 vi.mock('../../../src/services/auth/two-factor/setup.service.js', () => ({
   setupTwoFactorAuthentication: vi.fn(),
 }));
@@ -94,6 +99,7 @@ const mockedGetPersonalAccessTokens = vi.mocked(getPersonalAccessTokens);
 
 const mockedRevokePersonalAccessToken = vi.mocked(revokePersonalAccessToken);
 
+const mockedVerifyTwoFactorLoginChallenge = vi.mocked(verifyTwoFactorLoginChallenge);
 const mockedSetupTwoFactorAuthentication = vi.mocked(setupTwoFactorAuthentication);
 const mockedVerifyTwoFactorSetup = vi.mocked(verifyTwoFactorSetup);
 
@@ -990,6 +996,146 @@ describe('auth API integration', () => {
       error: {
         code: 'INVALID_JSON',
         message: 'Invalid JSON payload',
+      },
+    });
+  });
+
+  it('verifies a two-factor login challenge without prior authentication', async () => {
+    mockedVerifyTwoFactorLoginChallenge.mockResolvedValue({
+      user,
+      accessToken: 'two-factor-access-token',
+      refreshToken: 'two-factor-refresh-token',
+    });
+
+    const response = await request(app)
+      .post('/api/auth/2fa/login/verify')
+      .set('User-Agent', 'GitZone-2FA-Test/1.0')
+      .send({
+        challengeToken: 'challenge-token',
+        code: '123456',
+      });
+
+    expect(response.status).toBe(200);
+
+    expect(mockedVerifyAccessToken).not.toHaveBeenCalled();
+
+    expect(mockedVerifyTwoFactorLoginChallenge).toHaveBeenCalledWith('challenge-token', '123456', {
+      userAgent: 'GitZone-2FA-Test/1.0',
+      ipAddress: '::ffff:127.0.0.1',
+    });
+
+    expect(response.body).toEqual({
+      success: true,
+      data: {
+        user: {
+          ...user,
+          createdAt: createdAt.toISOString(),
+          updatedAt: updatedAt.toISOString(),
+        },
+        accessToken: 'two-factor-access-token',
+      },
+    });
+
+    expect(response.body.data).not.toHaveProperty('refreshToken');
+
+    const cookies = response.headers['set-cookie'];
+
+    expect(cookies).toBeDefined();
+    expect(cookies?.[0]).toContain('refreshToken=two-factor-refresh-token');
+    expect(cookies?.[0]).toContain('HttpOnly');
+    expect(cookies?.[0]).toContain('Path=/api/auth');
+    expect(cookies?.[0]).toContain('SameSite=Lax');
+  });
+
+  it('rejects malformed two-factor login challenge payload', async () => {
+    const response = await request(app).post('/api/auth/2fa/login/verify').send({
+      challengeToken: '',
+      code: '12345',
+    });
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+      },
+    });
+
+    expect(mockedVerifyTwoFactorLoginChallenge).not.toHaveBeenCalled();
+  });
+
+  it('rejects non-numeric two-factor login code', async () => {
+    const response = await request(app).post('/api/auth/2fa/login/verify').send({
+      challengeToken: 'challenge-token',
+      code: '12AB56',
+    });
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+      },
+    });
+
+    expect(mockedVerifyTwoFactorLoginChallenge).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 for an invalid or expired two-factor login challenge', async () => {
+    mockedVerifyTwoFactorLoginChallenge.mockRejectedValue(
+      new AppError(
+        'Invalid or expired two-factor authentication challenge',
+        401,
+        'INVALID_TWO_FACTOR_CHALLENGE',
+      ),
+    );
+
+    const response = await request(app).post('/api/auth/2fa/login/verify').send({
+      challengeToken: 'invalid-challenge-token',
+      code: '123456',
+    });
+
+    expect(response.status).toBe(401);
+
+    expect(mockedVerifyTwoFactorLoginChallenge).toHaveBeenCalledWith(
+      'invalid-challenge-token',
+      '123456',
+      {
+        userAgent: null,
+        ipAddress: '::ffff:127.0.0.1',
+      },
+    );
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'INVALID_TWO_FACTOR_CHALLENGE',
+        message: 'Invalid or expired two-factor authentication challenge',
+      },
+    });
+  });
+
+  it('returns 401 for an invalid two-factor login code', async () => {
+    mockedVerifyTwoFactorLoginChallenge.mockRejectedValue(
+      new AppError('Invalid two-factor authentication code', 401, 'INVALID_TWO_FACTOR_CODE'),
+    );
+
+    const response = await request(app).post('/api/auth/2fa/login/verify').send({
+      challengeToken: 'challenge-token',
+      code: '000000',
+    });
+
+    expect(response.status).toBe(401);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'INVALID_TWO_FACTOR_CODE',
+        message: 'Invalid two-factor authentication code',
       },
     });
   });
