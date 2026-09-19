@@ -45,8 +45,9 @@ model TwoFactorChallenge {
   userId    String
   tokenHash String @unique
 
-  expiresAt DateTime
-  usedAt    DateTime?
+  expiresAt    DateTime
+  usedAt       DateTime?
+  attemptCount Int       @default(0)
 
   createdAt DateTime @default(now())
 
