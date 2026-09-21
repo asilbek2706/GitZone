@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../../src/app.js';
 import { AppError } from '../../../src/errors/app.error.js';
+import { disableTwoFactorAuthentication } from '../../../src/services/auth/two-factor/disable.service.js';
 import { verifyTwoFactorLoginChallenge } from '../../../src/services/auth/two-factor/login-challenge.service.js';
 import { verifyTwoFactorRecoveryLogin } from '../../../src/services/auth/two-factor/recovery-login.service.js';
 import { setupTwoFactorAuthentication } from '../../../src/services/auth/two-factor/setup.service.js';
@@ -66,6 +67,10 @@ vi.mock('../../../src/controllers/git/git-http.controller.js', () => ({
   gitHttpController: vi.fn(),
 }));
 
+vi.mock('../../../src/services/auth/two-factor/disable.service.js', () => ({
+  disableTwoFactorAuthentication: vi.fn(),
+}));
+
 vi.mock('../../../src/services/auth/two-factor/login-challenge.service.js', () => ({
   verifyTwoFactorLoginChallenge: vi.fn(),
 }));
@@ -104,6 +109,7 @@ const mockedGetPersonalAccessTokens = vi.mocked(getPersonalAccessTokens);
 
 const mockedRevokePersonalAccessToken = vi.mocked(revokePersonalAccessToken);
 
+const mockedDisableTwoFactorAuthentication = vi.mocked(disableTwoFactorAuthentication);
 const mockedVerifyTwoFactorLoginChallenge = vi.mocked(verifyTwoFactorLoginChallenge);
 const mockedVerifyTwoFactorRecoveryLogin = vi.mocked(verifyTwoFactorRecoveryLogin);
 const mockedSetupTwoFactorAuthentication = vi.mocked(setupTwoFactorAuthentication);
@@ -1258,6 +1264,168 @@ describe('auth API integration', () => {
       error: {
         code: 'INVALID_RECOVERY_CODE',
         message: 'Invalid recovery code',
+      },
+    });
+  });
+
+
+  it('disables two-factor authentication for an authenticated user', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedDisableTwoFactorAuthentication.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .post('/api/auth/2fa/disable')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        password: 'CurrentPassword123!',
+        code: '123456',
+      });
+
+    expect(response.status).toBe(200);
+
+    expect(mockedVerifyAccessToken).toHaveBeenCalledWith('test-access-token');
+
+    expect(mockedDisableTwoFactorAuthentication).toHaveBeenCalledWith(
+      'user-1',
+      'CurrentPassword123!',
+      '123456',
+    );
+
+    expect(response.body).toEqual({
+      success: true,
+      message: 'Two-factor authentication disabled successfully',
+    });
+  });
+
+  it('rejects two-factor disable without authentication', async () => {
+    const response = await request(app)
+      .post('/api/auth/2fa/disable')
+      .send({
+        password: 'CurrentPassword123!',
+        code: '123456',
+      });
+
+    expect(response.status).toBe(401);
+    expect(mockedDisableTwoFactorAuthentication).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed two-factor disable payload', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    const response = await request(app)
+      .post('/api/auth/2fa/disable')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        password: '',
+        code: '12345',
+      });
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+      },
+    });
+
+    expect(mockedDisableTwoFactorAuthentication).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 when the current password is invalid during two-factor disable', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedDisableTwoFactorAuthentication.mockRejectedValue(
+      new AppError('Invalid current password', 401, 'INVALID_CURRENT_PASSWORD'),
+    );
+
+    const response = await request(app)
+      .post('/api/auth/2fa/disable')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        password: 'WrongPassword123!',
+        code: '123456',
+      });
+
+    expect(response.status).toBe(401);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'INVALID_CURRENT_PASSWORD',
+        message: 'Invalid current password',
+      },
+    });
+  });
+
+  it('returns 401 when the two-factor code is invalid during disable', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedDisableTwoFactorAuthentication.mockRejectedValue(
+      new AppError(
+        'Invalid two-factor authentication code',
+        401,
+        'INVALID_TWO_FACTOR_CODE',
+      ),
+    );
+
+    const response = await request(app)
+      .post('/api/auth/2fa/disable')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        password: 'CurrentPassword123!',
+        code: '000000',
+      });
+
+    expect(response.status).toBe(401);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'INVALID_TWO_FACTOR_CODE',
+        message: 'Invalid two-factor authentication code',
+      },
+    });
+  });
+
+  it('returns 409 when two-factor authentication is not enabled during disable', async () => {
+    mockedVerifyAccessToken.mockReturnValue({
+      sub: 'user-1',
+    } as never);
+
+    mockedDisableTwoFactorAuthentication.mockRejectedValue(
+      new AppError(
+        'Two-factor authentication is not enabled',
+        409,
+        'TWO_FACTOR_NOT_ENABLED',
+      ),
+    );
+
+    const response = await request(app)
+      .post('/api/auth/2fa/disable')
+      .set('Authorization', 'Bearer test-access-token')
+      .send({
+        password: 'CurrentPassword123!',
+        code: '123456',
+      });
+
+    expect(response.status).toBe(409);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'TWO_FACTOR_NOT_ENABLED',
+        message: 'Two-factor authentication is not enabled',
       },
     });
   });
