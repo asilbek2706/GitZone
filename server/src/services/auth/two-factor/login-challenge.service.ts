@@ -23,6 +23,18 @@ const invalidChallengeError = (): AppError => {
   );
 };
 
+const invalidTwoFactorCodeError = (): AppError => {
+  return new AppError(
+    'Invalid two-factor authentication code',
+    401,
+    'INVALID_TWO_FACTOR_CODE',
+  );
+};
+
+const getTotpStep = (timestamp: number): bigint => {
+  return BigInt(Math.floor(timestamp / 1000 / TOTP_PERIOD));
+};
+
 export const verifyTwoFactorLoginChallenge = async (
   challengeToken: string,
   code: string,
@@ -82,6 +94,7 @@ export const verifyTwoFactorLoginChallenge = async (
   const delta = totp.validate({
     token: code,
     window: TOTP_VALIDATION_WINDOW,
+    timestamp: now.getTime(),
   });
 
   if (delta === null) {
@@ -108,17 +121,41 @@ export const verifyTwoFactorLoginChallenge = async (
       throw invalidChallengeError();
     }
 
-    throw new AppError(
-      'Invalid two-factor authentication code',
-      401,
-      'INVALID_TWO_FACTOR_CODE',
-    );
+    throw invalidTwoFactorCodeError();
   }
 
+  const acceptedTotpStep = getTotpStep(now.getTime()) + BigInt(delta);
   const consumedAt = new Date();
 
   return prisma.$transaction(async (tx) => {
-    const consumed = await tx.twoFactorChallenge.updateMany({
+    const claimedTotpStep = await tx.twoFactorAuthentication.updateMany({
+      where: {
+        id: twoFactorAuthentication.id,
+        userId: challenge.userId,
+        enabledAt: {
+          not: null,
+        },
+        OR: [
+          {
+            lastUsedTotpStep: null,
+          },
+          {
+            lastUsedTotpStep: {
+              lt: acceptedTotpStep,
+            },
+          },
+        ],
+      },
+      data: {
+        lastUsedTotpStep: acceptedTotpStep,
+      },
+    });
+
+    if (claimedTotpStep.count !== 1) {
+      throw invalidTwoFactorCodeError();
+    }
+
+    const consumedChallenge = await tx.twoFactorChallenge.updateMany({
       where: {
         id: challenge.id,
         tokenHash,
@@ -135,7 +172,7 @@ export const verifyTwoFactorLoginChallenge = async (
       },
     });
 
-    if (consumed.count !== 1) {
+    if (consumedChallenge.count !== 1) {
       throw invalidChallengeError();
     }
 

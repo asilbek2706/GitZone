@@ -8,7 +8,8 @@ import { verifyTwoFactorLoginChallenge } from '../../../../src/services/auth/two
 import { hashTwoFactorChallengeToken } from '../../../../src/utils/auth/two-factor/challenge.js';
 import { decryptTwoFactorSecret } from '../../../../src/utils/auth/two-factor/crypto.js';
 
-const transactionUpdateMany = vi.fn();
+const transactionTotpUpdateMany = vi.fn();
+const transactionChallengeUpdateMany = vi.fn();
 
 vi.mock('../../../../src/config/prisma.js', () => ({
   default: {
@@ -35,8 +36,11 @@ const mockedDecryptTwoFactorSecret = vi.mocked(decryptTwoFactorSecret);
 const mockedIssueAuthSession = vi.mocked(issueAuthSession);
 
 const transactionClient = {
+  twoFactorAuthentication: {
+    updateMany: transactionTotpUpdateMany,
+  },
   twoFactorChallenge: {
-    updateMany: transactionUpdateMany,
+    updateMany: transactionChallengeUpdateMany,
   },
 } as unknown as Prisma.TransactionClient;
 
@@ -62,6 +66,7 @@ const user = {
     userId: 'user-1',
     encryptedSecret: 'v1.encrypted-secret',
     enabledAt: new Date('2026-01-01T00:00:00.000Z'),
+    lastUsedTotpStep: null,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
   },
@@ -109,7 +114,8 @@ const createValidCode = (): string => {
 describe('two-factor login challenge service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    transactionUpdateMany.mockReset();
+    transactionTotpUpdateMany.mockReset();
+    transactionChallengeUpdateMany.mockReset();
 
     mockedDecryptTwoFactorSecret.mockReturnValue(SECRET.base32);
 
@@ -119,7 +125,11 @@ describe('two-factor login challenge service', () => {
       count: 1,
     });
 
-    transactionUpdateMany.mockResolvedValue({
+    transactionTotpUpdateMany.mockResolvedValue({
+      count: 1,
+    });
+
+    transactionChallengeUpdateMany.mockResolvedValue({
       count: 1,
     });
 
@@ -147,8 +157,32 @@ describe('two-factor login challenge service', () => {
 
     expect(mockedTransaction).toHaveBeenCalledOnce();
 
-    expect(transactionUpdateMany).toHaveBeenCalledOnce();
-    expect(transactionUpdateMany).toHaveBeenCalledWith({
+    expect(transactionTotpUpdateMany).toHaveBeenCalledOnce();
+    expect(transactionTotpUpdateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'two-factor-1',
+        userId: 'user-1',
+        enabledAt: {
+          not: null,
+        },
+        OR: [
+          {
+            lastUsedTotpStep: null,
+          },
+          {
+            lastUsedTotpStep: {
+              lt: expect.any(BigInt),
+            },
+          },
+        ],
+      },
+      data: {
+        lastUsedTotpStep: expect.any(BigInt),
+      },
+    });
+
+    expect(transactionChallengeUpdateMany).toHaveBeenCalledOnce();
+    expect(transactionChallengeUpdateMany).toHaveBeenCalledWith({
       where: {
         id: 'challenge-1',
         tokenHash: hashTwoFactorChallengeToken('challenge-token'),
@@ -354,7 +388,7 @@ describe('two-factor login challenge service', () => {
   it('does not issue a session when the transactional challenge consume claim is lost', async () => {
     mockedFindUnique.mockResolvedValue(createChallenge() as never);
 
-    transactionUpdateMany.mockResolvedValue({
+    transactionChallengeUpdateMany.mockResolvedValue({
       count: 0,
     });
 
@@ -366,7 +400,7 @@ describe('two-factor login challenge service', () => {
     });
 
     expect(mockedTransaction).toHaveBeenCalledOnce();
-    expect(transactionUpdateMany).toHaveBeenCalledOnce();
+    expect(transactionChallengeUpdateMany).toHaveBeenCalledOnce();
     expect(mockedIssueAuthSession).not.toHaveBeenCalled();
   });
 
@@ -382,9 +416,80 @@ describe('two-factor login challenge service', () => {
     ).rejects.toBe(sessionError);
 
     expect(mockedTransaction).toHaveBeenCalledOnce();
-    expect(transactionUpdateMany).toHaveBeenCalledOnce();
+    expect(transactionChallengeUpdateMany).toHaveBeenCalledOnce();
 
     expect(mockedIssueAuthSession).toHaveBeenCalledOnce();
     expect(mockedIssueAuthSession).toHaveBeenCalledWith(user, metadata, transactionClient);
   });
+
+  it('rejects a valid TOTP when the same timestep was already claimed', async () => {
+    mockedFindUnique.mockResolvedValue(createChallenge() as never);
+
+    transactionTotpUpdateMany.mockResolvedValue({
+      count: 0,
+    });
+
+    await expect(
+      verifyTwoFactorLoginChallenge('challenge-token', createValidCode(), metadata),
+    ).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_TWO_FACTOR_CODE',
+    });
+
+    expect(transactionTotpUpdateMany).toHaveBeenCalledOnce();
+    expect(transactionChallengeUpdateMany).not.toHaveBeenCalled();
+    expect(mockedIssueAuthSession).not.toHaveBeenCalled();
+  });
+
+  it('claims the accepted TOTP timestep before consuming the challenge', async () => {
+    mockedFindUnique.mockResolvedValue(createChallenge() as never);
+
+    const operations: string[] = [];
+
+    transactionTotpUpdateMany.mockImplementation(async () => {
+      operations.push('totp');
+      return { count: 1 };
+    });
+
+    transactionChallengeUpdateMany.mockImplementation(async () => {
+      operations.push('challenge');
+      return { count: 1 };
+    });
+
+    mockedIssueAuthSession.mockImplementation(async () => {
+      operations.push('session');
+      return authResponse;
+    });
+
+    await verifyTwoFactorLoginChallenge(
+      'challenge-token',
+      createValidCode(),
+      metadata,
+    );
+
+    expect(operations).toEqual([
+      'totp',
+      'challenge',
+      'session',
+    ]);
+  });
+
+  it('does not issue a session when the TOTP timestep atomic claim is lost', async () => {
+    mockedFindUnique.mockResolvedValue(createChallenge() as never);
+
+    transactionTotpUpdateMany.mockResolvedValue({
+      count: 0,
+    });
+
+    await expect(
+      verifyTwoFactorLoginChallenge('challenge-token', createValidCode(), metadata),
+    ).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_TWO_FACTOR_CODE',
+    });
+
+    expect(transactionChallengeUpdateMany).not.toHaveBeenCalled();
+    expect(mockedIssueAuthSession).not.toHaveBeenCalled();
+  });
+
 });
