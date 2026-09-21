@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import app from '../../../src/app.js';
 import { AppError } from '../../../src/errors/app.error.js';
 import { verifyTwoFactorLoginChallenge } from '../../../src/services/auth/two-factor/login-challenge.service.js';
+import { verifyTwoFactorRecoveryLogin } from '../../../src/services/auth/two-factor/recovery-login.service.js';
 import { setupTwoFactorAuthentication } from '../../../src/services/auth/two-factor/setup.service.js';
 import { verifyTwoFactorSetup } from '../../../src/services/auth/two-factor/verify.service.js';
 
@@ -69,6 +70,10 @@ vi.mock('../../../src/services/auth/two-factor/login-challenge.service.js', () =
   verifyTwoFactorLoginChallenge: vi.fn(),
 }));
 
+vi.mock('../../../src/services/auth/two-factor/recovery-login.service.js', () => ({
+  verifyTwoFactorRecoveryLogin: vi.fn(),
+}));
+
 vi.mock('../../../src/services/auth/two-factor/setup.service.js', () => ({
   setupTwoFactorAuthentication: vi.fn(),
 }));
@@ -100,6 +105,7 @@ const mockedGetPersonalAccessTokens = vi.mocked(getPersonalAccessTokens);
 const mockedRevokePersonalAccessToken = vi.mocked(revokePersonalAccessToken);
 
 const mockedVerifyTwoFactorLoginChallenge = vi.mocked(verifyTwoFactorLoginChallenge);
+const mockedVerifyTwoFactorRecoveryLogin = vi.mocked(verifyTwoFactorRecoveryLogin);
 const mockedSetupTwoFactorAuthentication = vi.mocked(setupTwoFactorAuthentication);
 const mockedVerifyTwoFactorSetup = vi.mocked(verifyTwoFactorSetup);
 
@@ -1139,4 +1145,121 @@ describe('auth API integration', () => {
       },
     });
   });
+
+  it('logs in with a recovery code without prior authentication', async () => {
+    mockedVerifyTwoFactorRecoveryLogin.mockResolvedValue({
+      user,
+      accessToken: 'recovery-access-token',
+      refreshToken: 'recovery-refresh-token',
+    });
+
+    const response = await request(app)
+      .post('/api/auth/2fa/login/recovery')
+      .set('User-Agent', 'GitZone-Recovery-Test/1.0')
+      .send({
+        challengeToken: 'challenge-token',
+        recoveryCode: '0123456789abcdef0123456789abcdef',
+      });
+
+    expect(response.status).toBe(200);
+
+    expect(mockedVerifyAccessToken).not.toHaveBeenCalled();
+
+    expect(mockedVerifyTwoFactorRecoveryLogin).toHaveBeenCalledWith(
+      'challenge-token',
+      '0123456789abcdef0123456789abcdef',
+      {
+        userAgent: 'GitZone-Recovery-Test/1.0',
+        ipAddress: '::ffff:127.0.0.1',
+      },
+    );
+
+    expect(response.body).toEqual({
+      success: true,
+      data: {
+        user: {
+          ...user,
+          createdAt: createdAt.toISOString(),
+          updatedAt: updatedAt.toISOString(),
+        },
+        accessToken: 'recovery-access-token',
+      },
+    });
+
+    expect(response.body.data).not.toHaveProperty('refreshToken');
+
+    const cookies = response.headers['set-cookie'];
+
+    expect(cookies).toBeDefined();
+    expect(cookies?.[0]).toContain('refreshToken=recovery-refresh-token');
+    expect(cookies?.[0]).toContain('HttpOnly');
+    expect(cookies?.[0]).toContain('Path=/api/auth');
+    expect(cookies?.[0]).toContain('SameSite=Lax');
+  });
+
+  it('rejects malformed recovery login payload', async () => {
+    const response = await request(app).post('/api/auth/2fa/login/recovery').send({
+      challengeToken: '',
+      recoveryCode: 'invalid',
+    });
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+      },
+    });
+
+    expect(mockedVerifyTwoFactorRecoveryLogin).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 for an invalid recovery login challenge', async () => {
+    mockedVerifyTwoFactorRecoveryLogin.mockRejectedValue(
+      new AppError(
+        'Invalid or expired two-factor authentication challenge',
+        401,
+        'INVALID_TWO_FACTOR_CHALLENGE',
+      ),
+    );
+
+    const response = await request(app).post('/api/auth/2fa/login/recovery').send({
+      challengeToken: 'invalid-challenge-token',
+      recoveryCode: '0123456789abcdef0123456789abcdef',
+    });
+
+    expect(response.status).toBe(401);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'INVALID_TWO_FACTOR_CHALLENGE',
+        message: 'Invalid or expired two-factor authentication challenge',
+      },
+    });
+  });
+
+  it('returns 401 for an invalid recovery code', async () => {
+    mockedVerifyTwoFactorRecoveryLogin.mockRejectedValue(
+      new AppError('Invalid recovery code', 401, 'INVALID_RECOVERY_CODE'),
+    );
+
+    const response = await request(app).post('/api/auth/2fa/login/recovery').send({
+      challengeToken: 'challenge-token',
+      recoveryCode: 'ffffffffffffffffffffffffffffffff',
+    });
+
+    expect(response.status).toBe(401);
+
+    expect(response.body).toEqual({
+      success: false,
+      error: {
+        code: 'INVALID_RECOVERY_CODE',
+        message: 'Invalid recovery code',
+      },
+    });
+  });
+
 });

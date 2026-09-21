@@ -8,8 +8,15 @@ export interface RecoveryCodePair {
   codeHash: string;
 }
 
+export const normalizeRecoveryCode = (code: string): string => {
+  return code.trim().toLowerCase();
+};
+
 export const hashRecoveryCode = (code: string): string => {
-  return crypto.createHash('sha256').update(code, 'utf8').digest('hex');
+  return crypto
+    .createHash('sha256')
+    .update(normalizeRecoveryCode(code), 'utf8')
+    .digest('hex');
 };
 
 export const generateRecoveryCodes = (): RecoveryCodePair[] => {
