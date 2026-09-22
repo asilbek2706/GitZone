@@ -1,24 +1,17 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import path from 'node:path';
 import fs from 'node:fs/promises';
 
 import { AppError } from '../../errors/app.error.js';
-import { env } from '../../config/env.js';
+import { resolveGitRepositoryPath } from '../../utils/git/repository-path.js';
 
 const execFileAsync = promisify(execFile);
-
-const GIT_STORAGE_PATH = path.resolve(process.cwd(), env.GIT_STORAGE_PATH);
-
-const getRepositoryPath = (username: string, repositoryName: string): string => {
-  return path.join(GIT_STORAGE_PATH, username, `${repositoryName}.git`);
-};
 
 export const createGitRepository = async (
   username: string,
   repositoryName: string,
 ): Promise<string> => {
-  const repositoryPath = getRepositoryPath(username, repositoryName);
+  const repositoryPath = resolveGitRepositoryPath(username, repositoryName);
 
   try {
     await execFileAsync('git', ['init', '--bare', '--initial-branch=main', repositoryPath]);
@@ -36,9 +29,9 @@ export const renameGitRepository = async (
   oldRepositoryName: string,
   newRepositoryName: string,
 ): Promise<void> => {
-  const oldRepositoryPath = getRepositoryPath(username, oldRepositoryName);
+  const oldRepositoryPath = resolveGitRepositoryPath(username, oldRepositoryName);
 
-  const newRepositoryPath = getRepositoryPath(username, newRepositoryName);
+  const newRepositoryPath = resolveGitRepositoryPath(username, newRepositoryName);
 
   try {
     await fs.rename(oldRepositoryPath, newRepositoryPath);
@@ -51,7 +44,7 @@ export const deleteGitRepository = async (
   username: string,
   repositoryName: string,
 ): Promise<void> => {
-  const repositoryPath = getRepositoryPath(username, repositoryName);
+  const repositoryPath = resolveGitRepositoryPath(username, repositoryName);
 
   try {
     await fs.rm(repositoryPath, {

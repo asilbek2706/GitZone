@@ -130,4 +130,36 @@ describe('git repository service', () => {
       code: 'GIT_REPOSITORY_DELETE_FAILED',
     });
   });
+
+  it('rejects unsafe path before creating a git repository', async () => {
+    await expect(createGitRepository('../outside', 'demo')).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'INVALID_GIT_REPOSITORY_PATH',
+    });
+
+    expect(mockedExecFile).not.toHaveBeenCalled();
+  });
+
+  it('rejects unsafe path before renaming a git repository', async () => {
+    await expect(
+      renameGitRepository('asil', 'demo', '../outside'),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'INVALID_GIT_REPOSITORY_PATH',
+    });
+
+    expect(mockedRename).not.toHaveBeenCalled();
+  });
+
+  it('rejects unsafe path before deleting a git repository', async () => {
+    await expect(
+      deleteGitRepository('asil', '../outside'),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'INVALID_GIT_REPOSITORY_PATH',
+    });
+
+    expect(mockedRm).not.toHaveBeenCalled();
+  });
+
 });
