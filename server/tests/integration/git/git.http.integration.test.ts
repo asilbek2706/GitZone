@@ -551,4 +551,25 @@ describe('Git HTTP integration', () => {
 
     expect(mockedSpawn).toHaveBeenCalledOnce();
   });
+
+  it('rejects unsupported Git HTTP paths before spawning the backend', async () => {
+    mockedFindRepository.mockResolvedValue(gitRepository as never);
+
+    const response = await request(app).get('/asil/demo.git/HEAD');
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      error: {
+        code: 'INVALID_GIT_HTTP_PATH',
+        message: 'Invalid Git HTTP path',
+      },
+    });
+
+    expect(mockedVerifyPersonalAccessToken).not.toHaveBeenCalled();
+    expect(mockedAuthorizeRepositoryAccess).not.toHaveBeenCalled();
+    expect(mockedSpawn).not.toHaveBeenCalled();
+  });
+
 });

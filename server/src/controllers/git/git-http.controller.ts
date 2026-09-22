@@ -11,6 +11,7 @@ import {
   authorizeRepositoryAccess,
   type RepositoryAccessType,
 } from '../../services/repositories/repository-authorization.service.js';
+import { buildGitHttpPathInfo } from '../../utils/git/http-path.js';
 
 const GIT_PROJECT_ROOT = path.resolve(process.cwd(), env.GIT_STORAGE_PATH);
 
@@ -133,7 +134,11 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
 
   const repositoryName = gitRepository.name;
 
-  const pathInfo = `/${repositoryOwner}/${repositoryName}.git${req.path}`;
+  const pathInfo = buildGitHttpPathInfo(
+    repositoryOwner,
+    repositoryName,
+    req.path,
+  );
 
   const writeRequest = isGitWriteRequest(req);
 
