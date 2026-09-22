@@ -1,5 +1,6 @@
 import prisma from '../../config/prisma.js';
 import { AppError } from '../../errors/app.error.js';
+import { isPrismaUniqueConstraintError } from '../../utils/prisma/errors.js';
 
 export type RepositoryCollaboratorPermission = 'READ' | 'WRITE';
 
@@ -89,29 +90,41 @@ export const addRepositoryCollaborator = async (
     throw new AppError('User is already a collaborator', 409, 'COLLABORATOR_ALREADY_EXISTS');
   }
 
-  const collaborator = await prisma.repositoryCollaborator.create({
-    data: {
-      repositoryId: repository.id,
-      userId: collaboratorUser.id,
-      permission,
-    },
-    select: {
-      id: true,
-      permission: true,
-      createdAt: true,
-      updatedAt: true,
-      user: {
-        select: {
-          id: true,
-          username: true,
-          name: true,
-          avatarUrl: true,
+  try {
+    const collaborator = await prisma.repositoryCollaborator.create({
+      data: {
+        repositoryId: repository.id,
+        userId: collaboratorUser.id,
+        permission,
+      },
+      select: {
+        id: true,
+        permission: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  return collaborator;
+    return collaborator;
+  } catch (error) {
+    if (isPrismaUniqueConstraintError(error)) {
+      throw new AppError(
+        'User is already a collaborator',
+        409,
+        'COLLABORATOR_ALREADY_EXISTS',
+      );
+    }
+
+    throw error;
+  }
 };
 
 export const getRepositoryCollaborators = async (

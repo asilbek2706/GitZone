@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Prisma } from '../../../src/generated/prisma/client.js';
+
 import prisma from '../../../src/config/prisma.js';
 
 import {
@@ -290,4 +292,42 @@ describe('repository collaborator service', () => {
       code: 'COLLABORATOR_NOT_FOUND',
     });
   });
+
+  it('maps a concurrent duplicate collaborator insert to 409', async () => {
+    mockedRepositoryFindFirst.mockResolvedValue({
+      id: 'repo-1',
+      ownerId: 'owner-1',
+    } as never);
+
+    mockedUserFindUnique.mockResolvedValue({
+      id: 'user-2',
+      username: 'testuser',
+    } as never);
+
+    mockedCollaboratorFindUnique.mockResolvedValue(null as never);
+
+    mockedCollaboratorCreate.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint failed',
+        {
+          code: 'P2002',
+          clientVersion: '7.10.0',
+        },
+      ),
+    );
+
+    await expect(
+      addRepositoryCollaborator(
+        'owner-1',
+        'asil',
+        'demo',
+        'testuser',
+        'READ',
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'COLLABORATOR_ALREADY_EXISTS',
+    });
+  });
+
 });

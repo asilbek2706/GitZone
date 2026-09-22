@@ -160,4 +160,99 @@ describe('authorizeRepositoryAccess', () => {
       code: 'REPOSITORY_ACCESS_DENIED',
     });
   });
+
+  it('allows WRITE collaborator to read', async () => {
+    mockedFindUnique.mockResolvedValue({
+      id: 'repo-1',
+      name: 'demo',
+      ownerId: 'owner-1',
+      isPrivate: true,
+      owner: {
+        username: 'asil',
+      },
+      collaborators: [
+        {
+          permission: 'WRITE',
+        },
+      ],
+    } as never);
+
+    const result = await authorizeRepositoryAccess(
+      'repo-1',
+      'READ',
+      'user-1',
+    );
+
+    expect(result.permission).toBe('WRITE');
+  });
+
+  it('allows unrelated authenticated user to read a public repository', async () => {
+    mockedFindUnique.mockResolvedValue({
+      id: 'repo-1',
+      name: 'demo',
+      ownerId: 'owner-1',
+      isPrivate: false,
+      owner: {
+        username: 'asil',
+      },
+      collaborators: [],
+    } as never);
+
+    const result = await authorizeRepositoryAccess(
+      'repo-1',
+      'READ',
+      'unrelated-user',
+    );
+
+    expect(result.permission).toBe('PUBLIC');
+  });
+
+  it('denies unrelated authenticated user from reading a private repository', async () => {
+    mockedFindUnique.mockResolvedValue({
+      id: 'repo-1',
+      name: 'demo',
+      ownerId: 'owner-1',
+      isPrivate: true,
+      owner: {
+        username: 'asil',
+      },
+      collaborators: [],
+    } as never);
+
+    await expect(
+      authorizeRepositoryAccess(
+        'repo-1',
+        'READ',
+        'unrelated-user',
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      code: 'REPOSITORY_ACCESS_DENIED',
+    });
+  });
+
+  it('denies unrelated authenticated user from writing to a public repository', async () => {
+    mockedFindUnique.mockResolvedValue({
+      id: 'repo-1',
+      name: 'demo',
+      ownerId: 'owner-1',
+      isPrivate: false,
+      owner: {
+        username: 'asil',
+      },
+      collaborators: [],
+    } as never);
+
+    await expect(
+      authorizeRepositoryAccess(
+        'repo-1',
+        'WRITE',
+        'unrelated-user',
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      code: 'REPOSITORY_ACCESS_DENIED',
+    });
+  });
+
 });
