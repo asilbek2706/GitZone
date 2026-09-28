@@ -293,7 +293,6 @@ describe('Git HTTP integration', () => {
           PATH_INFO: '/asil/demo.git/info/refs',
           REQUEST_METHOD: 'GET',
           QUERY_STRING: 'service=git-upload-pack',
-          REMOTE_USER: 'asil',
         }),
       }),
     );
@@ -570,6 +569,199 @@ describe('Git HTTP integration', () => {
     expect(mockedVerifyPersonalAccessToken).not.toHaveBeenCalled();
     expect(mockedAuthorizeRepositoryAccess).not.toHaveBeenCalled();
     expect(mockedSpawn).not.toHaveBeenCalled();
+  });
+
+
+  it('rejects oversized CGI headers from git-http-backend', async () => {
+    mockedFindRepository.mockResolvedValue(
+      gitRepository as never,
+    );
+
+    mockedAuthorizeRepositoryAccess.mockResolvedValue({
+      permission: 'PUBLIC',
+    } as never);
+
+    mockedSpawn.mockImplementation(() => {
+      const child =
+        createGitBackendProcess();
+
+      Object.assign(
+        child,
+        {
+          killed: false,
+
+          kill: vi.fn(function (
+            this: {
+              killed: boolean;
+            },
+          ) {
+            this.killed = true;
+
+            return true;
+          }),
+        },
+      );
+
+      setImmediate(() => {
+        child.stdout.write(
+          Buffer.alloc(
+            20_000,
+            0x61,
+          ),
+        );
+      });
+
+      return child as never;
+    });
+
+    const response =
+      await request(app).get(
+        '/asil/demo.git/info/refs?service=git-upload-pack',
+      );
+
+    expect(response.status).toBe(502);
+
+    expect(response.body).toMatchObject({
+      success: false,
+
+      error: {
+        code:
+          'GIT_HTTP_BACKEND_INVALID_RESPONSE',
+      },
+    });
+  });
+
+
+
+  it('does not leak server secrets into git-http-backend environment', async () => {
+    mockedFindRepository.mockResolvedValue(
+      gitRepository as never,
+    );
+
+    mockedAuthorizeRepositoryAccess.mockResolvedValue({
+      permission: 'PUBLIC',
+    } as never);
+
+    mockSuccessfulGitBackend();
+
+    const response =
+      await request(app).get(
+        '/asil/demo.git/info/refs?service=git-upload-pack',
+      );
+
+    expect(response.status).toBe(200);
+
+    const spawnOptions =
+      mockedSpawn.mock.calls[0]?.[2];
+
+    const childEnvironment =
+      spawnOptions?.env;
+
+    expect(childEnvironment).toMatchObject({
+      PATH: '/usr/bin:/bin',
+      LANG: 'C.UTF-8',
+      GIT_CONFIG_NOSYSTEM: '1',
+      GIT_CONFIG_GLOBAL: '/dev/null',
+      GIT_HTTP_EXPORT_ALL: '1',
+      PATH_INFO:
+        '/asil/demo.git/info/refs',
+      REQUEST_METHOD: 'GET',
+      QUERY_STRING:
+        'service=git-upload-pack',
+    });
+
+    expect(
+      childEnvironment,
+    ).not.toHaveProperty(
+      'DATABASE_URL',
+    );
+
+    expect(
+      childEnvironment,
+    ).not.toHaveProperty(
+      'JWT_ACCESS_SECRET',
+    );
+
+    expect(
+      childEnvironment,
+    ).not.toHaveProperty(
+      'JWT_REFRESH_SECRET',
+    );
+
+    expect(
+      childEnvironment,
+    ).not.toHaveProperty(
+      'TWO_FACTOR_ENCRYPTION_KEY',
+    );
+
+    expect(
+      childEnvironment,
+    ).not.toHaveProperty(
+      'OWNER_ACCESS_TOKEN',
+    );
+
+    expect(
+      childEnvironment,
+    ).not.toHaveProperty(
+      'REMOTE_USER',
+    );
+  });
+
+  it('passes authenticated Git user as REMOTE_USER without leaking secrets', async () => {
+    mockedFindRepository.mockResolvedValue({
+      ...gitRepository,
+      isPrivate: true,
+    } as never);
+
+    mockedVerifyPersonalAccessToken.mockResolvedValue({
+      userId: 'user-2',
+      username: 'testuser',
+    });
+
+    mockedAuthorizeRepositoryAccess.mockResolvedValue({
+      permission: 'READ',
+    } as never);
+
+    mockSuccessfulGitBackend();
+
+    const credentials =
+      Buffer.from(
+        'testuser:gzp_testtoken',
+      ).toString('base64');
+
+    const response =
+      await request(app)
+        .get(
+          '/asil/demo.git/info/refs?service=git-upload-pack',
+        )
+        .set(
+          'Authorization',
+          `Basic ${credentials}`,
+        );
+
+    expect(response.status).toBe(200);
+
+    const childEnvironment =
+      mockedSpawn.mock.calls[0]?.[2]?.env;
+
+    expect(
+      childEnvironment,
+    ).toMatchObject({
+      REMOTE_USER:
+        'testuser',
+    });
+
+    expect(
+      childEnvironment,
+    ).not.toHaveProperty(
+      'JWT_ACCESS_SECRET',
+    );
+
+    expect(
+      childEnvironment,
+    ).not.toHaveProperty(
+      'DATABASE_URL',
+    );
   });
 
 });

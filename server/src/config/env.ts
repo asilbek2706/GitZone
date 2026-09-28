@@ -47,6 +47,19 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().trim().min(1, 'JWT_REFRESH_EXPIRES_IN is required'),
 
   GIT_STORAGE_PATH: z.string().trim().min(1, 'GIT_STORAGE_PATH is required'),
+
+  GIT_HTTP_BACKEND_PATH: z
+    .string()
+    .trim()
+    .min(1, 'GIT_HTTP_BACKEND_PATH must not be empty')
+    .default('/usr/lib/git-core/git-http-backend'),
+
+  GIT_HTTP_MAX_HEADER_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1024)
+    .max(65536)
+    .default(16384),
 });
 
 const result = envSchema.safeParse(process.env);

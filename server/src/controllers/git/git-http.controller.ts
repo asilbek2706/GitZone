@@ -1,105 +1,62 @@
-import type { Request, Response } from 'express';
-import { spawn } from 'node:child_process';
-import path from 'node:path';
+import type {
+  Request,
+  Response,
+} from 'express';
 
-import { env } from '../../config/env.js';
-import { logger } from '../../config/logger.js';
 import prisma from '../../config/prisma.js';
+import { logger } from '../../config/logger.js';
 import { AppError } from '../../errors/app.error.js';
+
 import { verifyPersonalAccessToken } from '../../services/auth/pat.service.js';
-import {
-  authorizeRepositoryAccess,
-  type RepositoryAccessType,
-} from '../../services/repositories/repository-authorization.service.js';
+
+import { executeGitHttpBackend } from '../../services/git/git-http-backend.service.js';
+
+import { authorizeRepositoryAccess } from '../../services/repositories/repository-authorization.service.js';
+
+import { parseGitBasicAuthorization } from '../../utils/git/basic-auth.js';
+
 import { buildGitHttpPathInfo } from '../../utils/git/http-path.js';
 
-const GIT_PROJECT_ROOT = path.resolve(process.cwd(), env.GIT_STORAGE_PATH);
+import { classifyGitHttpRequest } from '../../utils/git/http-request.js';
 
-const parseBasicAuth = (
-  req: Request,
-): {
-  username: string;
-  password: string;
-} | null => {
-  const authorization = req.headers.authorization;
+const getGitRepository = async (
+  username: string,
+  repositoryName: string,
+) => {
+  const repository =
+    await prisma.repository.findFirst({
+      where: {
+        name: repositoryName,
 
-  if (!authorization) {
-    return null;
-  }
-
-  if (!authorization.startsWith('Basic ')) {
-    return null;
-  }
-
-  const encodedCredentials = authorization.slice('Basic '.length);
-
-  try {
-    const decodedCredentials = Buffer.from(encodedCredentials, 'base64').toString('utf8');
-
-    const separatorIndex = decodedCredentials.indexOf(':');
-
-    if (separatorIndex === -1) {
-      return null;
-    }
-
-    const username = decodedCredentials.slice(0, separatorIndex);
-
-    const password = decodedCredentials.slice(separatorIndex + 1);
-
-    if (!username || !password) {
-      return null;
-    }
-
-    return {
-      username,
-      password,
-    };
-  } catch {
-    return null;
-  }
-};
-
-const getGitRepository = async (username: string, repositoryName: string) => {
-  const repository = await prisma.repository.findFirst({
-    where: {
-      name: repositoryName,
-      owner: {
-        username,
-      },
-    },
-    select: {
-      id: true,
-      name: true,
-      isPrivate: true,
-      defaultBranch: true,
-      owner: {
-        select: {
-          id: true,
-          username: true,
+        owner: {
+          username,
         },
       },
-    },
-  });
+
+      select: {
+        id: true,
+        name: true,
+        isPrivate: true,
+        defaultBranch: true,
+
+        owner: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+      },
+    });
 
   if (!repository) {
-    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
+    throw new AppError(
+      'Repository not found',
+      404,
+      'REPOSITORY_NOT_FOUND',
+    );
   }
 
   return repository;
-};
-
-const isGitWriteRequest = (req: Request): boolean => {
-  const service = req.query.service;
-
-  if (service === 'git-receive-pack') {
-    return true;
-  }
-
-  if (req.path === '/git-receive-pack') {
-    return true;
-  }
-
-  return false;
 };
 
 const authenticateGitRequest = async (
@@ -108,7 +65,10 @@ const authenticateGitRequest = async (
   userId: string;
   username: string;
 }> => {
-  const credentials = parseBasicAuth(req);
+  const credentials =
+    parseGitBasicAuthorization(
+      req.headers.authorization,
+    );
 
   if (!credentials) {
     throw new AppError(
@@ -118,33 +78,61 @@ const authenticateGitRequest = async (
     );
   }
 
-  return verifyPersonalAccessToken(credentials.username, credentials.password);
+  return verifyPersonalAccessToken(
+    credentials.username,
+    credentials.password,
+  );
 };
 
-export const gitHttpController = async (req: Request, res: Response): Promise<void> => {
-  const { username, repository } = req.params;
+export const gitHttpController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const {
+    username,
+    repository,
+  } = req.params;
 
-  if (typeof username !== 'string' || typeof repository !== 'string') {
-    throw new AppError('Invalid Git repository path', 400, 'INVALID_GIT_REPOSITORY_PATH');
+  if (
+    typeof username !== 'string' ||
+    typeof repository !== 'string'
+  ) {
+    throw new AppError(
+      'Invalid Git repository path',
+      400,
+      'INVALID_GIT_REPOSITORY_PATH',
+    );
   }
 
-  const gitRepository = await getGitRepository(username, repository);
+  const requestInfo =
+    classifyGitHttpRequest(
+      req.method,
+      req.path,
+      req.query.service,
+    );
 
-  const repositoryOwner = gitRepository.owner.username;
+  const gitRepository =
+    await getGitRepository(
+      username,
+      repository,
+    );
 
-  const repositoryName = gitRepository.name;
+  const repositoryOwner =
+    gitRepository.owner.username;
 
-  const pathInfo = buildGitHttpPathInfo(
-    repositoryOwner,
-    repositoryName,
-    req.path,
-  );
+  const repositoryName =
+    gitRepository.name;
 
-  const writeRequest = isGitWriteRequest(req);
+  const pathInfo =
+    buildGitHttpPathInfo(
+      repositoryOwner,
+      repositoryName,
+      req.path,
+    );
 
-  const accessType: RepositoryAccessType = writeRequest ? 'WRITE' : 'READ';
-
-  const authenticationRequired = gitRepository.isPrivate || writeRequest;
+  const authenticationRequired =
+    gitRepository.isPrivate ||
+    requestInfo.accessType === 'WRITE';
 
   logger.info(
     {
@@ -153,46 +141,77 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
       username: repositoryOwner,
       repository: repositoryName,
       pathInfo,
-      isPrivate: gitRepository.isPrivate,
-      writeRequest,
+      service: requestInfo.service,
+      accessType:
+        requestInfo.accessType,
+      isPrivate:
+        gitRepository.isPrivate,
       authenticationRequired,
     },
     'Git HTTP request received',
   );
 
+  let remoteUser: string | null =
+    null;
+
   try {
     if (authenticationRequired) {
-      const authenticatedUser = await authenticateGitRequest(req);
+      const authenticatedUser =
+        await authenticateGitRequest(
+          req,
+        );
 
-      const access = await authorizeRepositoryAccess(
-        gitRepository.id,
-        accessType,
-        authenticatedUser.userId,
-      );
+      const access =
+        await authorizeRepositoryAccess(
+          gitRepository.id,
+          requestInfo.accessType,
+          authenticatedUser.userId,
+        );
+
+      remoteUser =
+        authenticatedUser.username;
 
       logger.info(
         {
-          username: authenticatedUser.username,
+          username:
+            authenticatedUser.username,
         },
         'Git HTTP user authenticated',
       );
 
       logger.info(
         {
-          permission: access.permission,
-          repository: repositoryName,
-          username: repositoryOwner,
+          permission:
+            access.permission,
+
+          repository:
+            repositoryName,
+
+          username:
+            repositoryOwner,
+
+          authenticatedUsername:
+            authenticatedUser.username,
         },
         'Git HTTP access authorized',
       );
     } else {
-      const access = await authorizeRepositoryAccess(gitRepository.id, accessType);
+      const access =
+        await authorizeRepositoryAccess(
+          gitRepository.id,
+          requestInfo.accessType,
+        );
 
       logger.info(
         {
-          permission: access.permission,
-          repository: repositoryName,
-          username: repositoryOwner,
+          permission:
+            access.permission,
+
+          repository:
+            repositoryName,
+
+          username:
+            repositoryOwner,
         },
         'Git HTTP access authorized',
       );
@@ -200,14 +219,23 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
   } catch (error) {
     if (error instanceof AppError) {
       if (error.statusCode === 401) {
-        res.setHeader('WWW-Authenticate', 'Basic realm="GitZone"');
+        res.setHeader(
+          'WWW-Authenticate',
+          'Basic realm="GitZone"',
+        );
       }
 
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-        code: error.code,
-      });
+      res
+        .status(error.statusCode)
+        .json({
+          success: false,
+
+          message:
+            error.message,
+
+          code:
+            error.code,
+        });
 
       return;
     }
@@ -215,110 +243,12 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
     throw error;
   }
 
-  const child = spawn('/usr/lib/git-core/git-http-backend', [], {
-    env: {
-      ...process.env,
-      GIT_PROJECT_ROOT,
-      GIT_HTTP_EXPORT_ALL: '1',
-      PATH_INFO: pathInfo,
-      REQUEST_METHOD: req.method,
-      QUERY_STRING: req.originalUrl.split('?')[1] ?? '',
-      CONTENT_TYPE: req.headers['content-type'] ?? '',
-      CONTENT_LENGTH: req.headers['content-length'] ?? '',
-      REMOTE_USER: repositoryOwner,
-    },
+  await executeGitHttpBackend({
+    req,
+    res,
+    pathInfo,
+    remoteUser,
+    repositoryOwner,
+    repositoryName,
   });
-
-  let headersSent = false;
-  let headerBuffer = Buffer.alloc(0);
-
-  child.stdout.on('data', (chunk: Buffer) => {
-    if (headersSent) {
-      res.write(chunk);
-      return;
-    }
-
-    headerBuffer = Buffer.concat([headerBuffer, chunk]);
-
-    const headerEnd = headerBuffer.indexOf(Buffer.from('\r\n\r\n'));
-
-    if (headerEnd === -1) {
-      return;
-    }
-
-    const rawHeaders = headerBuffer.subarray(0, headerEnd).toString('utf8');
-
-    const body = headerBuffer.subarray(headerEnd + 4);
-
-    const headers = rawHeaders.split('\r\n');
-
-    for (const header of headers) {
-      const separatorIndex = header.indexOf(':');
-
-      if (separatorIndex === -1) {
-        continue;
-      }
-
-      const name = header.slice(0, separatorIndex).trim();
-
-      const value = header.slice(separatorIndex + 1).trim();
-
-      if (name.toLowerCase() === 'status') {
-        const statusCode = Number.parseInt(value, 10);
-
-        if (!Number.isNaN(statusCode)) {
-          res.status(statusCode);
-        }
-      } else {
-        res.setHeader(name, value);
-      }
-    }
-
-    headersSent = true;
-
-    if (body.length > 0) {
-      res.write(body);
-    }
-  });
-
-  child.stderr.on('data', (chunk: Buffer) => {
-    logger.error(
-      {
-        stderr: chunk.toString(),
-        repository: repositoryName,
-        username: repositoryOwner,
-      },
-      'git-http-backend stderr output',
-    );
-  });
-
-  child.on('error', (error) => {
-    logger.error(
-      {
-        err: error,
-        repository: repositoryName,
-        username: repositoryOwner,
-      },
-      'git-http-backend process error',
-    );
-
-    if (!res.headersSent) {
-      res.status(500).json({
-        success: false,
-        message: 'Git HTTP backend error',
-      });
-    }
-  });
-
-  child.on('close', (code) => {
-    if (!res.writableEnded) {
-      if (code !== 0 && !res.headersSent) {
-        res.status(500);
-      }
-
-      res.end();
-    }
-  });
-
-  req.pipe(child.stdin);
 };

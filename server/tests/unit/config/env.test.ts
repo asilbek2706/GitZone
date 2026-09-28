@@ -19,6 +19,8 @@ const setValidEnv = (): void => {
   process.env.JWT_ACCESS_EXPIRES_IN = '15m';
   process.env.JWT_REFRESH_EXPIRES_IN = '7d';
   process.env.GIT_STORAGE_PATH = './storage/test-repositories';
+  process.env.GIT_HTTP_BACKEND_PATH = '/usr/lib/git-core/git-http-backend';
+  process.env.GIT_HTTP_MAX_HEADER_BYTES = '16384';
 };
 
 const loadEnv = async () => {
@@ -54,6 +56,8 @@ describe('environment configuration', () => {
       JWT_ACCESS_EXPIRES_IN: '15m',
       JWT_REFRESH_EXPIRES_IN: '7d',
       GIT_STORAGE_PATH: './storage/test-repositories',
+      GIT_HTTP_BACKEND_PATH: '/usr/lib/git-core/git-http-backend',
+      GIT_HTTP_MAX_HEADER_BYTES: 16384,
     });
   });
 
@@ -190,4 +194,32 @@ describe('environment configuration', () => {
       'TWO_FACTOR_ENCRYPTION_KEY must be exactly 32 bytes encoded as 64 hexadecimal characters',
     );
   });
+
+  it('uses Git HTTP security defaults', async () => {
+    delete process.env.GIT_HTTP_BACKEND_PATH;
+    delete process.env.GIT_HTTP_MAX_HEADER_BYTES;
+
+    const { env } = await loadEnv();
+
+    expect(env.GIT_HTTP_BACKEND_PATH).toBe(
+      '/usr/lib/git-core/git-http-backend',
+    );
+
+    expect(env.GIT_HTTP_MAX_HEADER_BYTES).toBe(
+      16384,
+    );
+  });
+
+  it('rejects an invalid Git HTTP header limit', async () => {
+    process.env.GIT_HTTP_MAX_HEADER_BYTES =
+      '100';
+
+    await expect(
+      loadEnv(),
+    ).rejects.toThrow(
+      'Invalid environment configuration',
+    );
+  });
+
+
 });
