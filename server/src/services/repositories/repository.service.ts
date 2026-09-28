@@ -1,9 +1,12 @@
 import prisma from '../../config/prisma.js';
+import { logger } from '../../config/logger.js';
 import { AppError } from '../../errors/app.error.js';
 import {
   createGitRepository,
-  deleteGitRepository,
+  finalizeStagedGitRepositoryDeletion,
   renameGitRepository,
+  restoreStagedGitRepositoryDeletion,
+  stageGitRepositoryDeletion,
 } from '../git/git-repository.service.js';
 import type { CreateRepositoryInput, UpdateRepositoryInput } from '../../validations/repositories/repository.validation.js';
 import type { RepositoryResponse, RepositoryWithOwner } from '../../types/repository.types.js';
@@ -71,16 +74,42 @@ export const createRepository = async (
     });
 
     if (!owner) {
-      throw new AppError('Repository owner not found', 404, 'USER_NOT_FOUND');
+      throw new AppError(
+        'Repository owner not found',
+        404,
+        'USER_NOT_FOUND',
+      );
     }
 
-    await createGitRepository(owner.username, repository.name);
+    await createGitRepository(
+      owner.username,
+      repository.name,
+    );
   } catch (error) {
-    await prisma.repository.delete({
-      where: {
-        id: repository.id,
-      },
-    });
+    try {
+      await prisma.repository.delete({
+        where: {
+          id: repository.id,
+        },
+      });
+    } catch (rollbackError) {
+      logger.error(
+        {
+          err: rollbackError,
+          originalError: error,
+          repositoryId: repository.id,
+          ownerId,
+          repositoryName: repository.name,
+        },
+        'Repository creation database rollback failed',
+      );
+
+      throw new AppError(
+        'Repository creation failed and database rollback could not be completed',
+        500,
+        'REPOSITORY_CREATE_ROLLBACK_FAILED',
+      );
+    }
 
     throw error;
   }
@@ -161,7 +190,11 @@ export const updateRepository = async (
   });
 
   if (!repository) {
-    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
+    throw new AppError(
+      'Repository not found',
+      404,
+      'REPOSITORY_NOT_FOUND',
+    );
   }
 
   if (repository.ownerId !== ownerId) {
@@ -172,12 +205,19 @@ export const updateRepository = async (
     );
   }
 
-  if (input.name && input.name !== repository.name) {
+  const requestedName = input.name;
+
+  let gitRepositoryRenamed = false;
+
+  if (
+    requestedName !== undefined &&
+    requestedName !== repository.name
+  ) {
     const existingRepository = await prisma.repository.findUnique({
       where: {
         ownerId_name: {
           ownerId,
-          name: input.name,
+          name: requestedName,
         },
       },
     });
@@ -190,27 +230,68 @@ export const updateRepository = async (
       );
     }
 
-    await renameGitRepository(username, repository.name, input.name);
+    await renameGitRepository(
+      username,
+      repository.name,
+      requestedName,
+    );
+
+    gitRepositoryRenamed = true;
   }
 
-  const updatedRepository = await prisma.repository.update({
-    where: {
-      id: repository.id,
-    },
-    data: {
-      ...(input.name !== undefined && {
-        name: input.name,
-      }),
-      ...(input.description !== undefined && {
-        description: input.description,
-      }),
-      ...(input.isPrivate !== undefined && {
-        isPrivate: input.isPrivate,
-      }),
-    },
-  });
+  try {
+    const updatedRepository = await prisma.repository.update({
+      where: {
+        id: repository.id,
+      },
+      data: {
+        ...(requestedName !== undefined && {
+          name: requestedName,
+        }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
+        ...(input.isPrivate !== undefined && {
+          isPrivate: input.isPrivate,
+        }),
+      },
+    });
 
-  return toRepositoryResponse(updatedRepository);
+    return toRepositoryResponse(updatedRepository);
+  } catch (error) {
+    if (
+      gitRepositoryRenamed &&
+      requestedName !== undefined
+    ) {
+      try {
+        await renameGitRepository(
+          username,
+          requestedName,
+          repository.name,
+        );
+      } catch (rollbackError) {
+        logger.error(
+          {
+            err: rollbackError,
+            originalError: error,
+            repositoryId: repository.id,
+            username,
+            oldRepositoryName: repository.name,
+            newRepositoryName: requestedName,
+          },
+          'Repository rename filesystem rollback failed',
+        );
+
+        throw new AppError(
+          'Repository update failed and Git repository rename rollback could not be completed',
+          500,
+          'REPOSITORY_RENAME_ROLLBACK_FAILED',
+        );
+      }
+    }
+
+    throw error;
+  }
 };
 
 export const deleteRepository = async (
@@ -228,7 +309,11 @@ export const deleteRepository = async (
   });
 
   if (!repository) {
-    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
+    throw new AppError(
+      'Repository not found',
+      404,
+      'REPOSITORY_NOT_FOUND',
+    );
   }
 
   if (repository.ownerId !== ownerId) {
@@ -239,11 +324,66 @@ export const deleteRepository = async (
     );
   }
 
-  await deleteGitRepository(username, repository.name);
+  const stagedDeletion =
+    await stageGitRepositoryDeletion(
+      username,
+      repository.name,
+    );
 
-  await prisma.repository.delete({
-    where: {
-      id: repository.id,
-    },
-  });
+  try {
+    await prisma.repository.delete({
+      where: {
+        id: repository.id,
+      },
+    });
+  } catch (error) {
+    if (stagedDeletion) {
+      try {
+        await restoreStagedGitRepositoryDeletion(
+          stagedDeletion,
+        );
+      } catch (rollbackError) {
+        logger.error(
+          {
+            err: rollbackError,
+            originalError: error,
+            repositoryId: repository.id,
+            username,
+            repositoryName: repository.name,
+          },
+          'Repository deletion filesystem rollback failed',
+        );
+
+        throw new AppError(
+          'Repository deletion failed and Git repository rollback could not be completed',
+          500,
+          'REPOSITORY_DELETE_ROLLBACK_FAILED',
+        );
+      }
+    }
+
+    throw error;
+  }
+
+  if (!stagedDeletion) {
+    return;
+  }
+
+  try {
+    await finalizeStagedGitRepositoryDeletion(
+      stagedDeletion,
+    );
+  } catch (cleanupError) {
+    logger.error(
+      {
+        err: cleanupError,
+        repositoryId: repository.id,
+        username,
+        repositoryName: repository.name,
+        stagedRepositoryName:
+          stagedDeletion.stagedRepositoryName,
+      },
+      'Repository deleted from database but staged Git repository cleanup failed',
+    );
+  }
 };
