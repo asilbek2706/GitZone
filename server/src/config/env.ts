@@ -60,6 +60,20 @@ const envSchema = z.object({
     .min(1024)
     .max(65536)
     .default(16384),
+
+  GIT_READ_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .min(100)
+    .max(60000)
+    .default(5000),
+
+  GIT_READ_MAX_BUFFER_BYTES: z.coerce
+    .number()
+    .int()
+    .min(65536)
+    .max(52428800)
+    .default(5242880),
 });
 
 const result = envSchema.safeParse(process.env);

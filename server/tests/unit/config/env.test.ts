@@ -21,6 +21,8 @@ const setValidEnv = (): void => {
   process.env.GIT_STORAGE_PATH = './storage/test-repositories';
   process.env.GIT_HTTP_BACKEND_PATH = '/usr/lib/git-core/git-http-backend';
   process.env.GIT_HTTP_MAX_HEADER_BYTES = '16384';
+  process.env.GIT_READ_TIMEOUT_MS = '5000';
+  process.env.GIT_READ_MAX_BUFFER_BYTES = '5242880';
 };
 
 const loadEnv = async () => {
@@ -58,6 +60,8 @@ describe('environment configuration', () => {
       GIT_STORAGE_PATH: './storage/test-repositories',
       GIT_HTTP_BACKEND_PATH: '/usr/lib/git-core/git-http-backend',
       GIT_HTTP_MAX_HEADER_BYTES: 16384,
+      GIT_READ_TIMEOUT_MS: 5000,
+      GIT_READ_MAX_BUFFER_BYTES: 5242880,
     });
   });
 
@@ -213,6 +217,68 @@ describe('environment configuration', () => {
   it('rejects an invalid Git HTTP header limit', async () => {
     process.env.GIT_HTTP_MAX_HEADER_BYTES =
       '100';
+
+    await expect(
+      loadEnv(),
+    ).rejects.toThrow(
+      'Invalid environment configuration',
+    );
+  });
+
+
+
+  it('uses safe Git read defaults', async () => {
+    delete process.env.GIT_READ_TIMEOUT_MS;
+    delete process.env.GIT_READ_MAX_BUFFER_BYTES;
+
+    const { env } =
+      await loadEnv();
+
+    expect(
+      env.GIT_READ_TIMEOUT_MS,
+    ).toBe(5000);
+
+    expect(
+      env.GIT_READ_MAX_BUFFER_BYTES,
+    ).toBe(5242880);
+  });
+
+  it('rejects a Git read timeout below the minimum', async () => {
+    process.env.GIT_READ_TIMEOUT_MS =
+      '50';
+
+    await expect(
+      loadEnv(),
+    ).rejects.toThrow(
+      'Invalid environment configuration',
+    );
+  });
+
+  it('rejects an excessive Git read timeout', async () => {
+    process.env.GIT_READ_TIMEOUT_MS =
+      '60001';
+
+    await expect(
+      loadEnv(),
+    ).rejects.toThrow(
+      'Invalid environment configuration',
+    );
+  });
+
+  it('rejects a Git read buffer below the minimum', async () => {
+    process.env.GIT_READ_MAX_BUFFER_BYTES =
+      '1024';
+
+    await expect(
+      loadEnv(),
+    ).rejects.toThrow(
+      'Invalid environment configuration',
+    );
+  });
+
+  it('rejects an excessive Git read buffer', async () => {
+    process.env.GIT_READ_MAX_BUFFER_BYTES =
+      '52428801';
 
     await expect(
       loadEnv(),
