@@ -48,6 +48,24 @@ const envSchema = z.object({
 
   GIT_STORAGE_PATH: z.string().trim().min(1, 'GIT_STORAGE_PATH is required'),
 
+  GIT_EXECUTABLE_PATH: z
+    .string()
+    .trim()
+    .min(
+      1,
+      'GIT_EXECUTABLE_PATH must not be empty',
+    )
+    .default('git'),
+
+  GIT_CHILD_PATH: z
+    .string()
+    .trim()
+    .min(
+      1,
+      'GIT_CHILD_PATH must not be empty',
+    )
+    .default('/usr/bin:/bin'),
+
   GIT_HTTP_BACKEND_PATH: z
     .string()
     .trim()

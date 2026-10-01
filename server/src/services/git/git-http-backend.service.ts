@@ -17,6 +17,11 @@ const GIT_PROJECT_ROOT = path.resolve(
 const CGI_HEADER_SEPARATOR =
   Buffer.from('\r\n\r\n');
 
+const GIT_CONFIG_GLOBAL_PATH =
+  process.platform === 'win32'
+    ? 'NUL'
+    : '/dev/null';
+
 type ExecuteGitHttpBackendInput = {
   req: Request;
   res: Response;
@@ -43,8 +48,10 @@ const createGitBackendEnvironment = (
    * git-http-backend receives only the variables it needs.
    */
   const childEnvironment: NodeJS.ProcessEnv = {
-    PATH: '/usr/bin:/bin',
-    LANG: 'C.UTF-8',
+    PATH:
+      env.GIT_CHILD_PATH,
+    LANG: 'C',
+    LC_ALL: 'C',
 
     /*
      * Prevent the server process/user's Git configuration
@@ -53,7 +60,8 @@ const createGitBackendEnvironment = (
      * Repository-local config remains available.
      */
     GIT_CONFIG_NOSYSTEM: '1',
-    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_GLOBAL:
+      GIT_CONFIG_GLOBAL_PATH,
 
     GIT_PROJECT_ROOT,
     GIT_HTTP_EXPORT_ALL: '1',

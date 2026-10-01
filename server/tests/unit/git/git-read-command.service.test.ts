@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import {
   beforeEach,
   describe,
@@ -22,6 +24,12 @@ vi.mock(
 
 process.env.GIT_STORAGE_PATH =
   './storage/test-repositories';
+
+process.env.GIT_EXECUTABLE_PATH =
+  '/usr/bin/git';
+
+process.env.GIT_CHILD_PATH =
+  '/usr/bin:/bin';
 
 process.env.GIT_READ_TIMEOUT_MS =
   '5000';
@@ -143,14 +151,17 @@ describe(
       expect(
         mockedExecFile,
       ).toHaveBeenCalledWith(
-        'git',
+        '/usr/bin/git',
 
         expect.arrayContaining([
           '--no-pager',
           '--no-optional-locks',
           '--git-dir',
           expect.stringContaining(
-            'asil/demo.git',
+            path.join(
+              'asil',
+              'demo.git',
+            ),
           ),
           'rev-parse',
           '--is-bare-repository',
@@ -192,13 +203,18 @@ describe(
           '/usr/bin:/bin',
 
         LANG:
-          'C.UTF-8',
+          'C',
+
+        LC_ALL:
+          'C',
 
         GIT_CONFIG_NOSYSTEM:
           '1',
 
         GIT_CONFIG_GLOBAL:
-          '/dev/null',
+          process.platform === 'win32'
+            ? 'NUL'
+            : '/dev/null',
 
         GIT_OPTIONAL_LOCKS:
           '0',

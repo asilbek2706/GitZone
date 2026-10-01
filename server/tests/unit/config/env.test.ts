@@ -19,6 +19,8 @@ const setValidEnv = (): void => {
   process.env.JWT_ACCESS_EXPIRES_IN = '15m';
   process.env.JWT_REFRESH_EXPIRES_IN = '7d';
   process.env.GIT_STORAGE_PATH = './storage/test-repositories';
+  process.env.GIT_EXECUTABLE_PATH = '/usr/bin/git';
+  process.env.GIT_CHILD_PATH = '/usr/bin:/bin';
   process.env.GIT_HTTP_BACKEND_PATH = '/usr/lib/git-core/git-http-backend';
   process.env.GIT_HTTP_MAX_HEADER_BYTES = '16384';
   process.env.GIT_READ_TIMEOUT_MS = '5000';
@@ -58,6 +60,8 @@ describe('environment configuration', () => {
       JWT_ACCESS_EXPIRES_IN: '15m',
       JWT_REFRESH_EXPIRES_IN: '7d',
       GIT_STORAGE_PATH: './storage/test-repositories',
+      GIT_EXECUTABLE_PATH: '/usr/bin/git',
+      GIT_CHILD_PATH: '/usr/bin:/bin',
       GIT_HTTP_BACKEND_PATH: '/usr/lib/git-core/git-http-backend',
       GIT_HTTP_MAX_HEADER_BYTES: 16384,
       GIT_READ_TIMEOUT_MS: 5000,
@@ -228,11 +232,21 @@ describe('environment configuration', () => {
 
 
   it('uses safe Git read defaults', async () => {
+    delete process.env.GIT_EXECUTABLE_PATH;
+    delete process.env.GIT_CHILD_PATH;
     delete process.env.GIT_READ_TIMEOUT_MS;
     delete process.env.GIT_READ_MAX_BUFFER_BYTES;
 
     const { env } =
       await loadEnv();
+
+    expect(
+      env.GIT_EXECUTABLE_PATH,
+    ).toBe('git');
+
+    expect(
+      env.GIT_CHILD_PATH,
+    ).toBe('/usr/bin:/bin');
 
     expect(
       env.GIT_READ_TIMEOUT_MS,

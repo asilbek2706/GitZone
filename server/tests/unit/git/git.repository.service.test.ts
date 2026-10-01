@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
@@ -95,7 +97,9 @@ describe('git repository service', () => {
         'init',
         '--bare',
         '--initial-branch=main',
-        expect.stringContaining('asil/demo.git'),
+        expect.stringContaining(
+          path.join('asil', 'demo.git'),
+        ),
       ]),
       expect.any(Function),
     );
@@ -105,7 +109,9 @@ describe('git repository service', () => {
       'git',
       expect.arrayContaining([
         '--git-dir',
-        expect.stringContaining('asil/demo.git'),
+        expect.stringContaining(
+          path.join('asil', 'demo.git'),
+        ),
         'config',
         'http.receivepack',
         'true',
@@ -113,7 +119,9 @@ describe('git repository service', () => {
       expect.any(Function),
     );
 
-    expect(result).toContain('asil/demo.git');
+    expect(result).toContain(
+      path.join('asil', 'demo.git'),
+    );
   });
 
   it('rejects creation when git repository path already exists', async () => {
@@ -183,7 +191,9 @@ describe('git repository service', () => {
     });
 
     expect(mockedRm).toHaveBeenCalledWith(
-      expect.stringContaining('asil/demo.git'),
+      expect.stringContaining(
+          path.join('asil', 'demo.git'),
+        ),
       {
         recursive: true,
         force: true,
@@ -243,10 +253,16 @@ describe('git repository service', () => {
 
     expect(mockedRename).toHaveBeenCalledWith(
       expect.stringContaining(
-        'asil/old-name.git',
+        path.join(
+          'asil',
+          'old-name.git',
+        ),
       ),
       expect.stringContaining(
-        'asil/new-name.git',
+        path.join(
+          'asil',
+          'new-name.git',
+        ),
       ),
     );
   });
@@ -289,9 +305,11 @@ describe('git repository service', () => {
     ).toContain('demo.deleting-');
 
     expect(mockedRename).toHaveBeenCalledWith(
-      expect.stringContaining('asil/demo.git'),
       expect.stringContaining(
-        'asil/demo.deleting-',
+          path.join('asil', 'demo.git'),
+        ),
+      expect.stringContaining(
+        path.join('asil', 'demo.deleting-'),
       ),
     );
   });
@@ -344,10 +362,16 @@ describe('git repository service', () => {
 
     expect(mockedRename).toHaveBeenCalledWith(
       expect.stringContaining(
-        'asil/demo.deleting-test-id.git',
+        path.join(
+          'asil',
+          'demo.deleting-test-id.git',
+        ),
       ),
       expect.stringContaining(
-        'asil/demo.git',
+        path.join(
+          'asil',
+          'demo.git',
+        ),
       ),
     );
   });
@@ -384,7 +408,10 @@ describe('git repository service', () => {
 
     expect(mockedRm).toHaveBeenCalledWith(
       expect.stringContaining(
-        'asil/demo.deleting-test-id.git',
+        path.join(
+          'asil',
+          'demo.deleting-test-id.git',
+        ),
       ),
       {
         recursive: true,
@@ -420,7 +447,10 @@ describe('git repository service', () => {
 
     expect(mockedRm).toHaveBeenCalledWith(
       expect.stringContaining(
-        'asil/demo.git',
+        path.join(
+          'asil',
+          'demo.git',
+        ),
       ),
       {
         recursive: true,

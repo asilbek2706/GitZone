@@ -12,6 +12,11 @@ import {
 
 const STDERR_PREVIEW_LIMIT = 4096;
 
+const GIT_CONFIG_GLOBAL_PATH =
+  process.platform === 'win32'
+    ? 'NUL'
+    : '/dev/null';
+
 type ExecuteGitReadCommandInput = {
   username: string;
   repositoryName: string;
@@ -46,9 +51,12 @@ const getStderrPreview = (
 
 const createSafeGitReadEnvironment =
   (): NodeJS.ProcessEnv => ({
-    PATH: '/usr/bin:/bin',
+    PATH:
+      env.GIT_CHILD_PATH,
 
-    LANG: 'C.UTF-8',
+    LANG: 'C',
+
+    LC_ALL: 'C',
 
     /*
      * Never inherit the Node.js server environment.
@@ -59,7 +67,8 @@ const createSafeGitReadEnvironment =
      */
     GIT_CONFIG_NOSYSTEM: '1',
 
-    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_GLOBAL:
+      GIT_CONFIG_GLOBAL_PATH,
 
     /*
      * Read-only Git commands should not create
@@ -77,7 +86,7 @@ const executeGitFile = (
       reject,
     ) => {
       execFile(
-        'git',
+        env.GIT_EXECUTABLE_PATH,
         args,
         {
           encoding: 'utf8',

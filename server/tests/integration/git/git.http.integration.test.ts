@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import app from '../../../src/app.js';
 
 import prisma from '../../../src/config/prisma.js';
+import { env } from '../../../src/config/env.js';
 
 import { AppError } from '../../../src/errors/app.error.js';
 import { verifyPersonalAccessToken } from '../../../src/services/auth/pat.service.js';
@@ -285,7 +286,7 @@ describe('Git HTTP integration', () => {
     expect(response.status).toBe(200);
 
     expect(mockedSpawn).toHaveBeenCalledWith(
-      '/usr/lib/git-core/git-http-backend',
+      env.GIT_HTTP_BACKEND_PATH,
       [],
       expect.objectContaining({
         env: expect.objectContaining({
@@ -379,7 +380,7 @@ describe('Git HTTP integration', () => {
     expect(mockedAuthorizeRepositoryAccess).toHaveBeenCalledWith('repo-1', 'READ');
 
     expect(mockedSpawn).toHaveBeenCalledWith(
-      '/usr/lib/git-core/git-http-backend',
+      env.GIT_HTTP_BACKEND_PATH,
       [],
       expect.objectContaining({
         env: expect.objectContaining({
@@ -419,7 +420,7 @@ describe('Git HTTP integration', () => {
     expect(mockedAuthorizeRepositoryAccess).toHaveBeenCalledWith('repo-1', 'WRITE', 'user-2');
 
     expect(mockedSpawn).toHaveBeenCalledWith(
-      '/usr/lib/git-core/git-http-backend',
+      env.GIT_HTTP_BACKEND_PATH,
       [],
       expect.objectContaining({
         env: expect.objectContaining({
@@ -658,10 +659,14 @@ describe('Git HTTP integration', () => {
       spawnOptions?.env;
 
     expect(childEnvironment).toMatchObject({
-      PATH: '/usr/bin:/bin',
-      LANG: 'C.UTF-8',
+      PATH: env.GIT_CHILD_PATH,
+      LANG: 'C',
+      LC_ALL: 'C',
       GIT_CONFIG_NOSYSTEM: '1',
-      GIT_CONFIG_GLOBAL: '/dev/null',
+      GIT_CONFIG_GLOBAL:
+        process.platform === 'win32'
+          ? 'NUL'
+          : '/dev/null',
       GIT_HTTP_EXPORT_ALL: '1',
       PATH_INFO:
         '/asil/demo.git/info/refs',
