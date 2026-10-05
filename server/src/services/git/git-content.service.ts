@@ -1,8 +1,19 @@
+import { env } from '../../config/env.js';
 import { AppError } from '../../errors/app.error.js';
 import { GitReadError } from '../../errors/git-read.error.js';
 import { executeGitReadCommand } from './git-read-command.service.js';
 import { getGitRepositoryRefs, type GitReference } from './git-ref.service.js';
 import { assertSafeGitTreePath } from '../../utils/git/tree-path.js';
+
+const assertGitFileSizeAllowed = (size: number): void => {
+  if (size > env.GIT_MAX_FILE_SIZE_BYTES) {
+    throw new AppError(
+      'Git file exceeds the maximum readable size',
+      413,
+      'GIT_FILE_TOO_LARGE',
+    );
+  }
+};
 
 export type GitBlobContent = {
   path: string;
@@ -76,6 +87,8 @@ export const getGitBlobContent = async (
     if (!Number.isSafeInteger(size) || size < 0) {
       throw new AppError('Git repository contains invalid blob data', 500, 'GIT_BLOB_DATA_INVALID');
     }
+
+    assertGitFileSizeAllowed(size);
     const contentResult = await executeGitReadCommand({
       username,
       repositoryName,
@@ -125,6 +138,8 @@ export const getGitBlobContentBySha = async (
     if (!Number.isSafeInteger(size) || size < 0) {
       throw new AppError('Git repository contains invalid blob data', 500, 'GIT_BLOB_DATA_INVALID');
     }
+
+    assertGitFileSizeAllowed(size);
     const content = await executeGitReadCommand({
       username,
       repositoryName,

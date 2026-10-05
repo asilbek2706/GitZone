@@ -92,6 +92,13 @@ const envSchema = z.object({
     .min(65536)
     .max(52428800)
     .default(5242880),
+
+  GIT_MAX_FILE_SIZE_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1024)
+    .max(10485760)
+    .default(1048576),
 });
 
 const result = envSchema.safeParse(process.env);

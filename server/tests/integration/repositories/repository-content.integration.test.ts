@@ -17,6 +17,10 @@ import {
 import app from '../../../src/app.js';
 import { AppError } from '../../../src/errors/app.error.js';
 import {
+  getGitBlobContent,
+  getGitBlobContentBySha,
+} from '../../../src/services/git/git-content.service.js';
+import {
   getGitRepositoryRefs,
   type GitRepositoryRefs,
 } from '../../../src/services/git/git-ref.service.js';
@@ -65,6 +69,16 @@ vi.mock(
 );
 
 vi.mock(
+  '../../../src/services/git/git-content.service.js',
+  () => ({
+    getGitBlobContent:
+      vi.fn(),
+    getGitBlobContentBySha:
+      vi.fn(),
+  }),
+);
+
+vi.mock(
   '../../../src/services/git/git-ref.service.js',
   () => ({
     getGitRepositoryRefs:
@@ -80,6 +94,16 @@ const mockedAuthorize =
 const mockedGetRefs =
   vi.mocked(
     getGitRepositoryRefs,
+  );
+
+const mockedGetBlobContent =
+  vi.mocked(
+    getGitBlobContent,
+  );
+
+const mockedGetBlobContentBySha =
+  vi.mocked(
+    getGitBlobContentBySha,
   );
 
 const accessResult = {
@@ -196,6 +220,175 @@ describe(
         );
     });
 
+    it('returns file content by repository path', async () => {
+      mockedGetBlobContent
+        .mockResolvedValue({
+          path: 'README.md',
+          ref: 'main',
+          oid:
+            '2222222222222222222222222222222222222222',
+          size: 24,
+          encoding: 'utf-8',
+          content:
+            'GitZone Phase 4 E2E test',
+        });
+
+      const response =
+        await request(app)
+          .get(
+            '/api/repositories/asil/demo/git/contents',
+          )
+          .query({
+            ref: 'main',
+            path: 'README.md',
+          });
+
+      expect(response.status)
+        .toBe(200);
+
+      expect(response.body)
+        .toMatchObject({
+          success: true,
+          data: {
+            content: {
+              path: 'README.md',
+              ref: 'main',
+              size: 24,
+              encoding: 'utf-8',
+              content:
+                'GitZone Phase 4 E2E test',
+            },
+          },
+        });
+
+      expect(mockedAuthorize)
+        .toHaveBeenCalledWith(
+          'asil',
+          'demo',
+          undefined,
+        );
+
+      expect(mockedGetBlobContent)
+        .toHaveBeenCalledWith(
+          'asil',
+          'demo',
+          'main',
+          'README.md',
+        );
+    });
+
+    it('returns blob content by SHA', async () => {
+      const sha =
+        '3333333333333333333333333333333333333333';
+
+      mockedGetBlobContentBySha
+        .mockResolvedValue({
+          oid: sha,
+          size: 24,
+          encoding: 'utf-8',
+          content:
+            'GitZone Phase 4 E2E test',
+        });
+
+      const response =
+        await request(app)
+          .get(
+            '/api/repositories/asil/demo/git/blobs/' + sha,
+          );
+
+      expect(response.status)
+        .toBe(200);
+
+      expect(response.body)
+        .toMatchObject({
+          success: true,
+          data: {
+            blob: {
+              oid: sha,
+              size: 24,
+              encoding: 'utf-8',
+              content:
+                'GitZone Phase 4 E2E test',
+            },
+          },
+        });
+
+      expect(mockedGetBlobContentBySha)
+        .toHaveBeenCalledWith(
+          'asil',
+          'demo',
+          sha,
+        );
+    });
+
+    it('returns 413 when repository file exceeds readable size limit', async () => {
+      mockedGetBlobContent
+        .mockRejectedValue(
+          new AppError(
+            'Git file exceeds the maximum readable size',
+            413,
+            'GIT_FILE_TOO_LARGE',
+          ),
+        );
+
+      const response =
+        await request(app)
+          .get(
+            '/api/repositories/asil/demo/git/contents',
+          )
+          .query({
+            ref: 'main',
+            path: 'huge.txt',
+          });
+
+      expect(response.status)
+        .toBe(413);
+
+      expect(response.body)
+        .toMatchObject({
+          success: false,
+          error: {
+            code:
+              'GIT_FILE_TOO_LARGE',
+            message:
+              'Git file exceeds the maximum readable size',
+          },
+        });
+    });
+
+    it('returns 413 when Git blob exceeds readable size limit', async () => {
+      const sha =
+        '4444444444444444444444444444444444444444';
+
+      mockedGetBlobContentBySha
+        .mockRejectedValue(
+          new AppError(
+            'Git file exceeds the maximum readable size',
+            413,
+            'GIT_FILE_TOO_LARGE',
+          ),
+        );
+
+      const response =
+        await request(app)
+          .get(
+            '/api/repositories/asil/demo/git/blobs/' + sha,
+          );
+
+      expect(response.status)
+        .toBe(413);
+
+      expect(response.body)
+        .toMatchObject({
+          success: false,
+          error: {
+            code:
+              'GIT_FILE_TOO_LARGE',
+            message:
+              'Git file exceeds the maximum readable size',
+          },
+        });
+    });
     it('returns safe authorization errors', async () => {
       mockedAuthorize
         .mockRejectedValue(

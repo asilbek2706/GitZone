@@ -25,6 +25,7 @@ const setValidEnv = (): void => {
   process.env.GIT_HTTP_MAX_HEADER_BYTES = '16384';
   process.env.GIT_READ_TIMEOUT_MS = '5000';
   process.env.GIT_READ_MAX_BUFFER_BYTES = '5242880';
+  process.env.GIT_MAX_FILE_SIZE_BYTES = '1048576';
 };
 
 const loadEnv = async () => {
@@ -66,6 +67,7 @@ describe('environment configuration', () => {
       GIT_HTTP_MAX_HEADER_BYTES: 16384,
       GIT_READ_TIMEOUT_MS: 5000,
       GIT_READ_MAX_BUFFER_BYTES: 5242880,
+      GIT_MAX_FILE_SIZE_BYTES: 1048576,
     });
   });
 
@@ -236,6 +238,7 @@ describe('environment configuration', () => {
     delete process.env.GIT_CHILD_PATH;
     delete process.env.GIT_READ_TIMEOUT_MS;
     delete process.env.GIT_READ_MAX_BUFFER_BYTES;
+    delete process.env.GIT_MAX_FILE_SIZE_BYTES;
 
     const { env } =
       await loadEnv();
@@ -302,4 +305,28 @@ describe('environment configuration', () => {
   });
 
 
+
+  it('accepts a custom Git maximum file size', async () => {
+    process.env.GIT_MAX_FILE_SIZE_BYTES = '2097152';
+
+    const { env } = await loadEnv();
+
+    expect(env.GIT_MAX_FILE_SIZE_BYTES).toBe(2097152);
+  });
+
+  it('rejects a Git maximum file size below the minimum', async () => {
+    process.env.GIT_MAX_FILE_SIZE_BYTES = '1023';
+
+    await expect(loadEnv()).rejects.toThrow(
+      'Invalid environment configuration',
+    );
+  });
+
+  it('rejects an excessive Git maximum file size', async () => {
+    process.env.GIT_MAX_FILE_SIZE_BYTES = '10485761';
+
+    await expect(loadEnv()).rejects.toThrow(
+      'Invalid environment configuration',
+    );
+  });
 });
