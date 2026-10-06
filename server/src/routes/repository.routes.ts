@@ -9,6 +9,7 @@ import {
   getCommit,
   getCommits,
   getContent,
+  getRawContent,
 } from '../controllers/repositories/repository-git.controller.js';
 import { getTree } from '../controllers/repositories/repository-tree.controller.js';
 import {
@@ -31,6 +32,7 @@ router.get('/:username/:name/git/refs', optionalAuthMiddleware, getRefs);
 router.get('/:username/:name/git/branches', optionalAuthMiddleware, getBranches);
 router.get('/:username/:name/git/tree', optionalAuthMiddleware, getTree);
 router.get('/:username/:name/git/contents', optionalAuthMiddleware, getContent);
+router.get('/:username/:name/git/raw', optionalAuthMiddleware, getRawContent);
 router.get('/:username/:name/git/blobs/:sha', optionalAuthMiddleware, getBlob);
 router.get('/:username/:name/git/commits', optionalAuthMiddleware, getCommits);
 router.get('/:username/:name/git/commits/:sha', optionalAuthMiddleware, getCommit);

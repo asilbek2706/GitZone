@@ -34,6 +34,7 @@ vi.mock(
 const {
   getGitBlobContent,
   getGitBlobContentBySha,
+  getGitRawBlob,
 } = await import(
   '../../../src/services/git/git-content.service.js'
 );
@@ -343,6 +344,122 @@ describe(
       });
 
       expect(mockedExecute)
+        .not.toHaveBeenCalled();
+    });
+    it('returns a raw binary blob without UTF-8 decoding', async () => {
+      const binaryContent = Buffer.from([
+        0x89,
+        0x50,
+        0x4e,
+        0x47,
+        0x00,
+        0xff,
+        0x01,
+        0x80,
+      ]);
+
+      mockedExecute
+        .mockResolvedValueOnce({
+          stdout: `${OID}\n`,
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: 'blob\n',
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: '8\n',
+          stderr: '',
+        });
+
+      mockedExecuteBuffer.mockResolvedValueOnce({
+        stdout: binaryContent,
+        stderr: Buffer.alloc(0),
+      });
+
+      const result = await getGitRawBlob(
+        'asil',
+        'demo',
+        undefined,
+        'image.png',
+      );
+
+      expect(result).toMatchObject({
+        path: 'image.png',
+        ref: 'main',
+        oid: OID,
+        size: 8,
+      });
+
+      expect(Buffer.isBuffer(result.content))
+        .toBe(true);
+
+      expect(result.content)
+        .toEqual(binaryContent);
+
+      expect(mockedExecuteBuffer)
+        .toHaveBeenCalledWith({
+          username: 'asil',
+          repositoryName: 'demo',
+          args: [
+            'cat-file',
+            'blob',
+            OID,
+          ],
+        });
+    });
+
+    it('rejects an oversized raw blob before reading its content', async () => {
+      mockedExecute
+        .mockResolvedValueOnce({
+          stdout: `${OID}\n`,
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: 'blob\n',
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: '1048577\n',
+          stderr: '',
+        });
+
+      await expect(
+        getGitRawBlob(
+          'asil',
+          'demo',
+          undefined,
+          'huge.bin',
+        ),
+      ).rejects.toMatchObject({
+        statusCode: 413,
+        code: 'GIT_FILE_TOO_LARGE',
+      });
+
+      expect(mockedExecuteBuffer)
+        .not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid raw file path before executing Git', async () => {
+      await expect(
+        getGitRawBlob(
+          'asil',
+          'demo',
+          undefined,
+          '../secret.txt',
+        ),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        code: 'INVALID_GIT_TREE_PATH',
+      });
+
+      expect(mockedGetRefs)
+        .not.toHaveBeenCalled();
+
+      expect(mockedExecute)
+        .not.toHaveBeenCalled();
+
+      expect(mockedExecuteBuffer)
         .not.toHaveBeenCalled();
     });
   },

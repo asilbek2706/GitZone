@@ -5,6 +5,7 @@ import type { OptionalAuthenticatedRequest } from '../../middleware/optional-aut
 import {
   getGitBlobContent,
   getGitBlobContentBySha,
+  getGitRawBlob,
 } from '../../services/git/git-content.service.js';
 import { getGitCommit, listGitCommits } from '../../services/git/git-commit.service.js';
 import { getGitRepositoryRefs } from '../../services/git/git-ref.service.js';
@@ -45,6 +46,61 @@ export const getContent = async (req: Request, res: Response): Promise<void> => 
   res.status(200).json({ success: true, data: { content } });
 };
 
+export const getRawContent = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const parsed =
+    repositoryContentQuerySchema.safeParse(
+      req.query,
+    );
+
+  if (
+    !parsed.success ||
+    parsed.data.path === undefined
+  ) {
+    throw new AppError(
+      'A valid file path is required',
+      400,
+      'INVALID_GIT_FILE_PATH',
+    );
+  }
+
+  const { access } =
+    await authorize(req);
+
+  const raw =
+    await getGitRawBlob(
+      access.repositoryOwnerUsername,
+      access.repositoryName,
+      parsed.data.ref,
+      parsed.data.path,
+    );
+
+  res.status(200);
+
+  res.setHeader(
+    'Content-Type',
+    'application/octet-stream',
+  );
+
+  res.setHeader(
+    'Content-Length',
+    String(raw.size),
+  );
+
+  res.setHeader(
+    'X-Git-Blob-Oid',
+    raw.oid,
+  );
+
+  res.setHeader(
+    'X-Git-Ref',
+    raw.ref,
+  );
+
+  res.send(raw.content);
+};
 export const getCommits = async (req: Request, res: Response): Promise<void> => {
   const parsed = repositoryCommitsQuerySchema.safeParse(req.query);
   if (!parsed.success) {

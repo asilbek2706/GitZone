@@ -19,6 +19,7 @@ import { AppError } from '../../../src/errors/app.error.js';
 import {
   getGitBlobContent,
   getGitBlobContentBySha,
+  getGitRawBlob,
 } from '../../../src/services/git/git-content.service.js';
 import {
   getGitRepositoryRefs,
@@ -75,6 +76,8 @@ vi.mock(
       vi.fn(),
     getGitBlobContentBySha:
       vi.fn(),
+    getGitRawBlob:
+      vi.fn(),
   }),
 );
 
@@ -106,6 +109,10 @@ const mockedGetBlobContentBySha =
     getGitBlobContentBySha,
   );
 
+const mockedGetRawBlob =
+  vi.mocked(
+    getGitRawBlob,
+  );
 const accessResult = {
   repositoryId: 'repo-1',
   repositoryName: 'demo',
@@ -454,6 +461,160 @@ describe(
               'Git file exceeds the maximum readable size',
           },
         });
+    });
+    it('returns raw binary repository file bytes', async () => {
+      const rawContent = Buffer.from([
+        0x89,
+        0x50,
+        0x4e,
+        0x47,
+        0x00,
+        0xff,
+        0x01,
+        0x80,
+      ]);
+
+      mockedGetRawBlob
+        .mockResolvedValue({
+          path: 'binary.bin',
+          ref: 'main',
+          oid: '6666666666666666666666666666666666666666',
+          size: rawContent.length,
+          content: rawContent,
+        });
+
+      const response =
+        await request(app)
+          .get(
+            '/api/repositories/asil/demo/git/raw',
+          )
+          .query({
+            ref: 'main',
+            path: 'binary.bin',
+          })
+          .buffer(true)
+          .parse((res, callback) => {
+            const chunks: Buffer[] = [];
+
+            res.on('data', (chunk: Buffer) => {
+              chunks.push(chunk);
+            });
+
+            res.on('end', () => {
+              callback(
+                null,
+                Buffer.concat(chunks),
+              );
+            });
+          });
+
+      expect(response.status)
+        .toBe(200);
+
+      expect(response.headers['content-type'])
+        .toMatch(
+          /^application\/octet-stream/,
+        );
+
+      expect(response.headers['content-length'])
+        .toBe(
+          String(rawContent.length),
+        );
+
+      expect(response.headers['x-git-blob-oid'])
+        .toBe(
+          '6666666666666666666666666666666666666666',
+        );
+
+      expect(response.headers['x-git-ref'])
+        .toBe('main');
+
+      expect(Buffer.isBuffer(response.body))
+        .toBe(true);
+
+      expect(response.body)
+        .toEqual(rawContent);
+
+      expect(mockedGetRawBlob)
+        .toHaveBeenCalledWith(
+          'asil',
+          'demo',
+          'main',
+          'binary.bin',
+        );
+    });
+
+    it('returns 413 when raw repository file exceeds readable size limit', async () => {
+      mockedGetRawBlob
+        .mockRejectedValue(
+          new AppError(
+            'Git file exceeds the maximum readable size',
+            413,
+            'GIT_FILE_TOO_LARGE',
+          ),
+        );
+
+      const response =
+        await request(app)
+          .get(
+            '/api/repositories/asil/demo/git/raw',
+          )
+          .query({
+            ref: 'main',
+            path: 'huge.bin',
+          });
+
+      expect(response.status)
+        .toBe(413);
+
+      expect(response.body)
+        .toMatchObject({
+          success: false,
+          error: {
+            code:
+              'GIT_FILE_TOO_LARGE',
+            message:
+              'Git file exceeds the maximum readable size',
+          },
+        });
+    });
+
+    it('does not read raw content when repository authorization fails', async () => {
+      mockedAuthorize
+        .mockRejectedValue(
+          new AppError(
+            'Repository not found',
+            404,
+            'REPOSITORY_NOT_FOUND',
+          ),
+        );
+
+      const response =
+        await request(app)
+          .get(
+            '/api/repositories/asil/private/git/raw',
+          )
+          .query({
+            ref: 'main',
+            path: 'secret.bin',
+          });
+
+      expect(response.status)
+        .toBe(404);
+
+      expect(response.body)
+        .toMatchObject({
+          success: false,
+          error: {
+            code:
+              'REPOSITORY_NOT_FOUND',
+            message:
+              'Repository not found',
+          },
+        });
+
+      expect(mockedGetRawBlob)
+        .not.toHaveBeenCalled();
     });
     it('returns safe authorization errors', async () => {
       mockedAuthorize
