@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth.middleware.js';
 import { optionalAuthMiddleware } from '../middleware/optional-auth.middleware.js';
 import { getRefs } from '../controllers/repositories/repository-content.controller.js';
 import {
+  getBranch,
   getBranches,
   getBlob,
   getCommit,
@@ -31,6 +32,7 @@ router.post('/', authMiddleware, create);
 router.get('/:username', listByUsername);
 router.get('/:username/:name/git/refs', optionalAuthMiddleware, getRefs);
 router.get('/:username/:name/git/branches', optionalAuthMiddleware, getBranches);
+router.get('/:username/:name/git/branches/:branch', optionalAuthMiddleware, getBranch);
 router.get('/:username/:name/git/tree', optionalAuthMiddleware, getTree);
 router.get('/:username/:name/git/contents', optionalAuthMiddleware, getContent);
 router.get('/:username/:name/git/raw', optionalAuthMiddleware, getRawContent);

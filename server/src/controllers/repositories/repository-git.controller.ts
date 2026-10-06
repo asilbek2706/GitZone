@@ -8,6 +8,7 @@ import {
   getGitRawBlob,
 } from '../../services/git/git-content.service.js';
 import { getGitCommit, listGitCommits } from '../../services/git/git-commit.service.js';
+import { getGitBranch } from '../../services/git/git-branch.service.js';
 import { getGitRepositoryRefs } from '../../services/git/git-ref.service.js';
 import { getGitRepositoryReadme } from '../../services/git/git-readme.service.js';
 import { authorizeRepositoryContentRead } from '../../services/repositories/repository-content-access.service.js';
@@ -20,7 +21,11 @@ import {
 const repositoryParams = (req: Request): { username: string; name: string } => {
   const { username, name } = req.params;
   if (typeof username !== 'string' || typeof name !== 'string') {
-    throw new AppError('Username and repository name are required', 400, 'INVALID_REPOSITORY_PARAMS');
+    throw new AppError(
+      'Username and repository name are required',
+      400,
+      'INVALID_REPOSITORY_PARAMS',
+    );
   }
   return { username, name };
 };
@@ -35,45 +40,62 @@ const authorize = async (req: Request) => {
 export const getBranches = async (req: Request, res: Response): Promise<void> => {
   const { access } = await authorize(req);
   const refs = await getGitRepositoryRefs(access.repositoryOwnerUsername, access.repositoryName);
-  res.status(200).json({ success: true, data: { branches: refs.branches, defaultBranch: refs.defaultBranch } });
+  res
+    .status(200)
+    .json({ success: true, data: { branches: refs.branches, defaultBranch: refs.defaultBranch } });
 };
 
+export const getBranch = async (req: Request, res: Response): Promise<void> => {
+  const { branch } = req.params;
+
+  if (typeof branch !== 'string') {
+    throw new AppError('Git branch name is required', 400, 'INVALID_GIT_BRANCH_NAME');
+  }
+
+  const { access } = await authorize(req);
+
+  const branchDetails = await getGitBranch(
+    access.repositoryOwnerUsername,
+    access.repositoryName,
+    branch,
+  );
+
+  res.status(200).json({
+    success: true,
+    data: {
+      branch: branchDetails,
+    },
+  });
+};
 export const getContent = async (req: Request, res: Response): Promise<void> => {
   const parsed = repositoryContentQuerySchema.safeParse(req.query);
   if (!parsed.success || parsed.data.path === undefined) {
     throw new AppError('A valid file path is required', 400, 'INVALID_GIT_FILE_PATH');
   }
   const { access } = await authorize(req);
-  const content = await getGitBlobContent(access.repositoryOwnerUsername, access.repositoryName, parsed.data.ref, parsed.data.path);
+  const content = await getGitBlobContent(
+    access.repositoryOwnerUsername,
+    access.repositoryName,
+    parsed.data.ref,
+    parsed.data.path,
+  );
   res.status(200).json({ success: true, data: { content } });
 };
 
-export const getReadme = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  const parsed =
-    repositoryReadmeQuerySchema.safeParse(
-      req.query,
-    );
+export const getReadme = async (req: Request, res: Response): Promise<void> => {
+  const parsed = repositoryReadmeQuerySchema.safeParse(req.query);
 
   if (!parsed.success) {
-    throw new AppError(
-      'Invalid repository README query',
-      400,
-      'INVALID_GIT_README_QUERY',
-    );
+    throw new AppError('Invalid repository README query', 400, 'INVALID_GIT_README_QUERY');
   }
 
-  const { access } =
-    await authorize(req);
+  const { access } = await authorize(req);
 
-  const readme =
-    await getGitRepositoryReadme(
-      access.repositoryOwnerUsername,
-      access.repositoryName,
-      parsed.data.ref,
-    );
+  const readme = await getGitRepositoryReadme(
+    access.repositoryOwnerUsername,
+    access.repositoryName,
+    parsed.data.ref,
+  );
 
   res.status(200).json({
     success: true,
@@ -83,58 +105,31 @@ export const getReadme = async (
   });
 };
 
-export const getRawContent = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  const parsed =
-    repositoryContentQuerySchema.safeParse(
-      req.query,
-    );
+export const getRawContent = async (req: Request, res: Response): Promise<void> => {
+  const parsed = repositoryContentQuerySchema.safeParse(req.query);
 
-  if (
-    !parsed.success ||
-    parsed.data.path === undefined
-  ) {
-    throw new AppError(
-      'A valid file path is required',
-      400,
-      'INVALID_GIT_FILE_PATH',
-    );
+  if (!parsed.success || parsed.data.path === undefined) {
+    throw new AppError('A valid file path is required', 400, 'INVALID_GIT_FILE_PATH');
   }
 
-  const { access } =
-    await authorize(req);
+  const { access } = await authorize(req);
 
-  const raw =
-    await getGitRawBlob(
-      access.repositoryOwnerUsername,
-      access.repositoryName,
-      parsed.data.ref,
-      parsed.data.path,
-    );
+  const raw = await getGitRawBlob(
+    access.repositoryOwnerUsername,
+    access.repositoryName,
+    parsed.data.ref,
+    parsed.data.path,
+  );
 
   res.status(200);
 
-  res.setHeader(
-    'Content-Type',
-    'application/octet-stream',
-  );
+  res.setHeader('Content-Type', 'application/octet-stream');
 
-  res.setHeader(
-    'Content-Length',
-    String(raw.size),
-  );
+  res.setHeader('Content-Length', String(raw.size));
 
-  res.setHeader(
-    'X-Git-Blob-Oid',
-    raw.oid,
-  );
+  res.setHeader('X-Git-Blob-Oid', raw.oid);
 
-  res.setHeader(
-    'X-Git-Ref',
-    raw.ref,
-  );
+  res.setHeader('X-Git-Ref', raw.ref);
 
   res.send(raw.content);
 };
@@ -161,7 +156,11 @@ export const getBlob = async (req: Request, res: Response): Promise<void> => {
     throw new AppError('Blob SHA is required', 400, 'INVALID_GIT_BLOB_SHA');
   }
   const { access } = await authorize(req);
-  const blob = await getGitBlobContentBySha(access.repositoryOwnerUsername, access.repositoryName, sha);
+  const blob = await getGitBlobContentBySha(
+    access.repositoryOwnerUsername,
+    access.repositoryName,
+    sha,
+  );
   res.status(200).json({ success: true, data: { blob } });
 };
 
