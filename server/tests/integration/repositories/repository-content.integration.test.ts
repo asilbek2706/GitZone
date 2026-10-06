@@ -321,6 +321,72 @@ describe(
         );
     });
 
+    it('returns 415 when repository file is binary', async () => {
+      mockedGetBlobContent
+        .mockRejectedValue(
+          new AppError(
+            'Git file is binary and cannot be displayed as text',
+            415,
+            'GIT_FILE_BINARY',
+          ),
+        );
+
+      const response =
+        await request(app)
+          .get(
+            '/api/repositories/asil/demo/git/contents',
+          )
+          .query({
+            ref: 'main',
+            path: 'binary.bin',
+          });
+
+      expect(response.status)
+        .toBe(415);
+
+      expect(response.body)
+        .toMatchObject({
+          success: false,
+          error: {
+            code: 'GIT_FILE_BINARY',
+            message:
+              'Git file is binary and cannot be displayed as text',
+          },
+        });
+    });
+
+    it('returns 415 when Git blob is binary', async () => {
+      const sha =
+        '5555555555555555555555555555555555555555';
+
+      mockedGetBlobContentBySha
+        .mockRejectedValue(
+          new AppError(
+            'Git file is binary and cannot be displayed as text',
+            415,
+            'GIT_FILE_BINARY',
+          ),
+        );
+
+      const response =
+        await request(app)
+          .get(
+            '/api/repositories/asil/demo/git/blobs/' + sha,
+          );
+
+      expect(response.status)
+        .toBe(415);
+
+      expect(response.body)
+        .toMatchObject({
+          success: false,
+          error: {
+            code: 'GIT_FILE_BINARY',
+            message:
+              'Git file is binary and cannot be displayed as text',
+          },
+        });
+    });
     it('returns 413 when repository file exceeds readable size limit', async () => {
       mockedGetBlobContent
         .mockRejectedValue(

@@ -28,6 +28,11 @@ export type GitReadCommandResult = {
   stderr: string;
 };
 
+export type GitReadBufferCommandResult = {
+  stdout: Buffer;
+  stderr: Buffer;
+};
+
 type ChildProcessFailure = Error & {
   code?: string | number;
   killed?: boolean;
@@ -147,6 +152,66 @@ const executeGitFile = (
   );
 };
 
+const executeGitBufferFile = (
+  args: string[],
+): Promise<GitReadBufferCommandResult> => {
+  return new Promise(
+    (
+      resolve,
+      reject,
+    ) => {
+      execFile(
+        env.GIT_EXECUTABLE_PATH,
+        args,
+        {
+          encoding: 'buffer',
+
+          timeout:
+            env.GIT_READ_TIMEOUT_MS,
+
+          maxBuffer:
+            env.GIT_READ_MAX_BUFFER_BYTES,
+
+          windowsHide: true,
+
+          env:
+            createSafeGitReadEnvironment(),
+        },
+        (
+          error,
+          stdout,
+          stderr,
+        ) => {
+          if (error) {
+            const failure =
+              error as ChildProcessFailure;
+
+            if (
+              stderr.length > 0 ||
+              failure.stderr === undefined
+            ) {
+              failure.stderr =
+                stderr;
+            }
+
+            reject(failure);
+
+            return;
+          }
+
+          resolve({
+            stdout:
+              Buffer.from(stdout),
+
+            stderr:
+              Buffer.from(stderr),
+          });
+        },
+      );
+    },
+  );
+};
+
 const mapGitReadFailure = (
   error: unknown,
 ): GitReadError => {
@@ -245,6 +310,53 @@ export const executeGitReadCommand = async ({
 
   try {
     return await executeGitFile(
+      commandArgs,
+    );
+  } catch (error) {
+    if (error instanceof GitReadError) {
+      throw error;
+    }
+
+    throw mapGitReadFailure(
+      error,
+    );
+  }
+};
+export const executeGitReadBufferCommand = async ({
+  username,
+  repositoryName,
+  args,
+}: ExecuteGitReadCommandInput): Promise<GitReadBufferCommandResult> => {
+  if (args.length === 0) {
+    throw new GitReadError(
+      'Git read command arguments are required',
+      'GIT_READ_COMMAND_FAILED',
+    );
+  }
+
+  /*
+   * Keep binary Git reads behind the same repository
+   * identity and filesystem boundary validation as
+   * text-based Git reads.
+   */
+  const repositoryPath =
+    resolveGitRepositoryPath(
+      username,
+      repositoryName,
+    );
+
+  const commandArgs = [
+    '--no-pager',
+    '--no-optional-locks',
+
+    '--git-dir',
+    repositoryPath,
+
+    ...args,
+  ];
+
+  try {
+    return await executeGitBufferFile(
       commandArgs,
     );
   } catch (error) {

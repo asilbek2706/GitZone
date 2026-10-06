@@ -9,9 +9,11 @@ import {
 const {
   mockedGetRefs,
   mockedExecute,
+  mockedExecuteBuffer,
 } = vi.hoisted(() => ({
   mockedGetRefs: vi.fn(),
   mockedExecute: vi.fn(),
+  mockedExecuteBuffer: vi.fn(),
 }));
 
 vi.mock(
@@ -25,6 +27,7 @@ vi.mock(
   '../../../src/services/git/git-read-command.service.js',
   () => ({
     executeGitReadCommand: mockedExecute,
+    executeGitReadBufferCommand: mockedExecuteBuffer,
   }),
 );
 
@@ -86,11 +89,12 @@ describe(
         .mockResolvedValueOnce({
           stdout: '12\n',
           stderr: '',
-        })
-        .mockResolvedValueOnce({
-          stdout: 'hello world\n',
-          stderr: '',
         });
+
+      mockedExecuteBuffer.mockResolvedValueOnce({
+        stdout: Buffer.from('hello world\n'),
+        stderr: Buffer.alloc(0),
+      });
 
       const result =
         await getGitBlobContent(
@@ -110,7 +114,10 @@ describe(
       });
 
       expect(mockedExecute)
-        .toHaveBeenCalledTimes(4);
+        .toHaveBeenCalledTimes(3);
+
+      expect(mockedExecuteBuffer)
+        .toHaveBeenCalledOnce();
     });
 
     it('allows a blob exactly at the maximum file size', async () => {
@@ -126,11 +133,12 @@ describe(
         .mockResolvedValueOnce({
           stdout: '1048576\n',
           stderr: '',
-        })
-        .mockResolvedValueOnce({
-          stdout: 'allowed',
-          stderr: '',
         });
+
+      mockedExecuteBuffer.mockResolvedValueOnce({
+        stdout: Buffer.from('allowed'),
+        stderr: Buffer.alloc(0),
+      });
 
       const result =
         await getGitBlobContent(
@@ -144,9 +152,102 @@ describe(
         .toBe(1048576);
 
       expect(mockedExecute)
-        .toHaveBeenCalledTimes(4);
+        .toHaveBeenCalledTimes(3);
+
+      expect(mockedExecuteBuffer)
+        .toHaveBeenCalledOnce();
     });
 
+    it('rejects a binary blob read by repository path', async () => {
+      mockedExecute
+        .mockResolvedValueOnce({
+          stdout: `${OID}\n`,
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: 'blob\n',
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: '8\n',
+          stderr: '',
+        });
+
+      mockedExecuteBuffer.mockResolvedValueOnce({
+        stdout: Buffer.from([
+          0x89,
+          0x50,
+          0x4e,
+          0x47,
+          0x00,
+          0x01,
+          0x02,
+          0x03,
+        ]),
+        stderr: Buffer.alloc(0),
+      });
+
+      await expect(
+        getGitBlobContent(
+          'asil',
+          'demo',
+          undefined,
+          'image.png',
+        ),
+      ).rejects.toMatchObject({
+        statusCode: 415,
+        code: 'GIT_FILE_BINARY',
+      });
+
+      expect(mockedExecute)
+        .toHaveBeenCalledTimes(3);
+
+      expect(mockedExecuteBuffer)
+        .toHaveBeenCalledOnce();
+    });
+
+    it('rejects a binary blob read by SHA', async () => {
+      mockedExecute
+        .mockResolvedValueOnce({
+          stdout: 'blob\n',
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: '8\n',
+          stderr: '',
+        });
+
+      mockedExecuteBuffer.mockResolvedValueOnce({
+        stdout: Buffer.from([
+          0x89,
+          0x50,
+          0x4e,
+          0x47,
+          0x00,
+          0x01,
+          0x02,
+          0x03,
+        ]),
+        stderr: Buffer.alloc(0),
+      });
+
+      await expect(
+        getGitBlobContentBySha(
+          'asil',
+          'demo',
+          OID,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: 415,
+        code: 'GIT_FILE_BINARY',
+      });
+
+      expect(mockedExecute)
+        .toHaveBeenCalledTimes(2);
+
+      expect(mockedExecuteBuffer)
+        .toHaveBeenCalledOnce();
+    });
     it('rejects an oversized path blob before reading its content', async () => {
       mockedExecute
         .mockResolvedValueOnce({
@@ -213,6 +314,9 @@ describe(
 
       expect(mockedExecute)
         .toHaveBeenCalledTimes(2);
+
+      expect(mockedExecuteBuffer)
+        .not.toHaveBeenCalled();
 
       expect(mockedExecute)
         .not.toHaveBeenCalledWith({

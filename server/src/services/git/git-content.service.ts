@@ -1,7 +1,10 @@
 import { env } from '../../config/env.js';
 import { AppError } from '../../errors/app.error.js';
 import { GitReadError } from '../../errors/git-read.error.js';
-import { executeGitReadCommand } from './git-read-command.service.js';
+import {
+  executeGitReadBufferCommand,
+  executeGitReadCommand,
+} from './git-read-command.service.js';
 import { getGitRepositoryRefs, type GitReference } from './git-ref.service.js';
 import { assertSafeGitTreePath } from '../../utils/git/tree-path.js';
 
@@ -13,6 +16,26 @@ const assertGitFileSizeAllowed = (size: number): void => {
       'GIT_FILE_TOO_LARGE',
     );
   }
+};
+
+const isBinaryGitBlob = (
+  content: Buffer,
+): boolean => {
+  return content.includes(0);
+};
+
+const decodeGitTextBlob = (
+  content: Buffer,
+): string => {
+  if (isBinaryGitBlob(content)) {
+    throw new AppError(
+      'Git file is binary and cannot be displayed as text',
+      415,
+      'GIT_FILE_BINARY',
+    );
+  }
+
+  return content.toString('utf8');
 };
 
 export type GitBlobContent = {
@@ -89,7 +112,7 @@ export const getGitBlobContent = async (
     }
 
     assertGitFileSizeAllowed(size);
-    const contentResult = await executeGitReadCommand({
+    const contentResult = await executeGitReadBufferCommand({
       username,
       repositoryName,
       args: ['cat-file', 'blob', oid],
@@ -100,7 +123,7 @@ export const getGitBlobContent = async (
       oid,
       size,
       encoding: 'utf-8',
-      content: contentResult.stdout,
+      content: decodeGitTextBlob(contentResult.stdout),
     };
 
   } catch (error) {
@@ -140,12 +163,17 @@ export const getGitBlobContentBySha = async (
     }
 
     assertGitFileSizeAllowed(size);
-    const content = await executeGitReadCommand({
+    const content = await executeGitReadBufferCommand({
       username,
       repositoryName,
       args: ['cat-file', 'blob', sha],
     });
-    return { oid: sha, size, encoding: 'utf-8', content: content.stdout };
+    return {
+      oid: sha,
+      size,
+      encoding: 'utf-8',
+      content: decodeGitTextBlob(content.stdout),
+    };
   } catch (error) {
     if (error instanceof AppError) throw error;
     if (error instanceof GitReadError && error.code === 'GIT_READ_COMMAND_FAILED' && error.exitCode === 128) {
