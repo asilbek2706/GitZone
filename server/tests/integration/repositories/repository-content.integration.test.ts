@@ -26,6 +26,9 @@ import {
   type GitRepositoryRefs,
 } from '../../../src/services/git/git-ref.service.js';
 import {
+  getGitRepositoryReadme,
+} from '../../../src/services/git/git-readme.service.js';
+import {
   authorizeRepositoryContentRead,
 } from '../../../src/services/repositories/repository-content-access.service.js';
 
@@ -82,6 +85,14 @@ vi.mock(
 );
 
 vi.mock(
+  '../../../src/services/git/git-readme.service.js',
+  () => ({
+    getGitRepositoryReadme:
+      vi.fn(),
+  }),
+);
+
+vi.mock(
   '../../../src/services/git/git-ref.service.js',
   () => ({
     getGitRepositoryRefs:
@@ -113,6 +124,11 @@ const mockedGetRawBlob =
   vi.mocked(
     getGitRawBlob,
   );
+const mockedGetReadme =
+  vi.mocked(
+    getGitRepositoryReadme,
+  );
+
 const accessResult = {
   repositoryId: 'repo-1',
   repositoryName: 'demo',
@@ -462,6 +478,169 @@ describe(
           },
         });
     });
+    it('returns repository README from the default branch', async () => {
+      mockedGetReadme
+        .mockResolvedValue({
+          path: 'README.md',
+          ref: 'main',
+          oid: '5555555555555555555555555555555555555555',
+          size: 10,
+          encoding: 'utf-8',
+          content: '# GitZone',
+        });
+
+      const response = await request(app)
+        .get(
+          '/api/repositories/asil/demo/git/readme',
+        )
+        .expect(200);
+
+      expect(response.body).toEqual({
+        success: true,
+        data: {
+          readme: {
+            path: 'README.md',
+            ref: 'main',
+            oid: '5555555555555555555555555555555555555555',
+            size: 10,
+            encoding: 'utf-8',
+            content: '# GitZone',
+          },
+        },
+      });
+
+      expect(mockedAuthorize)
+        .toHaveBeenCalled();
+
+      expect(mockedGetReadme)
+        .toHaveBeenCalledWith(
+          'asil',
+          'demo',
+          undefined,
+        );
+    });
+
+    it('returns repository README from a requested ref', async () => {
+      mockedGetReadme
+        .mockResolvedValue({
+          path: 'README.md',
+          ref: 'develop',
+          oid: '6666666666666666666666666666666666666666',
+          size: 18,
+          encoding: 'utf-8',
+          content: '# Develop branch',
+        });
+
+      const response = await request(app)
+        .get(
+          '/api/repositories/asil/demo/git/readme?ref=develop',
+        )
+        .expect(200);
+
+      expect(response.body.data.readme.ref)
+        .toBe('develop');
+
+      expect(mockedGetReadme)
+        .toHaveBeenCalledWith(
+          'asil',
+          'demo',
+          'develop',
+        );
+    });
+
+    it('returns 404 when repository README does not exist', async () => {
+      mockedGetReadme
+        .mockRejectedValue(
+          new AppError(
+            'Repository README not found',
+            404,
+            'GIT_README_NOT_FOUND',
+          ),
+        );
+
+      const response = await request(app)
+        .get(
+          '/api/repositories/asil/demo/git/readme',
+        )
+        .expect(404);
+
+      expect(response.body).toMatchObject({
+        success: false,
+        error: {
+          code: 'GIT_README_NOT_FOUND',
+        },
+      });
+    });
+
+    it('returns 400 for an invalid README ref', async () => {
+      const response = await request(app)
+        .get(
+          '/api/repositories/asil/demo/git/readme?ref=../main',
+        )
+        .expect(400);
+
+      expect(response.body).toMatchObject({
+        success: false,
+        error: {
+          code: 'INVALID_GIT_README_QUERY',
+        },
+      });
+
+      expect(mockedAuthorize)
+        .not.toHaveBeenCalled();
+
+      expect(mockedGetReadme)
+        .not.toHaveBeenCalled();
+    });
+
+    it('rejects unsupported README query parameters', async () => {
+      const response = await request(app)
+        .get(
+          '/api/repositories/asil/demo/git/readme?path=README.md',
+        )
+        .expect(400);
+
+      expect(response.body).toMatchObject({
+        success: false,
+        error: {
+          code: 'INVALID_GIT_README_QUERY',
+        },
+      });
+
+      expect(mockedAuthorize)
+        .not.toHaveBeenCalled();
+
+      expect(mockedGetReadme)
+        .not.toHaveBeenCalled();
+    });
+
+    it('does not read README when repository authorization fails', async () => {
+      mockedAuthorize
+        .mockRejectedValue(
+          new AppError(
+            'Repository not found',
+            404,
+            'REPOSITORY_NOT_FOUND',
+          ),
+        );
+
+      const response = await request(app)
+        .get(
+          '/api/repositories/asil/demo/git/readme',
+        )
+        .expect(404);
+
+      expect(response.body).toMatchObject({
+        success: false,
+        error: {
+          code: 'REPOSITORY_NOT_FOUND',
+        },
+      });
+
+      expect(mockedGetReadme)
+        .not.toHaveBeenCalled();
+    });
+
     it('returns raw binary repository file bytes', async () => {
       const rawContent = Buffer.from([
         0x89,

@@ -9,10 +9,12 @@ import {
 } from '../../services/git/git-content.service.js';
 import { getGitCommit, listGitCommits } from '../../services/git/git-commit.service.js';
 import { getGitRepositoryRefs } from '../../services/git/git-ref.service.js';
+import { getGitRepositoryReadme } from '../../services/git/git-readme.service.js';
 import { authorizeRepositoryContentRead } from '../../services/repositories/repository-content-access.service.js';
 import {
   repositoryCommitsQuerySchema,
   repositoryContentQuerySchema,
+  repositoryReadmeQuerySchema,
 } from '../../validations/repositories/repository-git.validation.js';
 
 const repositoryParams = (req: Request): { username: string; name: string } => {
@@ -44,6 +46,41 @@ export const getContent = async (req: Request, res: Response): Promise<void> => 
   const { access } = await authorize(req);
   const content = await getGitBlobContent(access.repositoryOwnerUsername, access.repositoryName, parsed.data.ref, parsed.data.path);
   res.status(200).json({ success: true, data: { content } });
+};
+
+export const getReadme = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const parsed =
+    repositoryReadmeQuerySchema.safeParse(
+      req.query,
+    );
+
+  if (!parsed.success) {
+    throw new AppError(
+      'Invalid repository README query',
+      400,
+      'INVALID_GIT_README_QUERY',
+    );
+  }
+
+  const { access } =
+    await authorize(req);
+
+  const readme =
+    await getGitRepositoryReadme(
+      access.repositoryOwnerUsername,
+      access.repositoryName,
+      parsed.data.ref,
+    );
+
+  res.status(200).json({
+    success: true,
+    data: {
+      readme,
+    },
+  });
 };
 
 export const getRawContent = async (

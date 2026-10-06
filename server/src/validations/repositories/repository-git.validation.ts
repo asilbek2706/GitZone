@@ -10,6 +10,10 @@ import {
 const safeRef = z.string().min(1).max(255).refine(isSafeGitRefName);
 const safePath = z.string().max(4096).refine(isSafeGitTreePath);
 
+export const repositoryReadmeQuerySchema = z.object({
+  ref: safeRef.optional(),
+}).strict();
+
 export const repositoryContentQuerySchema = z.object({
   ref: safeRef.optional(),
   path: safePath.optional(),

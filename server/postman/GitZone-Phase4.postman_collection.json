@@ -1,0 +1,206 @@
+{
+  "info": {
+    "_postman_id": "e09ac690-73e6-4b42-92c6-gitzone-phase4",
+    "name": "GitZone Phase 4 - Repository Content E2E",
+    "description": "Real E2E verification for GitZone Phase 4 repository content and Git data APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "username",
+      "value": "asilbek2706"
+    },
+    {
+      "key": "repository",
+      "value": "phase4-e2e"
+    },
+    {
+      "key": "ref",
+      "value": "phase4-e2e"
+    }
+  ],
+  "item": [
+    {
+      "name": "Repository Refs",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/repositories/{{username}}/{{repository}}/git/refs"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response is JSON', () => pm.response.to.be.json);",
+              "pm.test('Request succeeds', () => pm.expect(pm.response.json().success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Repository Root Tree",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/repositories/{{username}}/{{repository}}/git/tree?ref={{ref}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Tree request succeeds', () => pm.expect(json.success).to.eql(true));",
+              "pm.test('README exists in root tree', () => {",
+              "  const entries = json.data.tree.entries;",
+              "  pm.expect(entries.some(entry => entry.name === 'README.md')).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Read Small Text File",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/repositories/{{username}}/{{repository}}/git/contents?ref={{ref}}&path=small.txt"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('File request succeeds', () => pm.expect(json.success).to.eql(true));",
+              "pm.test('Correct file path returned', () => pm.expect(json.data.content.path).to.eql('small.txt'));",
+              "pm.test('UTF-8 content returned', () => pm.expect(json.data.content.encoding).to.eql('utf-8'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "README Detection",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/repositories/{{username}}/{{repository}}/git/readme?ref={{ref}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('README request succeeds', () => pm.expect(json.success).to.eql(true));",
+              "pm.test('README.md detected', () => pm.expect(json.data.readme.path).to.eql('README.md'));",
+              "pm.test('README ref is preserved', () => pm.expect(json.data.readme.ref).to.eql(pm.variables.get('ref')));",
+              "pm.test('README has blob OID', () => pm.expect(json.data.readme.oid).to.match(/^[0-9a-f]{40}$|^[0-9a-f]{64}$/));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Raw Binary File",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/repositories/{{username}}/{{repository}}/git/raw?ref={{ref}}&path=binary.bin"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('Raw content type is octet-stream', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/octet-stream'));",
+              "pm.test('Blob OID header exists', () => pm.expect(pm.response.headers.get('X-Git-Blob-Oid')).to.match(/^[0-9a-f]{40}$|^[0-9a-f]{64}$/));",
+              "pm.test('Git ref header is correct', () => pm.expect(pm.response.headers.get('X-Git-Ref')).to.eql(pm.variables.get('ref')));",
+              "pm.test('Binary length is 12 bytes', () => pm.expect(Number(pm.response.headers.get('Content-Length'))).to.eql(12));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Binary Text Protection",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/repositories/{{username}}/{{repository}}/git/contents?ref={{ref}}&path=binary.bin"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Binary text read is rejected with 415', () => pm.response.to.have.status(415));",
+              "pm.test('Correct binary error returned', () => pm.expect(pm.response.json().error.code).to.eql('GIT_FILE_BINARY'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Large File Protection",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/repositories/{{username}}/{{repository}}/git/contents?ref={{ref}}&path=huge.txt"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Large file is rejected with 413', () => pm.response.to.have.status(413));",
+              "pm.test('Correct size error returned', () => pm.expect(pm.response.json().error.code).to.eql('GIT_FILE_TOO_LARGE'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid Ref Protection",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/repositories/{{username}}/{{repository}}/git/readme?ref=../main"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Unsafe ref is rejected with 400', () => pm.response.to.have.status(400));",
+              "pm.test('Correct README query error returned', () => pm.expect(pm.response.json().error.code).to.eql('INVALID_GIT_README_QUERY'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unsupported README Query Protection",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/repositories/{{username}}/{{repository}}/git/readme?path=README.md"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Unsupported query is rejected with 400', () => pm.response.to.have.status(400));",
+              "pm.test('Correct README query error returned', () => pm.expect(pm.response.json().error.code).to.eql('INVALID_GIT_README_QUERY'));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
