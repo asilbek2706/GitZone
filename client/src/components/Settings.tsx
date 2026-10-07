@@ -15,24 +15,34 @@ export function Settings({ user }: { user: User }) {
     if (tab === 'Developer settings')
       api<ApiResponse<{ tokens: typeof tokens }>>('/tokens')
         .then((r) => setTokens(r.data.tokens))
-        .catch((reason: unknown) => setTokenError(reason instanceof Error ? reason.message : 'Unable to load tokens'));
+        .catch((reason: unknown) =>
+          setTokenError(reason instanceof Error ? reason.message : 'Unable to load tokens'),
+        );
   }, [tab]);
   const createToken = async () => {
     if (!tokenName.trim()) return;
     setTokenError('');
     try {
-      const result = await api<ApiResponse<{ token: string; id: string; name: string; expiresAt: string | null; createdAt: string }>>(
-        '/tokens',
-        { method: 'POST', body: JSON.stringify({ name: tokenName.trim() }) },
-      );
+      const result = await api<
+        ApiResponse<{
+          token: string;
+          id: string;
+          name: string;
+          expiresAt: string | null;
+          createdAt: string;
+        }>
+      >('/tokens', { method: 'POST', body: JSON.stringify({ name: tokenName.trim() }) });
       setTokenValue(result.data.token);
       setTokenName('');
-      setTokens((current) => [...current, {
-        id: result.data.id,
-        name: result.data.name,
-        tokenPrefix: result.data.token.slice(0, 8),
-        createdAt: result.data.createdAt,
-      }]);
+      setTokens((current) => [
+        ...current,
+        {
+          id: result.data.id,
+          name: result.data.name,
+          tokenPrefix: result.data.token.slice(0, 8),
+          createdAt: result.data.createdAt,
+        },
+      ]);
     } catch (reason) {
       setTokenError(reason instanceof Error ? reason.message : 'Unable to create token');
     }
@@ -124,18 +134,31 @@ export function Settings({ user }: { user: User }) {
                 <div className="token-secret">
                   <b>Copy this token now. It will not be shown again.</b>
                   <code>{tokenValue}</code>
-                  <button className="button ghost" onClick={() => void navigator.clipboard.writeText(tokenValue)}>Copy token</button>
+                  <button
+                    className="button ghost"
+                    onClick={() => void navigator.clipboard.writeText(tokenValue)}
+                  >
+                    Copy token
+                  </button>
                 </div>
               )}
               <div className="token-create">
-                <input value={tokenName} onChange={(event) => setTokenName(event.target.value)} placeholder="Token name" />
-                <button className="button primary" onClick={() => void createToken()}>＋ Generate new token</button>
+                <input
+                  value={tokenName}
+                  onChange={(event) => setTokenName(event.target.value)}
+                  placeholder="Token name"
+                />
+                <button className="button primary" onClick={() => void createToken()}>
+                  ＋ Generate new token
+                </button>
               </div>
               {tokens.map((token) => (
                 <div className="token-row" key={token.id}>
                   <b>{token.name}</b>
                   <code>{token.tokenPrefix}••••••••</code>
-                  <button className="text-button" onClick={() => void revokeToken(token.id)}>Revoke</button>
+                  <button className="text-button" onClick={() => void revokeToken(token.id)}>
+                    Revoke
+                  </button>
                 </div>
               ))}
             </>

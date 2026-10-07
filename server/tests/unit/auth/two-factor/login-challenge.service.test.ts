@@ -461,17 +461,9 @@ describe('two-factor login challenge service', () => {
       return authResponse;
     });
 
-    await verifyTwoFactorLoginChallenge(
-      'challenge-token',
-      createValidCode(),
-      metadata,
-    );
+    await verifyTwoFactorLoginChallenge('challenge-token', createValidCode(), metadata);
 
-    expect(operations).toEqual([
-      'totp',
-      'challenge',
-      'session',
-    ]);
+    expect(operations).toEqual(['totp', 'challenge', 'session']);
   });
 
   it('does not issue a session when the TOTP timestep atomic claim is lost', async () => {
@@ -491,5 +483,4 @@ describe('two-factor login challenge service', () => {
     expect(transactionChallengeUpdateMany).not.toHaveBeenCalled();
     expect(mockedIssueAuthSession).not.toHaveBeenCalled();
   });
-
 });

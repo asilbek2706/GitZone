@@ -15,11 +15,7 @@ const assertSafePathSegment = (value: string, field: 'username' | 'repository'):
     value.includes('\0') ||
     !SAFE_PATH_SEGMENT_PATTERN.test(value)
   ) {
-    throw new AppError(
-      `Invalid Git ${field} path segment`,
-      400,
-      'INVALID_GIT_REPOSITORY_PATH',
-    );
+    throw new AppError(`Invalid Git ${field} path segment`, 400, 'INVALID_GIT_REPOSITORY_PATH');
   }
 };
 
@@ -40,18 +36,11 @@ const assertInsideGitStorage = (targetPath: string): void => {
   }
 };
 
-export const resolveGitRepositoryPath = (
-  username: string,
-  repositoryName: string,
-): string => {
+export const resolveGitRepositoryPath = (username: string, repositoryName: string): string => {
   assertSafePathSegment(username, 'username');
   assertSafePathSegment(repositoryName, 'repository');
 
-  const repositoryPath = path.resolve(
-    GIT_STORAGE_ROOT,
-    username,
-    `${repositoryName}.git`,
-  );
+  const repositoryPath = path.resolve(GIT_STORAGE_ROOT, username, `${repositoryName}.git`);
 
   assertInsideGitStorage(repositoryPath);
 

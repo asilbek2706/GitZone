@@ -45,11 +45,7 @@ export const disableTwoFactorAuthentication = async (
   const twoFactorAuthentication = user.twoFactorAuthentication;
 
   if (!twoFactorAuthentication?.enabledAt) {
-    throw new AppError(
-      'Two-factor authentication is not enabled',
-      409,
-      'TWO_FACTOR_NOT_ENABLED',
-    );
+    throw new AppError('Two-factor authentication is not enabled', 409, 'TWO_FACTOR_NOT_ENABLED');
   }
 
   let secret: string;
@@ -78,11 +74,7 @@ export const disableTwoFactorAuthentication = async (
   });
 
   if (delta === null) {
-    throw new AppError(
-      'Invalid two-factor authentication code',
-      401,
-      'INVALID_TWO_FACTOR_CODE',
-    );
+    throw new AppError('Invalid two-factor authentication code', 401, 'INVALID_TWO_FACTOR_CODE');
   }
 
   const disabled = await prisma.$transaction(async (tx) => {
@@ -116,10 +108,6 @@ export const disableTwoFactorAuthentication = async (
   });
 
   if (!disabled) {
-    throw new AppError(
-      'Two-factor authentication is not enabled',
-      409,
-      'TWO_FACTOR_NOT_ENABLED',
-    );
+    throw new AppError('Two-factor authentication is not enabled', 409, 'TWO_FACTOR_NOT_ENABLED');
   }
 };

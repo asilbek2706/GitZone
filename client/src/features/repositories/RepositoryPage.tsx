@@ -71,7 +71,9 @@ export function RepositoryPage() {
                 }}
               >
                 {branches.length === 0 && <option>{branch}</option>}
-                {branches.map((name) => <option key={name}>{name}</option>)}
+                {branches.map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
               </select>
               <div className="breadcrumbs">
                 <button onClick={() => setPath('')}>{repo}</button>

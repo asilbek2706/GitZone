@@ -24,11 +24,7 @@ const invalidChallengeError = (): AppError => {
 };
 
 const invalidTwoFactorCodeError = (): AppError => {
-  return new AppError(
-    'Invalid two-factor authentication code',
-    401,
-    'INVALID_TWO_FACTOR_CODE',
-  );
+  return new AppError('Invalid two-factor authentication code', 401, 'INVALID_TWO_FACTOR_CODE');
 };
 
 const getTotpStep = (timestamp: number): bigint => {

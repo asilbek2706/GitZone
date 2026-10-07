@@ -1268,7 +1268,6 @@ describe('auth API integration', () => {
     });
   });
 
-
   it('disables two-factor authentication for an authenticated user', async () => {
     mockedVerifyAccessToken.mockReturnValue({
       sub: 'user-1',
@@ -1301,12 +1300,10 @@ describe('auth API integration', () => {
   });
 
   it('rejects two-factor disable without authentication', async () => {
-    const response = await request(app)
-      .post('/api/auth/2fa/disable')
-      .send({
-        password: 'CurrentPassword123!',
-        code: '123456',
-      });
+    const response = await request(app).post('/api/auth/2fa/disable').send({
+      password: 'CurrentPassword123!',
+      code: '123456',
+    });
 
     expect(response.status).toBe(401);
     expect(mockedDisableTwoFactorAuthentication).not.toHaveBeenCalled();
@@ -1372,11 +1369,7 @@ describe('auth API integration', () => {
     } as never);
 
     mockedDisableTwoFactorAuthentication.mockRejectedValue(
-      new AppError(
-        'Invalid two-factor authentication code',
-        401,
-        'INVALID_TWO_FACTOR_CODE',
-      ),
+      new AppError('Invalid two-factor authentication code', 401, 'INVALID_TWO_FACTOR_CODE'),
     );
 
     const response = await request(app)
@@ -1404,11 +1397,7 @@ describe('auth API integration', () => {
     } as never);
 
     mockedDisableTwoFactorAuthentication.mockRejectedValue(
-      new AppError(
-        'Two-factor authentication is not enabled',
-        409,
-        'TWO_FACTOR_NOT_ENABLED',
-      ),
+      new AppError('Two-factor authentication is not enabled', 409, 'TWO_FACTOR_NOT_ENABLED'),
     );
 
     const response = await request(app)
@@ -1429,5 +1418,4 @@ describe('auth API integration', () => {
       },
     });
   });
-
 });

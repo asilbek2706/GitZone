@@ -116,11 +116,7 @@ export const addRepositoryCollaborator = async (
     return collaborator;
   } catch (error) {
     if (isPrismaUniqueConstraintError(error)) {
-      throw new AppError(
-        'User is already a collaborator',
-        409,
-        'COLLABORATOR_ALREADY_EXISTS',
-      );
+      throw new AppError('User is already a collaborator', 409, 'COLLABORATOR_ALREADY_EXISTS');
     }
 
     throw error;

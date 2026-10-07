@@ -31,11 +31,7 @@ export const createGitRepository = async (
   try {
     await fs.access(repositoryPath);
 
-    throw new AppError(
-      'Git repository path already exists',
-      409,
-      'GIT_REPOSITORY_ALREADY_EXISTS',
-    );
+    throw new AppError('Git repository path already exists', 409, 'GIT_REPOSITORY_ALREADY_EXISTS');
   } catch (error) {
     if (error instanceof AppError) {
       throw error;
@@ -51,20 +47,9 @@ export const createGitRepository = async (
   }
 
   try {
-    await execFileAsync('git', [
-      'init',
-      '--bare',
-      '--initial-branch=main',
-      repositoryPath,
-    ]);
+    await execFileAsync('git', ['init', '--bare', '--initial-branch=main', repositoryPath]);
 
-    await execFileAsync('git', [
-      '--git-dir',
-      repositoryPath,
-      'config',
-      'http.receivepack',
-      'true',
-    ]);
+    await execFileAsync('git', ['--git-dir', repositoryPath, 'config', 'http.receivepack', 'true']);
   } catch {
     try {
       await fs.rm(repositoryPath, {
@@ -79,11 +64,7 @@ export const createGitRepository = async (
       );
     }
 
-    throw new AppError(
-      'Failed to create Git repository',
-      500,
-      'GIT_REPOSITORY_CREATE_FAILED',
-    );
+    throw new AppError('Failed to create Git repository', 500, 'GIT_REPOSITORY_CREATE_FAILED');
   }
 
   return repositoryPath;
@@ -94,24 +75,14 @@ export const renameGitRepository = async (
   oldRepositoryName: string,
   newRepositoryName: string,
 ): Promise<void> => {
-  const oldRepositoryPath = resolveGitRepositoryPath(
-    username,
-    oldRepositoryName,
-  );
+  const oldRepositoryPath = resolveGitRepositoryPath(username, oldRepositoryName);
 
-  const newRepositoryPath = resolveGitRepositoryPath(
-    username,
-    newRepositoryName,
-  );
+  const newRepositoryPath = resolveGitRepositoryPath(username, newRepositoryName);
 
   try {
     await fs.rename(oldRepositoryPath, newRepositoryPath);
   } catch {
-    throw new AppError(
-      'Failed to rename Git repository',
-      500,
-      'GIT_REPOSITORY_RENAME_FAILED',
-    );
+    throw new AppError('Failed to rename Git repository', 500, 'GIT_REPOSITORY_RENAME_FAILED');
   }
 };
 
@@ -121,13 +92,9 @@ export const stageGitRepositoryDeletion = async (
 ): Promise<StagedGitRepositoryDeletion | null> => {
   const originalPath = resolveGitRepositoryPath(username, repositoryName);
 
-  const stagedRepositoryName =
-    `${repositoryName}.deleting-${randomUUID()}`;
+  const stagedRepositoryName = `${repositoryName}.deleting-${randomUUID()}`;
 
-  const stagedPath = resolveGitRepositoryPath(
-    username,
-    stagedRepositoryName,
-  );
+  const stagedPath = resolveGitRepositoryPath(username, stagedRepositoryName);
 
   try {
     await fs.rename(originalPath, stagedPath);
@@ -200,10 +167,7 @@ export const deleteGitRepository = async (
   username: string,
   repositoryName: string,
 ): Promise<void> => {
-  const repositoryPath = resolveGitRepositoryPath(
-    username,
-    repositoryName,
-  );
+  const repositoryPath = resolveGitRepositoryPath(username, repositoryName);
 
   try {
     await fs.rm(repositoryPath, {
@@ -211,10 +175,6 @@ export const deleteGitRepository = async (
       force: true,
     });
   } catch {
-    throw new AppError(
-      'Failed to delete Git repository',
-      500,
-      'GIT_REPOSITORY_DELETE_FAILED',
-    );
+    throw new AppError('Failed to delete Git repository', 500, 'GIT_REPOSITORY_DELETE_FAILED');
   }
 };

@@ -1,18 +1,8 @@
-import type {
-  NextFunction,
-  Request,
-  Response,
-} from 'express';
+import type { NextFunction, Request, Response } from 'express';
 
 import request from 'supertest';
 
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../../src/app.js';
 import { AppError } from '../../../src/errors/app.error.js';
@@ -20,67 +10,37 @@ import {
   getGitRepositoryTree,
   type GitRepositoryTree,
 } from '../../../src/services/git/git-tree.service.js';
-import {
-  authorizeRepositoryContentRead,
-} from '../../../src/services/repositories/repository-content-access.service.js';
+import { authorizeRepositoryContentRead } from '../../../src/services/repositories/repository-content-access.service.js';
 
-vi.mock(
-  '../../../src/controllers/git/git-http.controller.js',
-  () => ({
-    gitHttpController:
-      vi.fn(),
-  }),
-);
+vi.mock('../../../src/controllers/git/git-http.controller.js', () => ({
+  gitHttpController: vi.fn(),
+}));
 
-vi.mock(
-  '../../../src/middleware/optional-auth.middleware.js',
-  () => ({
-    optionalAuthMiddleware: (
-      req: Request,
-      _res: Response,
-      next: NextFunction,
-    ) => {
-      if (
-        req.headers.authorization
-      ) {
-        (
-          req as Request & {
-            userId?: string;
-          }
-        ).userId =
-          'viewer-1';
-      }
+vi.mock('../../../src/middleware/optional-auth.middleware.js', () => ({
+  optionalAuthMiddleware: (req: Request, _res: Response, next: NextFunction) => {
+    if (req.headers.authorization) {
+      (
+        req as Request & {
+          userId?: string;
+        }
+      ).userId = 'viewer-1';
+    }
 
-      next();
-    },
-  }),
-);
+    next();
+  },
+}));
 
-vi.mock(
-  '../../../src/services/repositories/repository-content-access.service.js',
-  () => ({
-    authorizeRepositoryContentRead:
-      vi.fn(),
-  }),
-);
+vi.mock('../../../src/services/repositories/repository-content-access.service.js', () => ({
+  authorizeRepositoryContentRead: vi.fn(),
+}));
 
-vi.mock(
-  '../../../src/services/git/git-tree.service.js',
-  () => ({
-    getGitRepositoryTree:
-      vi.fn(),
-  }),
-);
+vi.mock('../../../src/services/git/git-tree.service.js', () => ({
+  getGitRepositoryTree: vi.fn(),
+}));
 
-const mockedAuthorize =
-  vi.mocked(
-    authorizeRepositoryContentRead,
-  );
+const mockedAuthorize = vi.mocked(authorizeRepositoryContentRead);
 
-const mockedGetTree =
-  vi.mocked(
-    getGitRepositoryTree,
-  );
+const mockedGetTree = vi.mocked(getGitRepositoryTree);
 
 const accessResult = {
   repositoryId: 'repo-1',
@@ -96,10 +56,8 @@ const treeResult: GitRepositoryTree = {
 
   ref: {
     name: 'main',
-    fullName:
-      'refs/heads/main',
-    oid:
-      '1111111111111111111111111111111111111111',
+    fullName: 'refs/heads/main',
+    oid: '1111111111111111111111111111111111111111',
   },
 
   path: 'src',
@@ -107,171 +65,105 @@ const treeResult: GitRepositoryTree = {
   entries: [
     {
       name: 'index.ts',
-      path:
-        'src/index.ts',
+      path: 'src/index.ts',
       mode: '100644',
-      objectType:
-        'blob',
-      oid:
-        '2222222222222222222222222222222222222222',
+      objectType: 'blob',
+      oid: '2222222222222222222222222222222222222222',
       size: 42,
       kind: 'file',
     },
   ],
 };
 
-describe(
-  'repository tree API',
-  () => {
-    beforeEach(() => {
-      vi.resetAllMocks();
+describe('repository tree API', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
 
-      mockedAuthorize
-        .mockResolvedValue(
-          accessResult,
-        );
+    mockedAuthorize.mockResolvedValue(accessResult);
 
-      mockedGetTree
-        .mockResolvedValue(
-          treeResult,
-        );
+    mockedGetTree.mockResolvedValue(treeResult);
+  });
+
+  it('returns repository tree for public access', async () => {
+    const response = await request(app).get('/api/repositories/asil/demo/git/tree').query({
+      ref: 'main',
+      path: 'src',
     });
 
-    it('returns repository tree for public access', async () => {
-      const response =
-        await request(app)
-          .get(
-            '/api/repositories/asil/demo/git/tree',
-          )
-          .query({
-            ref: 'main',
-            path: 'src',
-          });
+    expect(response.status).toBe(200);
 
-      expect(response.status)
-        .toBe(200);
+    expect(response.body).toMatchObject({
+      success: true,
 
-      expect(response.body)
-        .toMatchObject({
-          success: true,
+      data: {
+        tree: {
+          path: 'src',
 
-          data: {
-            tree: {
-              path: 'src',
+          ref: {
+            name: 'main',
+          },
 
-              ref: {
-                name: 'main',
-              },
+          entries: [
+            {
+              name: 'index.ts',
 
-              entries: [
-                {
-                  name:
-                    'index.ts',
-
-                  kind:
-                    'file',
-                },
-              ],
+              kind: 'file',
             },
-          },
-        });
-
-      expect(mockedAuthorize)
-        .toHaveBeenCalledWith(
-          'asil',
-          'demo',
-          undefined,
-        );
-
-      expect(mockedGetTree)
-        .toHaveBeenCalledWith(
-          'asil',
-          'demo',
-          'main',
-          'src',
-        );
+          ],
+        },
+      },
     });
 
-    it('passes authenticated user to content authorization', async () => {
-      await request(app)
-        .get(
-          '/api/repositories/asil/demo/git/tree',
-        )
-        .set(
-          'Authorization',
-          'Bearer test-token',
-        );
+    expect(mockedAuthorize).toHaveBeenCalledWith('asil', 'demo', undefined);
 
-      expect(mockedAuthorize)
-        .toHaveBeenCalledWith(
-          'asil',
-          'demo',
-          'viewer-1',
-        );
+    expect(mockedGetTree).toHaveBeenCalledWith('asil', 'demo', 'main', 'src');
+  });
+
+  it('passes authenticated user to content authorization', async () => {
+    await request(app)
+      .get('/api/repositories/asil/demo/git/tree')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(mockedAuthorize).toHaveBeenCalledWith('asil', 'demo', 'viewer-1');
+  });
+
+  it('rejects invalid tree query', async () => {
+    const response = await request(app).get('/api/repositories/asil/demo/git/tree').query({
+      path: '../secret',
     });
 
-    it('rejects invalid tree query', async () => {
-      const response =
-        await request(app)
-          .get(
-            '/api/repositories/asil/demo/git/tree',
-          )
-          .query({
-            path:
-              '../secret',
-          });
+    expect(response.status).toBe(400);
 
-      expect(response.status)
-        .toBe(400);
+    expect(response.body).toMatchObject({
+      success: false,
 
-      expect(response.body)
-        .toMatchObject({
-          success: false,
-
-          error: {
-            code:
-              'INVALID_REPOSITORY_TREE_QUERY',
-          },
-        });
-
-      expect(mockedAuthorize)
-        .not.toHaveBeenCalled();
-
-      expect(mockedGetTree)
-        .not.toHaveBeenCalled();
+      error: {
+        code: 'INVALID_REPOSITORY_TREE_QUERY',
+      },
     });
 
-    it('does not expose inaccessible repository content', async () => {
-      mockedAuthorize
-        .mockRejectedValue(
-          new AppError(
-            'Repository not found',
-            404,
-            'REPOSITORY_NOT_FOUND',
-          ),
-        );
+    expect(mockedAuthorize).not.toHaveBeenCalled();
 
-      const response =
-        await request(app)
-          .get(
-            '/api/repositories/asil/private/git/tree',
-          );
+    expect(mockedGetTree).not.toHaveBeenCalled();
+  });
 
-      expect(response.status)
-        .toBe(404);
+  it('does not expose inaccessible repository content', async () => {
+    mockedAuthorize.mockRejectedValue(
+      new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND'),
+    );
 
-      expect(response.body)
-        .toMatchObject({
-          success: false,
+    const response = await request(app).get('/api/repositories/asil/private/git/tree');
 
-          error: {
-            code:
-              'REPOSITORY_NOT_FOUND',
-          },
-        });
+    expect(response.status).toBe(404);
 
-      expect(mockedGetTree)
-        .not.toHaveBeenCalled();
+    expect(response.body).toMatchObject({
+      success: false,
+
+      error: {
+        code: 'REPOSITORY_NOT_FOUND',
+      },
     });
-  },
-);
+
+    expect(mockedGetTree).not.toHaveBeenCalled();
+  });
+});

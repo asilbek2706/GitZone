@@ -307,27 +307,17 @@ describe('repository collaborator service', () => {
     mockedCollaboratorFindUnique.mockResolvedValue(null as never);
 
     mockedCollaboratorCreate.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError(
-        'Unique constraint failed',
-        {
-          code: 'P2002',
-          clientVersion: '7.10.0',
-        },
-      ),
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '7.10.0',
+      }),
     );
 
     await expect(
-      addRepositoryCollaborator(
-        'owner-1',
-        'asil',
-        'demo',
-        'testuser',
-        'READ',
-      ),
+      addRepositoryCollaborator('owner-1', 'asil', 'demo', 'testuser', 'READ'),
     ).rejects.toMatchObject({
       statusCode: 409,
       code: 'COLLABORATOR_ALREADY_EXISTS',
     });
   });
-
 });

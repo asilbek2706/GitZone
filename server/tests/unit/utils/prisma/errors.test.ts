@@ -5,25 +5,19 @@ import { isPrismaUniqueConstraintError } from '../../../../src/utils/prisma/erro
 
 describe('Prisma error utilities', () => {
   it('recognizes P2002 unique constraint errors', () => {
-    const error = new Prisma.PrismaClientKnownRequestError(
-      'Unique constraint failed',
-      {
-        code: 'P2002',
-        clientVersion: '7.10.0',
-      },
-    );
+    const error = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+      code: 'P2002',
+      clientVersion: '7.10.0',
+    });
 
     expect(isPrismaUniqueConstraintError(error)).toBe(true);
   });
 
   it('rejects other known Prisma errors', () => {
-    const error = new Prisma.PrismaClientKnownRequestError(
-      'Record not found',
-      {
-        code: 'P2025',
-        clientVersion: '7.10.0',
-      },
-    );
+    const error = new Prisma.PrismaClientKnownRequestError('Record not found', {
+      code: 'P2025',
+      clientVersion: '7.10.0',
+    });
 
     expect(isPrismaUniqueConstraintError(error)).toBe(false);
   });

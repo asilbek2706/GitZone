@@ -30,16 +30,16 @@ A working GitZone development environment therefore requires both a normal Node.
 
 The currently validated development environment uses:
 
-| Component | Validated version |
-|---|---:|
-| Node.js | 22.22.3 |
-| npm | 12.0.2 |
-| TypeScript | 5.9.3 |
-| PostgreSQL | 16.15 |
-| Git | 2.43.0 |
-| Prisma | 7.10.0 |
-| Vitest | 5.0.0 |
-| Express | 5.2.1 |
+| Component  | Validated version |
+| ---------- | ----------------: |
+| Node.js    |           22.22.3 |
+| npm        |            12.0.2 |
+| TypeScript |             5.9.3 |
+| PostgreSQL |             16.15 |
+| Git        |            2.43.0 |
+| Prisma     |            7.10.0 |
+| Vitest     |             5.0.0 |
+| Express    |             5.2.1 |
 
 These versions represent the environment against which the current backend has been linted, type-checked, tested, and built successfully.
 
@@ -838,12 +838,12 @@ git pull
 
 Conceptually:
 
-| Repository | Operation | Authentication |
-|---|---|---|
-| Public | Read | Anonymous allowed |
-| Public | Write | Required |
-| Private | Read | Required |
-| Private | Write | Required |
+| Repository | Operation | Authentication    |
+| ---------- | --------- | ----------------- |
+| Public     | Read      | Anonymous allowed |
+| Public     | Write     | Required          |
+| Private    | Read      | Required          |
+| Private    | Write     | Required          |
 
 Authenticated Git operations use a GitZone Personal Access Token.
 

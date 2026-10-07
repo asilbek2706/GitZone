@@ -60,12 +60,8 @@ const mockedUserFindUnique = vi.mocked(prisma.user.findUnique);
 const mockedCreateGitRepository = vi.mocked(createGitRepository);
 const mockedRenameGitRepository = vi.mocked(renameGitRepository);
 const mockedStageGitRepositoryDeletion = vi.mocked(stageGitRepositoryDeletion);
-const mockedRestoreStagedGitRepositoryDeletion = vi.mocked(
-  restoreStagedGitRepositoryDeletion,
-);
-const mockedFinalizeStagedGitRepositoryDeletion = vi.mocked(
-  finalizeStagedGitRepositoryDeletion,
-);
+const mockedRestoreStagedGitRepositoryDeletion = vi.mocked(restoreStagedGitRepositoryDeletion);
+const mockedFinalizeStagedGitRepositoryDeletion = vi.mocked(finalizeStagedGitRepositoryDeletion);
 
 const createdAt = new Date();
 const updatedAt = new Date();
@@ -341,50 +337,25 @@ describe('repository service', () => {
   });
 
   it('deletes repository using staged filesystem deletion', async () => {
-    mockedRepositoryFindFirst.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryFindFirst.mockResolvedValue(baseRepository as never);
 
-    mockedStageGitRepositoryDeletion.mockResolvedValue(
-      stagedDeletion,
-    );
+    mockedStageGitRepositoryDeletion.mockResolvedValue(stagedDeletion);
 
-    mockedRepositoryDelete.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryDelete.mockResolvedValue(baseRepository as never);
 
-    mockedFinalizeStagedGitRepositoryDeletion.mockResolvedValue(
-      undefined,
-    );
+    mockedFinalizeStagedGitRepositoryDeletion.mockResolvedValue(undefined);
 
-    await expect(
-      deleteRepository(
-        'owner-1',
-        'asil',
-        'demo',
-      ),
-    ).resolves.toBeUndefined();
+    await expect(deleteRepository('owner-1', 'asil', 'demo')).resolves.toBeUndefined();
 
-    expect(
-      mockedStageGitRepositoryDeletion,
-    ).toHaveBeenCalledWith(
-      'asil',
-      'demo',
-    );
+    expect(mockedStageGitRepositoryDeletion).toHaveBeenCalledWith('asil', 'demo');
 
-    expect(
-      mockedRepositoryDelete,
-    ).toHaveBeenCalledWith({
+    expect(mockedRepositoryDelete).toHaveBeenCalledWith({
       where: {
         id: 'repo-1',
       },
     });
 
-    expect(
-      mockedFinalizeStagedGitRepositoryDeletion,
-    ).toHaveBeenCalledWith(
-      stagedDeletion,
-    );
+    expect(mockedFinalizeStagedGitRepositoryDeletion).toHaveBeenCalledWith(stagedDeletion);
   });
 
   it('denies repository deletion for non-owner', async () => {
@@ -397,49 +368,29 @@ describe('repository service', () => {
   });
 
   it('does not delete database record when git deletion staging fails', async () => {
-    mockedRepositoryFindFirst.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryFindFirst.mockResolvedValue(baseRepository as never);
 
-    mockedStageGitRepositoryDeletion.mockRejectedValue(
-      new Error('Git deletion staging failed'),
-    );
+    mockedStageGitRepositoryDeletion.mockRejectedValue(new Error('Git deletion staging failed'));
 
-    await expect(
-      deleteRepository(
-        'owner-1',
-        'asil',
-        'demo',
-      ),
-    ).rejects.toThrow(
+    await expect(deleteRepository('owner-1', 'asil', 'demo')).rejects.toThrow(
       'Git deletion staging failed',
     );
 
-    expect(
-      mockedRepositoryDelete,
-    ).not.toHaveBeenCalled();
+    expect(mockedRepositoryDelete).not.toHaveBeenCalled();
   });
 
   it('reports critical error when create database rollback fails', async () => {
-    mockedRepositoryFindUnique.mockResolvedValue(
-      null as never,
-    );
+    mockedRepositoryFindUnique.mockResolvedValue(null as never);
 
-    mockedRepositoryCreate.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryCreate.mockResolvedValue(baseRepository as never);
 
     mockedUserFindUnique.mockResolvedValue({
       username: 'asil',
     } as never);
 
-    mockedCreateGitRepository.mockRejectedValue(
-      new Error('Git init failed'),
-    );
+    mockedCreateGitRepository.mockRejectedValue(new Error('Git init failed'));
 
-    mockedRepositoryDelete.mockRejectedValue(
-      new Error('Database rollback failed'),
-    );
+    mockedRepositoryDelete.mockRejectedValue(new Error('Database rollback failed'));
 
     await expect(
       createRepository('owner-1', {
@@ -453,82 +404,40 @@ describe('repository service', () => {
   });
 
   it('rolls back git rename when database update fails', async () => {
-    mockedRepositoryFindFirst.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryFindFirst.mockResolvedValue(baseRepository as never);
 
-    mockedRepositoryFindUnique.mockResolvedValue(
-      null as never,
-    );
+    mockedRepositoryFindUnique.mockResolvedValue(null as never);
 
-    mockedRenameGitRepository.mockResolvedValue(
-      undefined,
-    );
+    mockedRenameGitRepository.mockResolvedValue(undefined);
 
-    mockedRepositoryUpdate.mockRejectedValue(
-      new Error('Database update failed'),
-    );
+    mockedRepositoryUpdate.mockRejectedValue(new Error('Database update failed'));
 
     await expect(
-      updateRepository(
-        'owner-1',
-        'asil',
-        'demo',
-        {
-          name: 'new-name',
-        },
-      ),
-    ).rejects.toThrow(
-      'Database update failed',
-    );
+      updateRepository('owner-1', 'asil', 'demo', {
+        name: 'new-name',
+      }),
+    ).rejects.toThrow('Database update failed');
 
-    expect(
-      mockedRenameGitRepository,
-    ).toHaveBeenNthCalledWith(
-      1,
-      'asil',
-      'demo',
-      'new-name',
-    );
+    expect(mockedRenameGitRepository).toHaveBeenNthCalledWith(1, 'asil', 'demo', 'new-name');
 
-    expect(
-      mockedRenameGitRepository,
-    ).toHaveBeenNthCalledWith(
-      2,
-      'asil',
-      'new-name',
-      'demo',
-    );
+    expect(mockedRenameGitRepository).toHaveBeenNthCalledWith(2, 'asil', 'new-name', 'demo');
   });
 
   it('reports critical error when git rename rollback fails', async () => {
-    mockedRepositoryFindFirst.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryFindFirst.mockResolvedValue(baseRepository as never);
 
-    mockedRepositoryFindUnique.mockResolvedValue(
-      null as never,
-    );
+    mockedRepositoryFindUnique.mockResolvedValue(null as never);
 
     mockedRenameGitRepository
       .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(
-        new Error('Filesystem rollback failed'),
-      );
+      .mockRejectedValueOnce(new Error('Filesystem rollback failed'));
 
-    mockedRepositoryUpdate.mockRejectedValue(
-      new Error('Database update failed'),
-    );
+    mockedRepositoryUpdate.mockRejectedValue(new Error('Database update failed'));
 
     await expect(
-      updateRepository(
-        'owner-1',
-        'asil',
-        'demo',
-        {
-          name: 'new-name',
-        },
-      ),
+      updateRepository('owner-1', 'asil', 'demo', {
+        name: 'new-name',
+      }),
     ).rejects.toMatchObject({
       statusCode: 500,
       code: 'REPOSITORY_RENAME_ROLLBACK_FAILED',
@@ -536,126 +445,63 @@ describe('repository service', () => {
   });
 
   it('restores staged git repository when database deletion fails', async () => {
-    mockedRepositoryFindFirst.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryFindFirst.mockResolvedValue(baseRepository as never);
 
-    mockedStageGitRepositoryDeletion.mockResolvedValue(
-      stagedDeletion,
-    );
+    mockedStageGitRepositoryDeletion.mockResolvedValue(stagedDeletion);
 
-    mockedRepositoryDelete.mockRejectedValue(
-      new Error('Database delete failed'),
-    );
+    mockedRepositoryDelete.mockRejectedValue(new Error('Database delete failed'));
 
-    mockedRestoreStagedGitRepositoryDeletion.mockResolvedValue(
-      undefined,
-    );
+    mockedRestoreStagedGitRepositoryDeletion.mockResolvedValue(undefined);
 
-    await expect(
-      deleteRepository(
-        'owner-1',
-        'asil',
-        'demo',
-      ),
-    ).rejects.toThrow(
+    await expect(deleteRepository('owner-1', 'asil', 'demo')).rejects.toThrow(
       'Database delete failed',
     );
 
-    expect(
-      mockedRestoreStagedGitRepositoryDeletion,
-    ).toHaveBeenCalledWith(
-      stagedDeletion,
-    );
+    expect(mockedRestoreStagedGitRepositoryDeletion).toHaveBeenCalledWith(stagedDeletion);
 
-    expect(
-      mockedFinalizeStagedGitRepositoryDeletion,
-    ).not.toHaveBeenCalled();
+    expect(mockedFinalizeStagedGitRepositoryDeletion).not.toHaveBeenCalled();
   });
 
   it('reports critical error when deletion rollback cannot restore git repository', async () => {
-    mockedRepositoryFindFirst.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryFindFirst.mockResolvedValue(baseRepository as never);
 
-    mockedStageGitRepositoryDeletion.mockResolvedValue(
-      stagedDeletion,
-    );
+    mockedStageGitRepositoryDeletion.mockResolvedValue(stagedDeletion);
 
-    mockedRepositoryDelete.mockRejectedValue(
-      new Error('Database delete failed'),
-    );
+    mockedRepositoryDelete.mockRejectedValue(new Error('Database delete failed'));
 
     mockedRestoreStagedGitRepositoryDeletion.mockRejectedValue(
       new Error('Filesystem restore failed'),
     );
 
-    await expect(
-      deleteRepository(
-        'owner-1',
-        'asil',
-        'demo',
-      ),
-    ).rejects.toMatchObject({
+    await expect(deleteRepository('owner-1', 'asil', 'demo')).rejects.toMatchObject({
       statusCode: 500,
       code: 'REPOSITORY_DELETE_ROLLBACK_FAILED',
     });
   });
 
   it('allows database deletion when git repository is already missing', async () => {
-    mockedRepositoryFindFirst.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryFindFirst.mockResolvedValue(baseRepository as never);
 
-    mockedStageGitRepositoryDeletion.mockResolvedValue(
-      null,
-    );
+    mockedStageGitRepositoryDeletion.mockResolvedValue(null);
 
-    mockedRepositoryDelete.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryDelete.mockResolvedValue(baseRepository as never);
 
-    await expect(
-      deleteRepository(
-        'owner-1',
-        'asil',
-        'demo',
-      ),
-    ).resolves.toBeUndefined();
+    await expect(deleteRepository('owner-1', 'asil', 'demo')).resolves.toBeUndefined();
 
-    expect(
-      mockedRepositoryDelete,
-    ).toHaveBeenCalledOnce();
+    expect(mockedRepositoryDelete).toHaveBeenCalledOnce();
 
-    expect(
-      mockedFinalizeStagedGitRepositoryDeletion,
-    ).not.toHaveBeenCalled();
+    expect(mockedFinalizeStagedGitRepositoryDeletion).not.toHaveBeenCalled();
   });
 
   it('does not fail logical deletion when post-delete filesystem cleanup fails', async () => {
-    mockedRepositoryFindFirst.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryFindFirst.mockResolvedValue(baseRepository as never);
 
-    mockedStageGitRepositoryDeletion.mockResolvedValue(
-      stagedDeletion,
-    );
+    mockedStageGitRepositoryDeletion.mockResolvedValue(stagedDeletion);
 
-    mockedRepositoryDelete.mockResolvedValue(
-      baseRepository as never,
-    );
+    mockedRepositoryDelete.mockResolvedValue(baseRepository as never);
 
-    mockedFinalizeStagedGitRepositoryDeletion.mockRejectedValue(
-      new Error('Cleanup failed'),
-    );
+    mockedFinalizeStagedGitRepositoryDeletion.mockRejectedValue(new Error('Cleanup failed'));
 
-    await expect(
-      deleteRepository(
-        'owner-1',
-        'asil',
-        'demo',
-      ),
-    ).resolves.toBeUndefined();
+    await expect(deleteRepository('owner-1', 'asil', 'demo')).resolves.toBeUndefined();
   });
-
 });

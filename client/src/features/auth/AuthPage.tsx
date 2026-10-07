@@ -4,7 +4,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import type { ApiResponse, User } from '../../types';
 
-export function AuthPage({ mode, onAuth }: { mode: 'login' | 'register'; onAuth: (user: User) => void }) {
+export function AuthPage({
+  mode,
+  onAuth,
+}: {
+  mode: 'login' | 'register';
+  onAuth: (user: User) => void;
+}) {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);

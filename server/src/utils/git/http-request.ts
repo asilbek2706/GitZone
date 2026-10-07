@@ -1,12 +1,8 @@
 import { AppError } from '../../errors/app.error.js';
 
-export type GitHttpAccessType =
-  | 'READ'
-  | 'WRITE';
+export type GitHttpAccessType = 'READ' | 'WRITE';
 
-export type GitHttpService =
-  | 'git-upload-pack'
-  | 'git-receive-pack';
+export type GitHttpService = 'git-upload-pack' | 'git-receive-pack';
 
 export type GitHttpRequestInfo = {
   accessType: GitHttpAccessType;
@@ -14,27 +10,15 @@ export type GitHttpRequestInfo = {
 };
 
 const invalidMethod = (): never => {
-  throw new AppError(
-    'Invalid Git HTTP method',
-    405,
-    'INVALID_GIT_HTTP_METHOD',
-  );
+  throw new AppError('Invalid Git HTTP method', 405, 'INVALID_GIT_HTTP_METHOD');
 };
 
 const invalidService = (): never => {
-  throw new AppError(
-    'Invalid Git HTTP service',
-    400,
-    'INVALID_GIT_HTTP_SERVICE',
-  );
+  throw new AppError('Invalid Git HTTP service', 400, 'INVALID_GIT_HTTP_SERVICE');
 };
 
 const invalidPath = (): never => {
-  throw new AppError(
-    'Invalid Git HTTP path',
-    400,
-    'INVALID_GIT_HTTP_PATH',
-  );
+  throw new AppError('Invalid Git HTTP path', 400, 'INVALID_GIT_HTTP_PATH');
 };
 
 export const classifyGitHttpRequest = (
@@ -42,27 +26,20 @@ export const classifyGitHttpRequest = (
   requestPath: string,
   serviceQuery: unknown,
 ): GitHttpRequestInfo => {
-  const normalizedMethod =
-    method.toUpperCase();
+  const normalizedMethod = method.toUpperCase();
 
   if (requestPath === '/info/refs') {
     if (normalizedMethod !== 'GET') {
       return invalidMethod();
     }
 
-    if (
-      serviceQuery !== 'git-upload-pack' &&
-      serviceQuery !== 'git-receive-pack'
-    ) {
+    if (serviceQuery !== 'git-upload-pack' && serviceQuery !== 'git-receive-pack') {
       return invalidService();
     }
 
     return {
       service: serviceQuery,
-      accessType:
-        serviceQuery === 'git-receive-pack'
-          ? 'WRITE'
-          : 'READ',
+      accessType: serviceQuery === 'git-receive-pack' ? 'WRITE' : 'READ',
     };
   }
 

@@ -177,11 +177,7 @@ describe('authorizeRepositoryAccess', () => {
       ],
     } as never);
 
-    const result = await authorizeRepositoryAccess(
-      'repo-1',
-      'READ',
-      'user-1',
-    );
+    const result = await authorizeRepositoryAccess('repo-1', 'READ', 'user-1');
 
     expect(result.permission).toBe('WRITE');
   });
@@ -198,11 +194,7 @@ describe('authorizeRepositoryAccess', () => {
       collaborators: [],
     } as never);
 
-    const result = await authorizeRepositoryAccess(
-      'repo-1',
-      'READ',
-      'unrelated-user',
-    );
+    const result = await authorizeRepositoryAccess('repo-1', 'READ', 'unrelated-user');
 
     expect(result.permission).toBe('PUBLIC');
   });
@@ -220,11 +212,7 @@ describe('authorizeRepositoryAccess', () => {
     } as never);
 
     await expect(
-      authorizeRepositoryAccess(
-        'repo-1',
-        'READ',
-        'unrelated-user',
-      ),
+      authorizeRepositoryAccess('repo-1', 'READ', 'unrelated-user'),
     ).rejects.toMatchObject({
       statusCode: 403,
       code: 'REPOSITORY_ACCESS_DENIED',
@@ -244,15 +232,10 @@ describe('authorizeRepositoryAccess', () => {
     } as never);
 
     await expect(
-      authorizeRepositoryAccess(
-        'repo-1',
-        'WRITE',
-        'unrelated-user',
-      ),
+      authorizeRepositoryAccess('repo-1', 'WRITE', 'unrelated-user'),
     ).rejects.toMatchObject({
       statusCode: 403,
       code: 'REPOSITORY_ACCESS_DENIED',
     });
   });
-
 });

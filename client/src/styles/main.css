@@ -1,56 +1,46 @@
-@use 'sass:color';
-$bg: #f6f8fc;
-$surface: #fff;
-$ink: #172033;
-$muted: #72809a;
-$border: #e7ebf2;
-$blue: #4967f5;
-$purple: #7d58e8;
-$green: #1ea97c;
-$yellow: #e9ae3e;
 * {
   box-sizing: border-box;
 }
+
 body {
   margin: 0;
-  background: $bg;
-  color: $ink;
-  font:
-    14px/1.5 Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  background: #f6f8fc;
+  color: #172033;
+  font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+
 button,
 input,
 textarea,
 select {
   font: inherit;
 }
+
 button {
   cursor: pointer;
   border: 0;
   background: none;
   color: inherit;
 }
+
 a {
   color: inherit;
   text-decoration: none;
 }
+
 .muted {
-  color: $muted;
+  color: #72809a;
 }
+
 .loading-screen {
   height: 100vh;
   display: grid;
   place-content: center;
   gap: 14px;
   justify-items: center;
-  color: $muted;
+  color: #72809a;
 }
+
 .logo-mark {
   display: grid;
   place-items: center;
@@ -61,8 +51,9 @@ a {
   border-radius: 10px;
   font-weight: 800;
   font-size: 19px;
-  box-shadow: 0 8px 20px #6475ea40;
+  box-shadow: 0 8px 20px rgba(100, 117, 234, 0.2509803922);
 }
+
 .brand {
   display: flex;
   align-items: center;
@@ -70,23 +61,27 @@ a {
   font-size: 20px;
   font-weight: 800;
 }
+
 .brand.light {
   color: #fff;
 }
+
 .app-shell {
   display: flex;
   min-height: 100vh;
 }
+
 .sidebar {
   width: 248px;
   background: #fff;
-  border-right: 1px solid $border;
+  border-right: 1px solid #e7ebf2;
   padding: 26px 17px 18px;
   display: flex;
   flex-direction: column;
   position: fixed;
   inset: 0 auto 0 0;
 }
+
 .workspace-label {
   color: #a0aabe;
   font-size: 10px;
@@ -96,15 +91,18 @@ a {
   display: flex;
   justify-content: space-between;
 }
+
 .workspace-label a {
   font-size: 18px;
-  color: $blue;
+  color: #4967f5;
 }
+
 .side-nav,
 .mini-repos {
   display: grid;
   gap: 4px;
 }
+
 .side-nav a,
 .sidebar-bottom > a {
   display: flex;
@@ -115,12 +113,14 @@ a {
   color: #718099;
   font-weight: 600;
 }
+
 .side-nav a.active,
 .side-nav a:hover,
 .sidebar-bottom > a.active {
   background: #eef1ff;
-  color: $blue;
+  color: #4967f5;
 }
+
 .side-nav em {
   margin-left: auto;
   background: #f0f2f7;
@@ -129,33 +129,40 @@ a {
   font-size: 11px;
   font-style: normal;
 }
+
 .nav-icon {
   width: 15px;
   text-align: center;
 }
+
 .repo-label {
   margin-top: 34px;
 }
+
 .mini-repos a {
   padding: 9px 14px;
   color: #63728a;
 }
+
 .repo-dot {
   display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   margin-right: 9px;
-  background: $blue;
+  background: #4967f5;
 }
+
 .repo-dot.purple {
-  background: $purple;
+  background: #7d58e8;
 }
+
 .sidebar-bottom {
   margin-top: auto;
-  border-top: 1px solid $border;
+  border-top: 1px solid #e7ebf2;
   padding-top: 14px;
 }
+
 .profile-mini {
   display: flex;
   align-items: center;
@@ -164,45 +171,52 @@ a {
   padding: 13px 7px;
   text-align: left;
 }
+
 .profile-mini span:nth-child(2) {
   display: grid;
   flex: 1;
 }
+
 .profile-mini small {
-  color: $muted;
+  color: #72809a;
 }
+
 .avatar {
   display: grid;
   place-items: center;
   background: #e9edff;
-  color: $blue;
+  color: #4967f5;
   width: 34px;
   height: 34px;
   border-radius: 50%;
   font-size: 11px;
   font-weight: 800;
 }
+
 .avatar.small {
   width: 30px;
   height: 30px;
 }
+
 .main-content {
   margin-left: 248px;
   flex: 1;
 }
+
 .topbar {
   height: 76px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid #e7ebf2;
   background: #fff;
   display: flex;
   align-items: center;
   padding: 0 42px;
   justify-content: space-between;
 }
+
 .search {
   display: flex;
   align-items: center;
-  border: 1px solid $border;
+  border: 1px solid #e7ebf2;
   background: #fafbfe;
   border-radius: 8px;
   height: 38px;
@@ -211,20 +225,23 @@ a {
   padding: 0 11px;
   gap: 8px;
 }
+
 .search input {
   border: 0;
   outline: 0;
   background: transparent;
   width: 100%;
-  color: $ink;
+  color: #172033;
 }
+
 .search kbd {
   font-size: 11px;
-  border: 1px solid $border;
+  border: 1px solid #e7ebf2;
   padding: 3px 6px;
   border-radius: 4px;
   white-space: nowrap;
 }
+
 .top-actions {
   display: flex;
   align-items: center;
@@ -232,9 +249,11 @@ a {
   font-size: 20px;
   color: #77849b;
 }
+
 .top-actions button {
   position: relative;
 }
+
 .top-actions i {
   position: absolute;
   background: #ee6684;
@@ -244,20 +263,24 @@ a {
   top: 0;
   right: -1px;
 }
+
 .page-wrap {
   padding: 40px 50px;
   max-width: 1480px;
   margin: auto;
 }
+
 .mobile-menu {
   display: none;
 }
+
 .eyebrow {
   font-size: 11px;
   letter-spacing: 0.14em;
   color: #9ba7bc;
   font-weight: 800;
 }
+
 .welcome-row,
 .profile-head,
 .repo-header {
@@ -266,6 +289,7 @@ a {
   align-items: flex-start;
   gap: 20px;
 }
+
 .welcome-row h1,
 .profile-head h1,
 .repo-header h1 {
@@ -273,9 +297,11 @@ a {
   margin: 7px 0 2px;
   letter-spacing: -0.03em;
 }
+
 .wave {
-  color: $yellow;
+  color: #e9ae3e;
 }
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -286,40 +312,48 @@ a {
   border: 1px solid transparent;
   gap: 5px;
 }
+
 .button.primary {
-  background: $blue;
+  background: #4967f5;
   color: #fff;
-  box-shadow: 0 5px 13px #4967f533;
+  box-shadow: 0 5px 13px rgba(73, 103, 245, 0.2);
 }
+
 .button.primary:hover {
   background: #3855df;
 }
+
 .button.ghost {
-  border-color: $border;
+  border-color: #e7ebf2;
   background: #fff;
   color: #57657d;
 }
+
 .button.full {
   width: 100%;
   padding: 13px;
 }
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 15px;
   margin: 32px 0;
 }
+
 .stat-card,
 .panel {
-  background: $surface;
-  border: 1px solid $border;
+  background: #fff;
+  border: 1px solid #e7ebf2;
   border-radius: 12px;
 }
+
 .stat-card {
   display: flex;
   gap: 14px;
   padding: 21px 19px;
 }
+
 .stat-icon {
   width: 40px;
   height: 40px;
@@ -327,55 +361,67 @@ a {
   place-items: center;
   background: #edf0ff;
   border-radius: 9px;
-  color: $blue;
+  color: #4967f5;
   font-size: 20px;
 }
+
 .stat-card div {
   display: grid;
 }
+
 .stat-card strong {
   font-size: 25px;
   line-height: 1.2;
 }
+
 .stat-card small {
-  color: $green;
+  color: #1ea97c;
   font-size: 11px;
   margin-top: 3px;
 }
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   gap: 17px;
 }
+
 .panel {
   padding: 22px;
 }
+
 .panel-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
 }
+
 .panel h2 {
   font-size: 16px;
   margin: 0 0 3px;
 }
+
 .text-button {
-  color: $blue;
+  color: #4967f5;
   font-weight: 700;
   font-size: 12px;
 }
+
 .activity-list {
   margin-top: 21px;
 }
+
 .activity {
   display: flex;
   gap: 13px;
   padding: 14px 0;
   border-bottom: 1px solid #f0f2f6;
 }
+
 .activity:last-child {
   border: 0;
 }
+
 .activity-icon {
   width: 31px;
   height: 31px;
@@ -384,28 +430,35 @@ a {
   place-items: center;
   font-size: 14px;
 }
+
 .activity-icon.purple {
   background: #f1ebff;
-  color: $purple;
+  color: #7d58e8;
 }
+
 .activity-icon.blue {
   background: #e9efff;
-  color: $blue;
+  color: #4967f5;
 }
+
 .activity-icon.yellow {
   background: #fff5df;
   color: #ca8b16;
 }
+
 .activity-icon.green {
   background: #e3f8f0;
-  color: $green;
+  color: #1ea97c;
 }
+
 .activity p {
   margin: 0 0 4px;
 }
+
 .activity small {
-  color: $muted;
+  color: #72809a;
 }
+
 .code-tag {
   background: #f0f2f7;
   border-radius: 4px;
@@ -413,6 +466,7 @@ a {
   font-size: 11px;
   color: #55627a;
 }
+
 .repo-row {
   display: flex;
   align-items: center;
@@ -420,17 +474,21 @@ a {
   padding: 13px 0;
   border-bottom: 1px solid #f0f2f6;
 }
+
 .repo-row > span:nth-child(2) {
   flex: 1;
   display: grid;
 }
+
 .repo-row small {
-  color: $muted;
+  color: #72809a;
 }
+
 .repo-symbol {
-  color: $blue;
+  color: #4967f5;
   font-size: 17px;
 }
+
 .language-dot {
   display: inline-block;
   width: 8px;
@@ -439,44 +497,52 @@ a {
   background: #3178c6;
   margin-right: 5px;
 }
+
 .create-repo {
   display: block;
-  color: $blue;
+  color: #4967f5;
   font-weight: 700;
   padding-top: 18px;
 }
+
 .empty {
   padding: 35px 10px;
   text-align: center;
-  color: $muted;
+  color: #72809a;
 }
+
 .empty a {
-  color: $blue;
+  color: #4967f5;
 }
+
 .contribution-panel {
   margin-top: 17px;
 }
+
 .contribution-panel select,
 .file-toolbar select,
 .settings-content select {
-  border: 1px solid $border;
+  border: 1px solid #e7ebf2;
   border-radius: 6px;
   padding: 7px 10px;
-  color: $muted;
+  color: #72809a;
   background: #fff;
 }
+
 .contribution-chart {
   display: flex;
   gap: 10px;
   margin: 25px 0 9px;
 }
+
 .chart-labels {
   display: grid;
   grid-template-rows: repeat(3, 1fr);
   font-size: 10px;
-  color: $muted;
+  color: #72809a;
   gap: 9px;
 }
+
 .heatmap {
   display: grid;
   grid-template-rows: repeat(7, 11px);
@@ -484,54 +550,67 @@ a {
   grid-auto-columns: 11px;
   gap: 4px;
 }
+
 .heatmap i,
 .chart-footer i {
   border-radius: 3px;
   background: #edf0f5;
 }
+
 .level-1 {
   background: #d8e0ff !important;
 }
+
 .level-2 {
   background: #aebdff !important;
 }
+
 .level-3 {
   background: #778cf8 !important;
 }
+
 .level-4 {
-  background: $blue !important;
+  background: #4967f5 !important;
 }
+
 .chart-footer {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: $muted;
+  color: #72809a;
   font-size: 10px;
 }
+
 .chart-footer b {
   margin-left: auto;
   font-weight: 500;
 }
+
 .form-page {
   max-width: 760px;
   margin: auto;
 }
+
 .back-link {
-  color: $blue;
+  color: #4967f5;
   font-weight: 700;
 }
+
 .form-heading {
   margin: 35px 0 26px;
 }
+
 .form-heading h1,
 .settings-heading h1 {
   font-size: 30px;
   margin: 7px 0;
 }
+
 .repo-form {
   display: grid;
   gap: 22px;
 }
+
 .repo-form label,
 .settings-content label {
   display: grid;
@@ -539,15 +618,18 @@ a {
   color: #44516b;
   font-weight: 700;
 }
+
 .required {
   color: #e15d74;
 }
+
 .optional {
   font-weight: 400;
   color: #a0aabd;
   font-size: 12px;
   margin-left: 5px;
 }
+
 .repo-form input,
 .repo-form textarea,
 .repo-form select,
@@ -557,107 +639,126 @@ a {
   border-radius: 7px;
   padding: 11px 13px;
   outline: 0;
-  color: $ink;
+  color: #172033;
   background: #fff;
   resize: vertical;
 }
+
 .repo-form input:focus,
 .repo-form textarea:focus,
 .settings-content input:focus,
 .settings-content textarea:focus {
-  border-color: $blue;
-  box-shadow: 0 0 0 3px #4967f51c;
+  border-color: #4967f5;
+  box-shadow: 0 0 0 3px rgba(73, 103, 245, 0.1098039216);
 }
+
 .repo-form small {
   font-weight: 400;
-  color: $muted;
+  color: #72809a;
 }
+
 .input-prefix {
   display: flex;
 }
+
 .input-prefix span {
   border: 1px solid #dfe4ed;
   border-right: 0;
   padding: 11px 10px;
   border-radius: 7px 0 0 7px;
   background: #f8f9fc;
-  color: $muted;
+  color: #72809a;
 }
+
 .input-prefix input {
   border-radius: 0 7px 7px 0 !important;
   flex: 1;
 }
+
 .repo-form fieldset {
   border: 0;
   padding: 0;
   display: grid;
   gap: 12px;
 }
+
 .repo-form legend {
   font-weight: 700;
   color: #44516b;
   margin-bottom: 5px;
 }
+
 .radio {
   display: flex !important;
   grid-template-columns: none !important;
   flex-direction: row;
   gap: 10px !important;
   font-weight: 400 !important;
-  border: 1px solid $border;
+  border: 1px solid #e7ebf2;
   padding: 13px;
   border-radius: 8px;
 }
+
 .radio input {
-  accent-color: $blue;
+  accent-color: #4967f5;
 }
+
 .radio span {
   display: grid;
 }
+
 .form-actions {
-  border-top: 1px solid $border;
+  border-top: 1px solid #e7ebf2;
   padding-top: 20px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
+
 .profile-head {
   background: #fff;
-  border: 1px solid $border;
+  border: 1px solid #e7ebf2;
   border-radius: 12px;
   padding: 28px;
 }
+
 .profile-avatar {
   width: 82px;
   height: 82px;
   font-size: 23px;
 }
+
 .profile-head > div:nth-child(2) {
   flex: 1;
 }
+
 .profile-meta {
-  color: $muted;
+  color: #72809a;
   font-size: 12px;
   margin-top: 13px;
 }
+
 .tabs,
 .repo-tabs {
   display: flex;
   gap: 28px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid #e7ebf2;
   margin-top: 22px;
 }
+
 .tabs span,
 .repo-tabs span {
   padding: 13px 3px;
-  color: $muted;
+  color: #72809a;
   font-weight: 700;
 }
+
 .tabs .selected,
 .repo-tabs .active {
-  color: $blue;
-  border-bottom: 2px solid $blue;
+  color: #4967f5;
+  border-bottom: 2px solid #4967f5;
 }
+
 .tabs b,
 .repo-tabs b {
   background: #edf0f7;
@@ -665,111 +766,136 @@ a {
   font-size: 10px;
   padding: 2px 6px;
 }
+
 .section-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin: 27px 0 14px;
 }
+
 .section-title h2 {
   font-size: 19px;
 }
+
 .search.small {
   width: 230px;
   height: 34px;
 }
+
 .profile-repos {
   display: grid;
   gap: 12px;
 }
+
 .repo-card {
   display: block;
   padding: 20px;
 }
+
 .repo-card:hover {
   border-color: #c5cff7;
 }
+
 .repo-card-title {
   display: flex;
   align-items: center;
   gap: 9px;
 }
+
 .repo-card-title h3 {
   margin: 0;
   font-size: 16px;
-  color: $blue;
+  color: #4967f5;
 }
+
 .visibility {
   font-size: 11px;
-  color: $muted;
-  border: 1px solid $border;
+  color: #72809a;
+  border: 1px solid #e7ebf2;
   border-radius: 12px;
   padding: 2px 8px;
 }
+
 .repo-card p {
   margin: 12px 0;
 }
+
 .repo-card-foot {
   display: flex;
   gap: 20px;
-  color: $muted;
+  color: #72809a;
   font-size: 12px;
 }
+
 .repo-header {
   margin-bottom: 22px;
 }
+
 .repo-title {
   display: flex;
   align-items: center;
   gap: 9px;
 }
+
 .repo-title h1 {
   font-size: 22px;
 }
+
 .repo-title h1 b {
   font-weight: 400;
-  color: $muted;
+  color: #72809a;
 }
+
 .repo-symbol.large {
   font-size: 24px;
 }
+
 .repo-actions {
   display: flex;
   gap: 8px;
 }
+
 .repo-tabs {
   margin-top: 25px;
 }
+
 .repo-layout {
   display: grid;
   grid-template-columns: 1fr 280px;
   gap: 17px;
   margin-top: 22px;
 }
+
 .file-panel {
   padding: 0;
   overflow: hidden;
 }
+
 .file-toolbar {
   padding: 13px;
   display: flex;
   gap: 10px;
   align-items: center;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid #e7ebf2;
 }
+
 .file-toolbar .breadcrumbs {
   flex: 1;
-  color: $blue;
+  color: #4967f5;
   font-weight: 700;
 }
+
 .breadcrumbs button {
-  color: $blue;
+  color: #4967f5;
   font-weight: 700;
 }
+
 .small-button {
   padding: 7px 12px;
   font-size: 12px;
 }
+
 .commit-bar {
   padding: 12px 16px;
   background: #fafbfe;
@@ -777,17 +903,20 @@ a {
   align-items: center;
   gap: 9px;
   font-size: 12px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid #e7ebf2;
 }
+
 .commit-bar small {
   margin-left: auto;
-  color: $muted;
+  color: #72809a;
 }
+
 .avatar.tiny {
   width: 23px;
   height: 23px;
   font-size: 8px;
 }
+
 .file-row {
   width: 100%;
   display: grid;
@@ -798,97 +927,118 @@ a {
   text-align: left;
   border-bottom: 1px solid #f0f2f6;
 }
+
 .file-row:hover {
   background: #fafbff;
 }
+
 .file-row .muted {
   font-size: 12px;
 }
+
 .file-icon {
-  color: $blue;
+  color: #4967f5;
 }
+
 .file-icon.file {
   color: #8b98ad;
 }
+
 .repo-sidebar {
   display: grid;
   align-content: start;
   gap: 17px;
 }
+
 .about-panel div {
   padding: 8px 0;
-  color: $muted;
+  color: #72809a;
   font-size: 12px;
 }
+
 .about-panel h3,
 .releases h3 {
   margin: 0 0 12px;
 }
+
 .settings-heading {
   margin-bottom: 30px;
 }
+
 .settings-layout {
   display: grid;
   grid-template-columns: 210px 1fr;
   gap: 30px;
   max-width: 920px;
 }
+
 .settings-nav {
   display: grid;
   align-content: start;
   gap: 3px;
 }
+
 .settings-nav button {
   display: flex;
   justify-content: space-between;
   padding: 11px 13px;
-  color: $muted;
+  color: #72809a;
   text-align: left;
   border-radius: 7px;
 }
+
 .settings-nav button.active {
   background: #eaf0ff;
-  color: $blue;
+  color: #4967f5;
   font-weight: 700;
 }
+
 .settings-content {
   display: grid;
   gap: 17px;
 }
+
 .settings-content h2 {
   margin: 0;
   font-size: 20px;
 }
+
 .settings-content > p {
   margin: -10px 0 7px;
 }
+
 .settings-avatar {
   display: flex;
   align-items: center;
   gap: 15px;
 }
+
 .setting-row,
 .token-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid $border;
+  border-top: 1px solid #e7ebf2;
   padding: 19px 0;
 }
+
 .setting-row p {
   margin: 4px 0 0;
 }
+
 .token-row code {
   background: #f5f6fa;
   padding: 5px 9px;
-  color: $muted;
+  color: #72809a;
 }
+
 .auth-page {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 45% 55%;
   background: #fff;
 }
+
 .auth-decoration {
   background: linear-gradient(145deg, #263b93, #5137a1);
   padding: 37px 12%;
@@ -896,64 +1046,79 @@ a {
   display: flex;
   flex-direction: column;
 }
+
 .auth-quote {
   margin: auto 0;
 }
+
 .auth-quote > span {
   font-size: 70px;
   line-height: 0.4;
   color: #91a5ff;
 }
+
 .auth-quote h2 {
   font-size: 43px;
   line-height: 1.12;
   letter-spacing: -0.04em;
   margin: 20px 0;
 }
+
 .auth-quote strong {
   color: #a7b5ff;
 }
+
 .auth-quote p {
   color: #cad4ff;
   max-width: 340px;
   font-size: 15px;
 }
+
 .auth-circles {
   display: flex;
   gap: 6px;
   margin-top: 35px;
 }
+
 .auth-circles i {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #fff;
 }
+
 .auth-circles i ~ i {
   opacity: 0.3;
 }
+
 .auth-decoration > small {
   color: #a9b8ea;
 }
+
 .auth-card-wrap {
   display: grid;
   place-items: center;
   padding: 30px;
 }
+
 .auth-card {
   width: min(410px, 100%);
 }
+
 .auth-mobile-logo {
   display: none;
 }
+
 .auth-card h1 {
   font-size: 28px;
   letter-spacing: -0.03em;
   margin: 9px 0 3px;
 }
+
 .auth-card > .muted {
   margin: 0 0 28px;
 }
+
 .auth-card label {
   display: grid;
   gap: 7px;
@@ -961,35 +1126,42 @@ a {
   font-weight: 700;
   color: #45536e;
 }
+
 .auth-card label a {
   margin-left: auto;
-  color: $blue;
+  color: #4967f5;
   float: right;
   font-weight: 600;
 }
-.auth-card input:not([type='checkbox']) {
+
+.auth-card input:not([type=checkbox]) {
   border: 1px solid #dfe4ed;
   border-radius: 7px;
   padding: 12px 13px;
   outline: 0;
 }
+
 .auth-card input:focus {
-  border-color: $blue;
-  box-shadow: 0 0 0 3px #4967f51c;
+  border-color: #4967f5;
+  box-shadow: 0 0 0 3px rgba(73, 103, 245, 0.1098039216);
 }
+
 .check {
   display: flex !important;
   align-items: flex-start;
   font-size: 12px !important;
   font-weight: 400 !important;
 }
+
 .check input {
-  accent-color: $blue;
+  accent-color: #4967f5;
   margin-top: 3px;
 }
+
 .check a {
-  color: $blue;
+  color: #4967f5;
 }
+
 .auth-divider {
   display: flex;
   align-items: center;
@@ -998,26 +1170,31 @@ a {
   font-size: 11px;
   margin: 22px 0;
 }
+
 .auth-divider:before,
 .auth-divider:after {
-  content: '';
+  content: "";
   height: 1px;
-  background: $border;
+  background: #e7ebf2;
   flex: 1;
 }
+
 .github {
   width: 100%;
-  border: 1px solid $border;
+  border: 1px solid #e7ebf2;
 }
+
 .auth-switch {
   text-align: center;
-  color: $muted;
+  color: #72809a;
   margin-top: 25px;
 }
+
 .auth-switch a {
-  color: $blue;
+  color: #4967f5;
   font-weight: 700;
 }
+
 .error-box {
   padding: 11px 13px;
   border-radius: 7px;
@@ -1027,6 +1204,7 @@ a {
   margin: 12px 0;
   font-size: 13px;
 }
+
 @media (max-width: 1000px) {
   .sidebar {
     width: 210px;
@@ -1143,12 +1321,11 @@ a {
     display: none;
   }
 }
-
 :root {
   color-scheme: light;
 }
 
-:root[data-theme='dark'] {
+:root[data-theme=dark] {
   color-scheme: dark;
   --bg: #101522;
   --surface: #171e2d;
@@ -1161,45 +1338,43 @@ a {
 body {
   background: var(--bg, #f6f8fc);
   color: var(--ink, #172033);
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-:root[data-theme='dark'] .sidebar,
-:root[data-theme='dark'] .topbar,
-:root[data-theme='dark'] .panel,
-:root[data-theme='dark'] .stat-card,
-:root[data-theme='dark'] .profile-head,
-:root[data-theme='dark'] .auth-card-wrap,
-:root[data-theme='dark'] .repo-card {
+:root[data-theme=dark] .sidebar,
+:root[data-theme=dark] .topbar,
+:root[data-theme=dark] .panel,
+:root[data-theme=dark] .stat-card,
+:root[data-theme=dark] .profile-head,
+:root[data-theme=dark] .auth-card-wrap,
+:root[data-theme=dark] .repo-card {
   background: var(--surface);
   border-color: var(--border);
 }
 
-:root[data-theme='dark'] .search,
-:root[data-theme='dark'] .commit-bar,
-:root[data-theme='dark'] .side-nav em,
-:root[data-theme='dark'] .code-tag,
-:root[data-theme='dark'] .input-prefix span {
+:root[data-theme=dark] .search,
+:root[data-theme=dark] .commit-bar,
+:root[data-theme=dark] .side-nav em,
+:root[data-theme=dark] .code-tag,
+:root[data-theme=dark] .input-prefix span {
   background: var(--soft);
   border-color: var(--border);
 }
 
-:root[data-theme='dark'] input,
-:root[data-theme='dark'] textarea,
-:root[data-theme='dark'] select,
-:root[data-theme='dark'] .repo-form input,
-:root[data-theme='dark'] .repo-form textarea,
-:root[data-theme='dark'] .repo-form select,
-:root[data-theme='dark'] .settings-content input,
-:root[data-theme='dark'] .settings-content textarea {
+:root[data-theme=dark] input,
+:root[data-theme=dark] textarea,
+:root[data-theme=dark] select,
+:root[data-theme=dark] .repo-form input,
+:root[data-theme=dark] .repo-form textarea,
+:root[data-theme=dark] .repo-form select,
+:root[data-theme=dark] .settings-content input,
+:root[data-theme=dark] .settings-content textarea {
   background: var(--soft);
   color: var(--ink);
   border-color: var(--border);
 }
 
-:root[data-theme='dark'] .file-row:hover {
+:root[data-theme=dark] .file-row:hover {
   background: var(--soft);
 }
 
@@ -1224,4 +1399,4 @@ body {
 
 .token-secret code {
   overflow-wrap: anywhere;
-}
+}/*# sourceMappingURL=main.css.map */

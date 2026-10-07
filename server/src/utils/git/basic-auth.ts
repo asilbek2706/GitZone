@@ -3,34 +3,23 @@ export type GitBasicCredentials = {
   password: string;
 };
 
-const BASIC_AUTH_PATTERN =
-  /^Basic[ \t]+([A-Za-z0-9+/]+={0,2})$/i;
+const BASIC_AUTH_PATTERN = /^Basic[ \t]+([A-Za-z0-9+/]+={0,2})$/i;
 
-const decodeStrictBase64 = (
-  encoded: string,
-): string | null => {
-  if (
-    encoded.length === 0 ||
-    encoded.length % 4 === 1
-  ) {
+const decodeStrictBase64 = (encoded: string): string | null => {
+  if (encoded.length === 0 || encoded.length % 4 === 1) {
     return null;
   }
 
   try {
-    const decodedBuffer =
-      Buffer.from(encoded, 'base64');
+    const decodedBuffer = Buffer.from(encoded, 'base64');
 
     if (decodedBuffer.length === 0) {
       return null;
     }
 
-    const normalizedInput =
-      encoded.replace(/=+$/, '');
+    const normalizedInput = encoded.replace(/=+$/, '');
 
-    const normalizedDecoded =
-      decodedBuffer
-        .toString('base64')
-        .replace(/=+$/, '');
+    const normalizedDecoded = decodedBuffer.toString('base64').replace(/=+$/, '');
 
     if (normalizedDecoded !== normalizedInput) {
       return null;
@@ -49,15 +38,13 @@ export const parseGitBasicAuthorization = (
     return null;
   }
 
-  const match =
-    BASIC_AUTH_PATTERN.exec(authorization);
+  const match = BASIC_AUTH_PATTERN.exec(authorization);
 
   if (!match?.[1]) {
     return null;
   }
 
-  const decoded =
-    decodeStrictBase64(match[1]);
+  const decoded = decodeStrictBase64(match[1]);
 
   if (
     decoded === null ||
@@ -68,23 +55,17 @@ export const parseGitBasicAuthorization = (
     return null;
   }
 
-  const separatorIndex =
-    decoded.indexOf(':');
+  const separatorIndex = decoded.indexOf(':');
 
   if (separatorIndex <= 0) {
     return null;
   }
 
-  const username =
-    decoded.slice(0, separatorIndex);
+  const username = decoded.slice(0, separatorIndex);
 
-  const password =
-    decoded.slice(separatorIndex + 1);
+  const password = decoded.slice(separatorIndex + 1);
 
-  if (
-    username.length === 0 ||
-    password.length === 0
-  ) {
+  if (username.length === 0 || password.length === 0) {
     return null;
   }
 

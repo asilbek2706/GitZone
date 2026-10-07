@@ -211,27 +211,16 @@ describe('environment configuration', () => {
 
     const { env } = await loadEnv();
 
-    expect(env.GIT_HTTP_BACKEND_PATH).toBe(
-      '/usr/lib/git-core/git-http-backend',
-    );
+    expect(env.GIT_HTTP_BACKEND_PATH).toBe('/usr/lib/git-core/git-http-backend');
 
-    expect(env.GIT_HTTP_MAX_HEADER_BYTES).toBe(
-      16384,
-    );
+    expect(env.GIT_HTTP_MAX_HEADER_BYTES).toBe(16384);
   });
 
   it('rejects an invalid Git HTTP header limit', async () => {
-    process.env.GIT_HTTP_MAX_HEADER_BYTES =
-      '100';
+    process.env.GIT_HTTP_MAX_HEADER_BYTES = '100';
 
-    await expect(
-      loadEnv(),
-    ).rejects.toThrow(
-      'Invalid environment configuration',
-    );
+    await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
   });
-
-
 
   it('uses safe Git read defaults', async () => {
     delete process.env.GIT_EXECUTABLE_PATH;
@@ -240,71 +229,40 @@ describe('environment configuration', () => {
     delete process.env.GIT_READ_MAX_BUFFER_BYTES;
     delete process.env.GIT_MAX_FILE_SIZE_BYTES;
 
-    const { env } =
-      await loadEnv();
+    const { env } = await loadEnv();
 
-    expect(
-      env.GIT_EXECUTABLE_PATH,
-    ).toBe('git');
+    expect(env.GIT_EXECUTABLE_PATH).toBe('git');
 
-    expect(
-      env.GIT_CHILD_PATH,
-    ).toBe('/usr/bin:/bin');
+    expect(env.GIT_CHILD_PATH).toBe('/usr/bin:/bin');
 
-    expect(
-      env.GIT_READ_TIMEOUT_MS,
-    ).toBe(5000);
+    expect(env.GIT_READ_TIMEOUT_MS).toBe(5000);
 
-    expect(
-      env.GIT_READ_MAX_BUFFER_BYTES,
-    ).toBe(5242880);
+    expect(env.GIT_READ_MAX_BUFFER_BYTES).toBe(5242880);
   });
 
   it('rejects a Git read timeout below the minimum', async () => {
-    process.env.GIT_READ_TIMEOUT_MS =
-      '50';
+    process.env.GIT_READ_TIMEOUT_MS = '50';
 
-    await expect(
-      loadEnv(),
-    ).rejects.toThrow(
-      'Invalid environment configuration',
-    );
+    await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
   });
 
   it('rejects an excessive Git read timeout', async () => {
-    process.env.GIT_READ_TIMEOUT_MS =
-      '60001';
+    process.env.GIT_READ_TIMEOUT_MS = '60001';
 
-    await expect(
-      loadEnv(),
-    ).rejects.toThrow(
-      'Invalid environment configuration',
-    );
+    await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
   });
 
   it('rejects a Git read buffer below the minimum', async () => {
-    process.env.GIT_READ_MAX_BUFFER_BYTES =
-      '1024';
+    process.env.GIT_READ_MAX_BUFFER_BYTES = '1024';
 
-    await expect(
-      loadEnv(),
-    ).rejects.toThrow(
-      'Invalid environment configuration',
-    );
+    await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
   });
 
   it('rejects an excessive Git read buffer', async () => {
-    process.env.GIT_READ_MAX_BUFFER_BYTES =
-      '52428801';
+    process.env.GIT_READ_MAX_BUFFER_BYTES = '52428801';
 
-    await expect(
-      loadEnv(),
-    ).rejects.toThrow(
-      'Invalid environment configuration',
-    );
+    await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
   });
-
-
 
   it('accepts a custom Git maximum file size', async () => {
     process.env.GIT_MAX_FILE_SIZE_BYTES = '2097152';
@@ -317,16 +275,12 @@ describe('environment configuration', () => {
   it('rejects a Git maximum file size below the minimum', async () => {
     process.env.GIT_MAX_FILE_SIZE_BYTES = '1023';
 
-    await expect(loadEnv()).rejects.toThrow(
-      'Invalid environment configuration',
-    );
+    await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
   });
 
   it('rejects an excessive Git maximum file size', async () => {
     process.env.GIT_MAX_FILE_SIZE_BYTES = '10485761';
 
-    await expect(loadEnv()).rejects.toThrow(
-      'Invalid environment configuration',
-    );
+    await expect(loadEnv()).rejects.toThrow('Invalid environment configuration');
   });
 });

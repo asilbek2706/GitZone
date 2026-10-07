@@ -11,7 +11,9 @@ export function Dashboard({ user }: { user: User }) {
   useEffect(() => {
     api<ApiResponse<{ repositories: Repository[] }>>(`/repositories/${user.username}`)
       .then((result) => setRepos(result.data.repositories))
-      .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Unable to load repositories'))
+      .catch((reason: unknown) =>
+        setError(reason instanceof Error ? reason.message : 'Unable to load repositories'),
+      )
       .finally(() => setLoading(false));
   }, [user.username]);
 
@@ -23,7 +25,9 @@ export function Dashboard({ user }: { user: User }) {
           <h1>Welcome, {user.name?.split(' ')[0] ?? user.username}</h1>
           <p className="muted">Manage your repositories and collaborate with your team.</p>
         </div>
-        <Link className="button primary" to="/repositories/new">＋ New repository</Link>
+        <Link className="button primary" to="/repositories/new">
+          ＋ New repository
+        </Link>
       </div>
       <section className="panel dashboard-repositories">
         <div className="panel-head">
@@ -31,14 +35,20 @@ export function Dashboard({ user }: { user: User }) {
             <h2>Your repositories</h2>
             <p className="muted">Repositories visible to your account.</p>
           </div>
-          <Link className="text-button" to={`/${user.username}`}>View profile →</Link>
+          <Link className="text-button" to={`/${user.username}`}>
+            View profile →
+          </Link>
         </div>
         {loading && <div className="empty">Loading repositories...</div>}
         {!loading && error && <div className="error-box">{error}</div>}
         {!loading && !error && repos.length === 0 && (
-          <div className="empty">You have no visible repositories yet. <Link to="/repositories/new">Create one</Link></div>
+          <div className="empty">
+            You have no visible repositories yet. <Link to="/repositories/new">Create one</Link>
+          </div>
         )}
-        {!loading && !error && repos.map((repo) => <RepoRow key={repo.id} repo={repo} username={user.username} />)}
+        {!loading &&
+          !error &&
+          repos.map((repo) => <RepoRow key={repo.id} repo={repo} username={user.username} />)}
       </section>
     </>
   );

@@ -15,25 +15,16 @@ export class GitReadError extends Error {
   public readonly exitCode: number | null;
   public readonly stderr: string;
 
-  constructor(
-    message: string,
-    code: GitReadErrorCode,
-    options: GitReadErrorOptions = {},
-  ) {
+  constructor(message: string, code: GitReadErrorCode, options: GitReadErrorOptions = {}) {
     super(message, {
       cause: options.cause,
     });
 
     this.name = 'GitReadError';
     this.code = code;
-    this.exitCode =
-      options.exitCode ?? null;
-    this.stderr =
-      options.stderr ?? '';
+    this.exitCode = options.exitCode ?? null;
+    this.stderr = options.stderr ?? '';
 
-    Object.setPrototypeOf(
-      this,
-      new.target.prototype,
-    );
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }

@@ -1,11 +1,6 @@
 import { AppError } from '../../errors/app.error.js';
-import {
-  getGitBlobContentBySha,
-  type GitBlobContent,
-} from './git-content.service.js';
-import {
-  getGitRepositoryTree,
-} from './git-tree.service.js';
+import { getGitBlobContentBySha, type GitBlobContent } from './git-content.service.js';
+import { getGitRepositoryTree } from './git-tree.service.js';
 
 const README_NAMES = [
   'README.md',
@@ -19,15 +14,10 @@ const README_NAMES = [
 
 export type GitReadme = GitBlobContent;
 
-const getReadmePriority = (
-  name: string,
-): number => {
+const getReadmePriority = (name: string): number => {
   const normalized = name.toLowerCase();
 
-  return README_NAMES.findIndex(
-    (candidate) =>
-      candidate.toLowerCase() === normalized,
-  );
+  return README_NAMES.findIndex((candidate) => candidate.toLowerCase() === normalized);
 };
 
 export const getGitRepositoryReadme = async (
@@ -35,12 +25,7 @@ export const getGitRepositoryReadme = async (
   repositoryName: string,
   requestedRef?: string,
 ): Promise<GitReadme> => {
-  const tree = await getGitRepositoryTree(
-    username,
-    repositoryName,
-    requestedRef,
-    '',
-  );
+  const tree = await getGitRepositoryTree(username, repositoryName, requestedRef, '');
 
   const candidates = tree.entries
     .filter((entry) => {
@@ -50,27 +35,15 @@ export const getGitRepositoryReadme = async (
 
       return getReadmePriority(entry.name) !== -1;
     })
-    .sort(
-      (left, right) =>
-        getReadmePriority(left.name) -
-        getReadmePriority(right.name),
-    );
+    .sort((left, right) => getReadmePriority(left.name) - getReadmePriority(right.name));
 
   const readme = candidates[0];
 
   if (!readme) {
-    throw new AppError(
-      'Repository README not found',
-      404,
-      'GIT_README_NOT_FOUND',
-    );
+    throw new AppError('Repository README not found', 404, 'GIT_README_NOT_FOUND');
   }
 
-  const blob = await getGitBlobContentBySha(
-    username,
-    repositoryName,
-    readme.oid,
-  );
+  const blob = await getGitBlobContentBySha(username, repositoryName, readme.oid);
 
   return {
     path: readme.name,

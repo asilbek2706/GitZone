@@ -5,10 +5,7 @@ import type { AuthenticatedRequest } from '../../../middleware/auth.middleware.j
 import { disableTwoFactorAuthentication } from '../../../services/auth/two-factor/disable.service.js';
 import { disableTwoFactorSchema } from '../../../validations/auth/two-factor/disable.validation.js';
 
-export const disableTwoFactor = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const disableTwoFactor = async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;
 
   const parsed = disableTwoFactorSchema.safeParse(req.body);

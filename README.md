@@ -22,12 +22,12 @@ Development is phase-based: each major layer is implemented, tested, security-au
 
 # Development Status
 
-| Phase | Name | Status |
-| --- | --- | --- |
-| Phase 1 | Core Platform Foundation | ✅ Complete |
-| Phase 2 | Authentication & Sessions | ✅ Complete |
-| Phase 3 | Repository Core & Git Transport | 🚧 Next |
-| Phase 4+ | Advanced GitZone Features | ⏳ Planned |
+| Phase    | Name                            | Status      |
+| -------- | ------------------------------- | ----------- |
+| Phase 1  | Core Platform Foundation        | ✅ Complete |
+| Phase 2  | Authentication & Sessions       | ✅ Complete |
+| Phase 3  | Repository Core & Git Transport | 🚧 Next     |
+| Phase 4+ | Advanced GitZone Features       | ⏳ Planned  |
 
 ---
 
@@ -456,14 +456,14 @@ Planned work includes:
 
 ### Target Permission Model
 
-| Actor | Read | Push |
-| --- | --- | --- |
-| Public anonymous | ✅ | ❌ |
-| Private anonymous | ❌ | ❌ |
-| Repository owner | ✅ | ✅ |
-| READ collaborator | ✅ | ❌ |
-| WRITE collaborator | ✅ | ✅ |
-| Unrelated authenticated user | ❌ | ❌ |
+| Actor                        | Read | Push |
+| ---------------------------- | ---- | ---- |
+| Public anonymous             | ✅   | ❌   |
+| Private anonymous            | ❌   | ❌   |
+| Repository owner             | ✅   | ✅   |
+| READ collaborator            | ✅   | ❌   |
+| WRITE collaborator           | ✅   | ✅   |
+| Unrelated authenticated user | ❌   | ❌   |
 
 Phase 3 will verify these rules through both REST API tests and real Git operations.
 

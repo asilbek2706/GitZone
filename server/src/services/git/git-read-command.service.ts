@@ -1,21 +1,12 @@
-import {
-  execFile,
-} from 'node:child_process';
+import { execFile } from 'node:child_process';
 
 import { env } from '../../config/env.js';
-import {
-  GitReadError,
-} from '../../errors/git-read.error.js';
-import {
-  resolveGitRepositoryPath,
-} from '../../utils/git/repository-path.js';
+import { GitReadError } from '../../errors/git-read.error.js';
+import { resolveGitRepositoryPath } from '../../utils/git/repository-path.js';
 
 const STDERR_PREVIEW_LIMIT = 4096;
 
-const GIT_CONFIG_GLOBAL_PATH =
-  process.platform === 'win32'
-    ? 'NUL'
-    : '/dev/null';
+const GIT_CONFIG_GLOBAL_PATH = process.platform === 'win32' ? 'NUL' : '/dev/null';
 
 type ExecuteGitReadCommandInput = {
   username: string;
@@ -40,202 +31,138 @@ type ChildProcessFailure = Error & {
   stderr?: string | Buffer;
 };
 
-const getStderrPreview = (
-  error: ChildProcessFailure,
-): string => {
-  const stderr =
-    error.stderr === undefined
-      ? ''
-      : String(error.stderr);
+const getStderrPreview = (error: ChildProcessFailure): string => {
+  const stderr = error.stderr === undefined ? '' : String(error.stderr);
 
-  return stderr.slice(
-    0,
-    STDERR_PREVIEW_LIMIT,
-  );
+  return stderr.slice(0, STDERR_PREVIEW_LIMIT);
 };
 
-const createSafeGitReadEnvironment =
-  (): NodeJS.ProcessEnv => ({
-    PATH:
-      env.GIT_CHILD_PATH,
+const createSafeGitReadEnvironment = (): NodeJS.ProcessEnv => ({
+  PATH: env.GIT_CHILD_PATH,
 
-    LANG: 'C',
+  LANG: 'C',
 
-    LC_ALL: 'C',
+  LC_ALL: 'C',
 
-    /*
-     * Never inherit the Node.js server environment.
-     *
-     * DATABASE_URL, JWT secrets, encryption keys,
-     * access tokens and unrelated host variables
-     * must never reach Git child processes.
-     */
-    GIT_CONFIG_NOSYSTEM: '1',
+  /*
+   * Never inherit the Node.js server environment.
+   *
+   * DATABASE_URL, JWT secrets, encryption keys,
+   * access tokens and unrelated host variables
+   * must never reach Git child processes.
+   */
+  GIT_CONFIG_NOSYSTEM: '1',
 
-    GIT_CONFIG_GLOBAL:
-      GIT_CONFIG_GLOBAL_PATH,
+  GIT_CONFIG_GLOBAL: GIT_CONFIG_GLOBAL_PATH,
 
-    /*
-     * Read-only Git commands should not create
-     * optional repository lock files.
-     */
-    GIT_OPTIONAL_LOCKS: '0',
-  });
+  /*
+   * Read-only Git commands should not create
+   * optional repository lock files.
+   */
+  GIT_OPTIONAL_LOCKS: '0',
+});
 
-const executeGitFile = (
-  args: string[],
-): Promise<GitReadCommandResult> => {
-  return new Promise(
-    (
-      resolve,
-      reject,
-    ) => {
-      execFile(
-        env.GIT_EXECUTABLE_PATH,
-        args,
-        {
-          encoding: 'utf8',
-
-          timeout:
-            env.GIT_READ_TIMEOUT_MS,
-
-          maxBuffer:
-            env.GIT_READ_MAX_BUFFER_BYTES,
-
-          windowsHide: true,
-
-          env:
-            createSafeGitReadEnvironment(),
-        },
-        (
-          error,
-          stdout,
-          stderr,
-        ) => {
-          if (error) {
-            /*
-             * Keep stderr attached to the internal
-             * error so the mapper can classify and
-             * inspect a bounded diagnostic message.
-             */
-            const failure =
-              error as ChildProcessFailure;
-
-            /*
-             * Node normally provides stderr through the
-             * callback. Preserve an existing error.stderr
-             * value when the callback value is empty.
-             */
-            if (
-              stderr.length > 0 ||
-              failure.stderr === undefined
-            ) {
-              failure.stderr =
-                stderr;
-            }
-
-            reject(failure);
-
-            return;
-          }
-
-          resolve({
-            stdout:
-              String(stdout),
-
-            stderr:
-              String(stderr),
-          });
-        },
-      );
-    },
-  );
-};
-
-const executeGitBufferFile = (
-  args: string[],
-): Promise<GitReadBufferCommandResult> => {
-  return new Promise(
-    (
-      resolve,
-      reject,
-    ) => {
-      execFile(
-        env.GIT_EXECUTABLE_PATH,
-        args,
-        {
-          encoding: 'buffer',
-
-          timeout:
-            env.GIT_READ_TIMEOUT_MS,
-
-          maxBuffer:
-            env.GIT_READ_MAX_BUFFER_BYTES,
-
-          windowsHide: true,
-
-          env:
-            createSafeGitReadEnvironment(),
-        },
-        (
-          error,
-          stdout,
-          stderr,
-        ) => {
-          if (error) {
-            const failure =
-              error as ChildProcessFailure;
-
-            if (
-              stderr.length > 0 ||
-              failure.stderr === undefined
-            ) {
-              failure.stderr =
-                stderr;
-            }
-
-            reject(failure);
-
-            return;
-          }
-
-          resolve({
-            stdout:
-              Buffer.from(stdout),
-
-            stderr:
-              Buffer.from(stderr),
-          });
-        },
-      );
-    },
-  );
-};
-
-const mapGitReadFailure = (
-  error: unknown,
-): GitReadError => {
-  const failure =
-    error as ChildProcessFailure;
-
-  const stderr =
-    getStderrPreview(failure);
-
-  if (failure.code === 'ENOENT') {
-    return new GitReadError(
-      'Git executable could not be found',
-      'GIT_EXECUTABLE_NOT_FOUND',
+const executeGitFile = (args: string[]): Promise<GitReadCommandResult> => {
+  return new Promise((resolve, reject) => {
+    execFile(
+      env.GIT_EXECUTABLE_PATH,
+      args,
       {
-        stderr,
-        cause: error,
+        encoding: 'utf8',
+
+        timeout: env.GIT_READ_TIMEOUT_MS,
+
+        maxBuffer: env.GIT_READ_MAX_BUFFER_BYTES,
+
+        windowsHide: true,
+
+        env: createSafeGitReadEnvironment(),
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          /*
+           * Keep stderr attached to the internal
+           * error so the mapper can classify and
+           * inspect a bounded diagnostic message.
+           */
+          const failure = error as ChildProcessFailure;
+
+          /*
+           * Node normally provides stderr through the
+           * callback. Preserve an existing error.stderr
+           * value when the callback value is empty.
+           */
+          if (stderr.length > 0 || failure.stderr === undefined) {
+            failure.stderr = stderr;
+          }
+
+          reject(failure);
+
+          return;
+        }
+
+        resolve({
+          stdout: String(stdout),
+
+          stderr: String(stderr),
+        });
       },
     );
+  });
+};
+
+const executeGitBufferFile = (args: string[]): Promise<GitReadBufferCommandResult> => {
+  return new Promise((resolve, reject) => {
+    execFile(
+      env.GIT_EXECUTABLE_PATH,
+      args,
+      {
+        encoding: 'buffer',
+
+        timeout: env.GIT_READ_TIMEOUT_MS,
+
+        maxBuffer: env.GIT_READ_MAX_BUFFER_BYTES,
+
+        windowsHide: true,
+
+        env: createSafeGitReadEnvironment(),
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          const failure = error as ChildProcessFailure;
+
+          if (stderr.length > 0 || failure.stderr === undefined) {
+            failure.stderr = stderr;
+          }
+
+          reject(failure);
+
+          return;
+        }
+
+        resolve({
+          stdout: Buffer.from(stdout),
+
+          stderr: Buffer.from(stderr),
+        });
+      },
+    );
+  });
+};
+
+const mapGitReadFailure = (error: unknown): GitReadError => {
+  const failure = error as ChildProcessFailure;
+
+  const stderr = getStderrPreview(failure);
+
+  if (failure.code === 'ENOENT') {
+    return new GitReadError('Git executable could not be found', 'GIT_EXECUTABLE_NOT_FOUND', {
+      stderr,
+      cause: error,
+    });
   }
 
-  if (
-    failure.code ===
-    'ERR_CHILD_PROCESS_STDIO_MAXBUFFER'
-  ) {
+  if (failure.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER') {
     return new GitReadError(
       'Git read output exceeded the configured limit',
       'GIT_READ_OUTPUT_LIMIT_EXCEEDED',
@@ -246,34 +173,20 @@ const mapGitReadFailure = (
     );
   }
 
-  if (
-    failure.killed === true ||
-    failure.signal === 'SIGTERM'
-  ) {
-    return new GitReadError(
-      'Git read command timed out',
-      'GIT_READ_TIMEOUT',
-      {
-        stderr,
-        cause: error,
-      },
-    );
+  if (failure.killed === true || failure.signal === 'SIGTERM') {
+    return new GitReadError('Git read command timed out', 'GIT_READ_TIMEOUT', {
+      stderr,
+      cause: error,
+    });
   }
 
-  return new GitReadError(
-    'Git read command failed',
-    'GIT_READ_COMMAND_FAILED',
-    {
-      exitCode:
-        typeof failure.code === 'number'
-          ? failure.code
-          : null,
+  return new GitReadError('Git read command failed', 'GIT_READ_COMMAND_FAILED', {
+    exitCode: typeof failure.code === 'number' ? failure.code : null,
 
-      stderr,
+    stderr,
 
-      cause: error,
-    },
-  );
+    cause: error,
+  });
 };
 
 export const executeGitReadCommand = async ({
@@ -282,44 +195,25 @@ export const executeGitReadCommand = async ({
   args,
 }: ExecuteGitReadCommandInput): Promise<GitReadCommandResult> => {
   if (args.length === 0) {
-    throw new GitReadError(
-      'Git read command arguments are required',
-      'GIT_READ_COMMAND_FAILED',
-    );
+    throw new GitReadError('Git read command arguments are required', 'GIT_READ_COMMAND_FAILED');
   }
 
   /*
    * Repository identity and filesystem boundary
    * validation always happens before spawning Git.
    */
-  const repositoryPath =
-    resolveGitRepositoryPath(
-      username,
-      repositoryName,
-    );
+  const repositoryPath = resolveGitRepositoryPath(username, repositoryName);
 
-  const commandArgs = [
-    '--no-pager',
-    '--no-optional-locks',
-
-    '--git-dir',
-    repositoryPath,
-
-    ...args,
-  ];
+  const commandArgs = ['--no-pager', '--no-optional-locks', '--git-dir', repositoryPath, ...args];
 
   try {
-    return await executeGitFile(
-      commandArgs,
-    );
+    return await executeGitFile(commandArgs);
   } catch (error) {
     if (error instanceof GitReadError) {
       throw error;
     }
 
-    throw mapGitReadFailure(
-      error,
-    );
+    throw mapGitReadFailure(error);
   }
 };
 export const executeGitReadBufferCommand = async ({
@@ -328,10 +222,7 @@ export const executeGitReadBufferCommand = async ({
   args,
 }: ExecuteGitReadCommandInput): Promise<GitReadBufferCommandResult> => {
   if (args.length === 0) {
-    throw new GitReadError(
-      'Git read command arguments are required',
-      'GIT_READ_COMMAND_FAILED',
-    );
+    throw new GitReadError('Git read command arguments are required', 'GIT_READ_COMMAND_FAILED');
   }
 
   /*
@@ -339,33 +230,17 @@ export const executeGitReadBufferCommand = async ({
    * identity and filesystem boundary validation as
    * text-based Git reads.
    */
-  const repositoryPath =
-    resolveGitRepositoryPath(
-      username,
-      repositoryName,
-    );
+  const repositoryPath = resolveGitRepositoryPath(username, repositoryName);
 
-  const commandArgs = [
-    '--no-pager',
-    '--no-optional-locks',
-
-    '--git-dir',
-    repositoryPath,
-
-    ...args,
-  ];
+  const commandArgs = ['--no-pager', '--no-optional-locks', '--git-dir', repositoryPath, ...args];
 
   try {
-    return await executeGitBufferFile(
-      commandArgs,
-    );
+    return await executeGitBufferFile(commandArgs);
   } catch (error) {
     if (error instanceof GitReadError) {
       throw error;
     }
 
-    throw mapGitReadFailure(
-      error,
-    );
+    throw mapGitReadFailure(error);
   }
 };

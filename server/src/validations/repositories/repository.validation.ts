@@ -17,14 +17,8 @@ const repositoryNameSchema = z
     (name) => !RESERVED_REPOSITORY_NAMES.has(name.toLowerCase()),
     'Repository name is reserved',
   )
-  .refine(
-    (name) => !name.toLowerCase().endsWith('.git'),
-    'Repository name must not end with .git',
-  )
-  .refine(
-    (name) => !name.includes('..'),
-    'Repository name must not contain consecutive dots',
-  );
+  .refine((name) => !name.toLowerCase().endsWith('.git'), 'Repository name must not end with .git')
+  .refine((name) => !name.includes('..'), 'Repository name must not contain consecutive dots');
 
 export const createRepositorySchema = z.object({
   name: repositoryNameSchema,

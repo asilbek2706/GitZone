@@ -34,7 +34,11 @@ export function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }
     <div className="app-shell">
       <Sidebar user={user} onSignOut={onSignOut} />
       <main className="main-content">
-        <Topbar user={user} darkMode={darkMode} onThemeToggle={() => setDarkMode((value) => !value)} />
+        <Topbar
+          user={user}
+          darkMode={darkMode}
+          onThemeToggle={() => setDarkMode((value) => !value)}
+        />
         <div className="page-wrap">{content}</div>
       </main>
     </div>
@@ -110,7 +114,10 @@ export function Topbar({
       </div>
       <div className="top-actions">
         <NotificationBell />
-        <button title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'} onClick={onThemeToggle}>
+        <button
+          title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          onClick={onThemeToggle}
+        >
           {darkMode ? '☀' : '☾'}
         </button>
         <button title="Create">

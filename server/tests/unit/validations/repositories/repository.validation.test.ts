@@ -7,20 +7,16 @@ import {
 
 describe('repository validation', () => {
   describe('createRepositorySchema', () => {
-    it.each([
-      'demo',
-      'my-repository',
-      'my_repository',
-      'repository.v2',
-      'repo-123',
-      'A1_B2-C3',
-    ])('accepts valid repository name "%s"', (name) => {
-      const result = createRepositorySchema.safeParse({
-        name,
-      });
+    it.each(['demo', 'my-repository', 'my_repository', 'repository.v2', 'repo-123', 'A1_B2-C3'])(
+      'accepts valid repository name "%s"',
+      (name) => {
+        const result = createRepositorySchema.safeParse({
+          name,
+        });
 
-      expect(result.success).toBe(true);
-    });
+        expect(result.success).toBe(true);
+      },
+    );
 
     it('trims repository name', () => {
       const result = createRepositorySchema.safeParse({
@@ -34,16 +30,13 @@ describe('repository validation', () => {
       }
     });
 
-    it.each(['.', '..', '.git', '.GIT'])(
-      'rejects reserved repository name "%s"',
-      (name) => {
-        const result = createRepositorySchema.safeParse({
-          name,
-        });
+    it.each(['.', '..', '.git', '.GIT'])('rejects reserved repository name "%s"', (name) => {
+      const result = createRepositorySchema.safeParse({
+        name,
+      });
 
-        expect(result.success).toBe(false);
-      },
-    );
+      expect(result.success).toBe(false);
+    });
 
     it.each(['demo.git', 'demo.GIT', 'repository.Git'])(
       'rejects repository name ending with .git: "%s"',
@@ -67,21 +60,16 @@ describe('repository validation', () => {
       },
     );
 
-    it.each([
-      '../demo',
-      'demo/repo',
-      'demo\\repo',
-      '/demo',
-      'demo repo',
-      'demo@repo',
-      'demo:repo',
-    ])('rejects unsafe repository name "%s"', (name) => {
-      const result = createRepositorySchema.safeParse({
-        name,
-      });
+    it.each(['../demo', 'demo/repo', 'demo\\repo', '/demo', 'demo repo', 'demo@repo', 'demo:repo'])(
+      'rejects unsafe repository name "%s"',
+      (name) => {
+        const result = createRepositorySchema.safeParse({
+          name,
+        });
 
-      expect(result.success).toBe(false);
-    });
+        expect(result.success).toBe(false);
+      },
+    );
 
     it('rejects an empty repository name', () => {
       const result = createRepositorySchema.safeParse({
@@ -118,21 +106,16 @@ describe('repository validation', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each([
-      '.',
-      '..',
-      '.git',
-      'demo.git',
-      'demo..repo',
-      '../demo',
-      'demo/repo',
-    ])('applies repository name security rules during rename: "%s"', (name) => {
-      const result = updateRepositorySchema.safeParse({
-        name,
-      });
+    it.each(['.', '..', '.git', 'demo.git', 'demo..repo', '../demo', 'demo/repo'])(
+      'applies repository name security rules during rename: "%s"',
+      (name) => {
+        const result = updateRepositorySchema.safeParse({
+          name,
+        });
 
-      expect(result.success).toBe(false);
-    });
+        expect(result.success).toBe(false);
+      },
+    );
 
     it('accepts a valid repository rename', () => {
       const result = updateRepositorySchema.safeParse({

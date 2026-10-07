@@ -16,11 +16,7 @@ const invalidChallengeError = (): AppError => {
 };
 
 const invalidRecoveryCodeError = (): AppError => {
-  return new AppError(
-    'Invalid recovery code',
-    401,
-    'INVALID_RECOVERY_CODE',
-  );
+  return new AppError('Invalid recovery code', 401, 'INVALID_RECOVERY_CODE');
 };
 
 export const verifyTwoFactorRecoveryLogin = async (

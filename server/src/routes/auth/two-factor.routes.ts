@@ -14,10 +14,6 @@ router.post('/setup', authMiddleware, securityActionRateLimiter, setupTwoFactor)
 router.post('/verify', authMiddleware, securityActionRateLimiter, verifyTwoFactor);
 router.post('/disable', authMiddleware, securityActionRateLimiter, disableTwoFactor);
 router.post('/login/verify', securityActionRateLimiter, verifyTwoFactorLogin);
-router.post(
-  '/login/recovery',
-  securityActionRateLimiter,
-  verifyTwoFactorRecoveryLoginController,
-);
+router.post('/login/recovery', securityActionRateLimiter, verifyTwoFactorRecoveryLoginController);
 
 export default router;

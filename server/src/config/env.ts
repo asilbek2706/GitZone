@@ -51,19 +51,13 @@ const envSchema = z.object({
   GIT_EXECUTABLE_PATH: z
     .string()
     .trim()
-    .min(
-      1,
-      'GIT_EXECUTABLE_PATH must not be empty',
-    )
+    .min(1, 'GIT_EXECUTABLE_PATH must not be empty')
     .default('git'),
 
   GIT_CHILD_PATH: z
     .string()
     .trim()
-    .min(
-      1,
-      'GIT_CHILD_PATH must not be empty',
-    )
+    .min(1, 'GIT_CHILD_PATH must not be empty')
     .default('/usr/bin:/bin'),
 
   GIT_HTTP_BACKEND_PATH: z
@@ -72,33 +66,13 @@ const envSchema = z.object({
     .min(1, 'GIT_HTTP_BACKEND_PATH must not be empty')
     .default('/usr/lib/git-core/git-http-backend'),
 
-  GIT_HTTP_MAX_HEADER_BYTES: z.coerce
-    .number()
-    .int()
-    .min(1024)
-    .max(65536)
-    .default(16384),
+  GIT_HTTP_MAX_HEADER_BYTES: z.coerce.number().int().min(1024).max(65536).default(16384),
 
-  GIT_READ_TIMEOUT_MS: z.coerce
-    .number()
-    .int()
-    .min(100)
-    .max(60000)
-    .default(5000),
+  GIT_READ_TIMEOUT_MS: z.coerce.number().int().min(100).max(60000).default(5000),
 
-  GIT_READ_MAX_BUFFER_BYTES: z.coerce
-    .number()
-    .int()
-    .min(65536)
-    .max(52428800)
-    .default(5242880),
+  GIT_READ_MAX_BUFFER_BYTES: z.coerce.number().int().min(65536).max(52428800).default(5242880),
 
-  GIT_MAX_FILE_SIZE_BYTES: z.coerce
-    .number()
-    .int()
-    .min(1024)
-    .max(10485760)
-    .default(1048576),
+  GIT_MAX_FILE_SIZE_BYTES: z.coerce.number().int().min(1024).max(10485760).default(1048576),
 });
 
 const result = envSchema.safeParse(process.env);

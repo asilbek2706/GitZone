@@ -124,11 +124,7 @@ describe('two-factor recovery login service', () => {
   });
 
   it('consumes the recovery code and challenge and issues a session inside one transaction', async () => {
-    const result = await verifyTwoFactorRecoveryLogin(
-      challengeToken,
-      recoveryCode,
-      metadata,
-    );
+    const result = await verifyTwoFactorRecoveryLogin(challengeToken, recoveryCode, metadata);
 
     expect(result).toEqual(authResponse);
 
@@ -159,21 +155,13 @@ describe('two-factor recovery login service', () => {
     expect(transactionRecoveryUpdateMany).toHaveBeenCalledOnce();
     expect(transactionChallengeUpdateMany).toHaveBeenCalledOnce();
 
-    expect(mockedIssueAuthSession).toHaveBeenCalledWith(
-      user,
-      metadata,
-      transactionClient,
-    );
+    expect(mockedIssueAuthSession).toHaveBeenCalledWith(user, metadata, transactionClient);
 
     expect(mockedChallengeUpdateMany).not.toHaveBeenCalled();
   });
 
   it('accepts an uppercase recovery code through normalization', async () => {
-    await verifyTwoFactorRecoveryLogin(
-      challengeToken,
-      recoveryCode.toUpperCase(),
-      metadata,
-    );
+    await verifyTwoFactorRecoveryLogin(challengeToken, recoveryCode.toUpperCase(), metadata);
 
     expect(mockedFindRecoveryCode).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -345,9 +333,9 @@ describe('two-factor recovery login service', () => {
     const sessionError = new Error('Session creation failed');
     mockedIssueAuthSession.mockRejectedValue(sessionError);
 
-    await expect(
-      verifyTwoFactorRecoveryLogin(challengeToken, recoveryCode, metadata),
-    ).rejects.toBe(sessionError);
+    await expect(verifyTwoFactorRecoveryLogin(challengeToken, recoveryCode, metadata)).rejects.toBe(
+      sessionError,
+    );
 
     expect(transactionRecoveryUpdateMany).toHaveBeenCalledOnce();
     expect(transactionChallengeUpdateMany).toHaveBeenCalledOnce();

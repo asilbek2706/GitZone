@@ -8,7 +8,10 @@ import {
   restoreStagedGitRepositoryDeletion,
   stageGitRepositoryDeletion,
 } from '../git/git-repository.service.js';
-import type { CreateRepositoryInput, UpdateRepositoryInput } from '../../validations/repositories/repository.validation.js';
+import type {
+  CreateRepositoryInput,
+  UpdateRepositoryInput,
+} from '../../validations/repositories/repository.validation.js';
 import type { RepositoryResponse, RepositoryWithOwner } from '../../types/repository.types.js';
 
 const toRepositoryResponse = (repository: {
@@ -74,17 +77,10 @@ export const createRepository = async (
     });
 
     if (!owner) {
-      throw new AppError(
-        'Repository owner not found',
-        404,
-        'USER_NOT_FOUND',
-      );
+      throw new AppError('Repository owner not found', 404, 'USER_NOT_FOUND');
     }
 
-    await createGitRepository(
-      owner.username,
-      repository.name,
-    );
+    await createGitRepository(owner.username, repository.name);
   } catch (error) {
     try {
       await prisma.repository.delete({
@@ -190,11 +186,7 @@ export const updateRepository = async (
   });
 
   if (!repository) {
-    throw new AppError(
-      'Repository not found',
-      404,
-      'REPOSITORY_NOT_FOUND',
-    );
+    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
   }
 
   if (repository.ownerId !== ownerId) {
@@ -209,10 +201,7 @@ export const updateRepository = async (
 
   let gitRepositoryRenamed = false;
 
-  if (
-    requestedName !== undefined &&
-    requestedName !== repository.name
-  ) {
+  if (requestedName !== undefined && requestedName !== repository.name) {
     const existingRepository = await prisma.repository.findUnique({
       where: {
         ownerId_name: {
@@ -230,11 +219,7 @@ export const updateRepository = async (
       );
     }
 
-    await renameGitRepository(
-      username,
-      repository.name,
-      requestedName,
-    );
+    await renameGitRepository(username, repository.name, requestedName);
 
     gitRepositoryRenamed = true;
   }
@@ -259,16 +244,9 @@ export const updateRepository = async (
 
     return toRepositoryResponse(updatedRepository);
   } catch (error) {
-    if (
-      gitRepositoryRenamed &&
-      requestedName !== undefined
-    ) {
+    if (gitRepositoryRenamed && requestedName !== undefined) {
       try {
-        await renameGitRepository(
-          username,
-          requestedName,
-          repository.name,
-        );
+        await renameGitRepository(username, requestedName, repository.name);
       } catch (rollbackError) {
         logger.error(
           {
@@ -309,11 +287,7 @@ export const deleteRepository = async (
   });
 
   if (!repository) {
-    throw new AppError(
-      'Repository not found',
-      404,
-      'REPOSITORY_NOT_FOUND',
-    );
+    throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
   }
 
   if (repository.ownerId !== ownerId) {
@@ -324,11 +298,7 @@ export const deleteRepository = async (
     );
   }
 
-  const stagedDeletion =
-    await stageGitRepositoryDeletion(
-      username,
-      repository.name,
-    );
+  const stagedDeletion = await stageGitRepositoryDeletion(username, repository.name);
 
   try {
     await prisma.repository.delete({
@@ -339,9 +309,7 @@ export const deleteRepository = async (
   } catch (error) {
     if (stagedDeletion) {
       try {
-        await restoreStagedGitRepositoryDeletion(
-          stagedDeletion,
-        );
+        await restoreStagedGitRepositoryDeletion(stagedDeletion);
       } catch (rollbackError) {
         logger.error(
           {
@@ -370,9 +338,7 @@ export const deleteRepository = async (
   }
 
   try {
-    await finalizeStagedGitRepositoryDeletion(
-      stagedDeletion,
-    );
+    await finalizeStagedGitRepositoryDeletion(stagedDeletion);
   } catch (cleanupError) {
     logger.error(
       {
@@ -380,8 +346,7 @@ export const deleteRepository = async (
         repositoryId: repository.id,
         username,
         repositoryName: repository.name,
-        stagedRepositoryName:
-          stagedDeletion.stagedRepositoryName,
+        stagedRepositoryName: stagedDeletion.stagedRepositoryName,
       },
       'Repository deleted from database but staged Git repository cleanup failed',
     );

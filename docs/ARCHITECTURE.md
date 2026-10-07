@@ -603,16 +603,16 @@ and evaluates repository ownership, visibility, and collaborator permissions.
 
 The current conceptual matrix is:
 
-| Repository | User state | READ | WRITE |
-|---|---|---:|---:|
-| Public | Anonymous | Yes | No |
-| Public | Owner | Yes | Yes |
-| Public | READ collaborator | Yes | No |
-| Public | WRITE collaborator | Yes | Yes |
-| Private | Anonymous | No | No |
-| Private | Owner | Yes | Yes |
-| Private | READ collaborator | Yes | No |
-| Private | WRITE collaborator | Yes | Yes |
+| Repository | User state         | READ | WRITE |
+| ---------- | ------------------ | ---: | ----: |
+| Public     | Anonymous          |  Yes |    No |
+| Public     | Owner              |  Yes |   Yes |
+| Public     | READ collaborator  |  Yes |    No |
+| Public     | WRITE collaborator |  Yes |   Yes |
+| Private    | Anonymous          |   No |    No |
+| Private    | Owner              |  Yes |   Yes |
+| Private    | READ collaborator  |  Yes |    No |
+| Private    | WRITE collaborator |  Yes |   Yes |
 
 This authorization model is a foundation.
 

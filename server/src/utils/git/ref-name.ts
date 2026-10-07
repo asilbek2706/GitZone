@@ -32,10 +32,12 @@ export const isSafeGitRefName = (value: string): boolean => {
     }
   }
 
-  return value.split('/').every(
-    (component) =>
-      component.length > 0 &&
-      !component.startsWith('.') &&
-      !component.toLowerCase().endsWith('.lock'),
-  );
+  return value
+    .split('/')
+    .every(
+      (component) =>
+        component.length > 0 &&
+        !component.startsWith('.') &&
+        !component.toLowerCase().endsWith('.lock'),
+    );
 };

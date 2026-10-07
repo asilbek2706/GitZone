@@ -1,48 +1,25 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import prisma from '../../../src/config/prisma.js';
 import { AppError } from '../../../src/errors/app.error.js';
-import {
-  authorizeRepositoryAccess,
-} from '../../../src/services/repositories/repository-authorization.service.js';
-import {
-  authorizeRepositoryContentRead,
-} from '../../../src/services/repositories/repository-content-access.service.js';
+import { authorizeRepositoryAccess } from '../../../src/services/repositories/repository-authorization.service.js';
+import { authorizeRepositoryContentRead } from '../../../src/services/repositories/repository-content-access.service.js';
 
-vi.mock(
-  '../../../src/config/prisma.js',
-  () => ({
-    default: {
-      repository: {
-        findFirst: vi.fn(),
-      },
+vi.mock('../../../src/config/prisma.js', () => ({
+  default: {
+    repository: {
+      findFirst: vi.fn(),
     },
-  }),
-);
+  },
+}));
 
-vi.mock(
-  '../../../src/services/repositories/repository-authorization.service.js',
-  () => ({
-    authorizeRepositoryAccess:
-      vi.fn(),
-  }),
-);
+vi.mock('../../../src/services/repositories/repository-authorization.service.js', () => ({
+  authorizeRepositoryAccess: vi.fn(),
+}));
 
-const mockedFindFirst =
-  vi.mocked(
-    prisma.repository.findFirst,
-  );
+const mockedFindFirst = vi.mocked(prisma.repository.findFirst);
 
-const mockedAuthorize =
-  vi.mocked(
-    authorizeRepositoryAccess,
-  );
+const mockedAuthorize = vi.mocked(authorizeRepositoryAccess);
 
 const accessResult = {
   repositoryId: 'repo-1',
@@ -53,117 +30,68 @@ const accessResult = {
   permission: 'PUBLIC',
 } as const;
 
-describe(
-  'repository content access service',
-  () => {
-    beforeEach(() => {
-      vi.resetAllMocks();
+describe('repository content access service', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('throws 404 when repository does not exist', async () => {
+    mockedFindFirst.mockResolvedValue(null as never);
+
+    await expect(authorizeRepositoryContentRead('asil', 'missing')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'REPOSITORY_NOT_FOUND',
     });
 
-    it('throws 404 when repository does not exist', async () => {
-      mockedFindFirst
-        .mockResolvedValue(
-          null as never,
-        );
+    expect(mockedAuthorize).not.toHaveBeenCalled();
+  });
 
-      await expect(
-        authorizeRepositoryContentRead(
-          'asil',
-          'missing',
-        ),
-      ).rejects.toMatchObject({
-        statusCode: 404,
-        code:
-          'REPOSITORY_NOT_FOUND',
-      });
+  it('authorizes anonymous repository read', async () => {
+    mockedFindFirst.mockResolvedValue({
+      id: 'repo-1',
+    } as never);
 
-      expect(
-        mockedAuthorize,
-      ).not.toHaveBeenCalled();
+    mockedAuthorize.mockResolvedValue(accessResult);
+
+    const result = await authorizeRepositoryContentRead('asil', 'demo');
+
+    expect(result).toEqual(accessResult);
+
+    expect(mockedAuthorize).toHaveBeenCalledWith('repo-1', 'READ', undefined);
+  });
+
+  it('passes authenticated user to authorization service', async () => {
+    mockedFindFirst.mockResolvedValue({
+      id: 'repo-1',
+    } as never);
+
+    mockedAuthorize.mockResolvedValue({
+      ...accessResult,
+      isPrivate: true,
+      permission: 'READ',
     });
 
-    it('authorizes anonymous repository read', async () => {
-      mockedFindFirst
-        .mockResolvedValue({
-          id: 'repo-1',
-        } as never);
+    await authorizeRepositoryContentRead('asil', 'demo', 'viewer-1');
 
-      mockedAuthorize
-        .mockResolvedValue(
-          accessResult,
-        );
+    expect(mockedAuthorize).toHaveBeenCalledWith('repo-1', 'READ', 'viewer-1');
+  });
 
-      const result =
-        await authorizeRepositoryContentRead(
-          'asil',
-          'demo',
-        );
+  it('hides unauthorized private repository existence', async () => {
+    mockedFindFirst.mockResolvedValue({
+      id: 'repo-1',
+    } as never);
 
-      expect(result)
-        .toEqual(accessResult);
+    mockedAuthorize.mockRejectedValue(
+      new AppError(
+        'You do not have permission to access this repository',
+        403,
+        'REPOSITORY_ACCESS_DENIED',
+      ),
+    );
 
-      expect(
-        mockedAuthorize,
-      ).toHaveBeenCalledWith(
-        'repo-1',
-        'READ',
-        undefined,
-      );
+    await expect(authorizeRepositoryContentRead('asil', 'private-demo')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'REPOSITORY_NOT_FOUND',
     });
-
-    it('passes authenticated user to authorization service', async () => {
-      mockedFindFirst
-        .mockResolvedValue({
-          id: 'repo-1',
-        } as never);
-
-      mockedAuthorize
-        .mockResolvedValue({
-          ...accessResult,
-          isPrivate: true,
-          permission: 'READ',
-        });
-
-      await authorizeRepositoryContentRead(
-        'asil',
-        'demo',
-        'viewer-1',
-      );
-
-      expect(
-        mockedAuthorize,
-      ).toHaveBeenCalledWith(
-        'repo-1',
-        'READ',
-        'viewer-1',
-      );
-    });
-
-    it('hides unauthorized private repository existence', async () => {
-      mockedFindFirst
-        .mockResolvedValue({
-          id: 'repo-1',
-        } as never);
-
-      mockedAuthorize
-        .mockRejectedValue(
-          new AppError(
-            'You do not have permission to access this repository',
-            403,
-            'REPOSITORY_ACCESS_DENIED',
-          ),
-        );
-
-      await expect(
-        authorizeRepositoryContentRead(
-          'asil',
-          'private-demo',
-        ),
-      ).rejects.toMatchObject({
-        statusCode: 404,
-        code:
-          'REPOSITORY_NOT_FOUND',
-      });
-    });
-  },
-);
+  });
+});
