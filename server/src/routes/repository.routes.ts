@@ -1,4 +1,14 @@
 import { Router } from 'express';
+import {
+  create as createPullRequest,
+  getOne as getPullRequest,
+  list as listPullRequests,
+  update as updatePullRequest,
+  getCommits as getPullRequestCommits,
+  getDiff as getPullRequestDiff,
+  getMergeability as getPullRequestMergeability,
+  merge as mergePullRequest,
+} from '../controllers/pull-requests/pull-request.controller.js';
 
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { optionalAuthMiddleware } from '../middleware/optional-auth.middleware.js';
@@ -48,22 +58,19 @@ router.get('/:username/:name/git/raw', optionalAuthMiddleware, getRawContent);
 router.get('/:username/:name/git/readme', optionalAuthMiddleware, getReadme);
 router.get('/:username/:name/git/blobs/:sha', optionalAuthMiddleware, getBlob);
 router.get('/:username/:name/git/commits', optionalAuthMiddleware, getCommits);
-router.get(
-  '/:username/:name/git/compare/commits',
-  optionalAuthMiddleware,
-  compareCommits,
-);
-router.get(
-  '/:username/:name/git/compare/branches',
-  optionalAuthMiddleware,
-  compareBranches,
-);
-router.get(
-  '/:username/:name/git/commits/:sha/diff',
-  optionalAuthMiddleware,
-  getCommitDiff,
-);
+router.get('/:username/:name/git/compare/commits', optionalAuthMiddleware, compareCommits);
+router.get('/:username/:name/git/compare/branches', optionalAuthMiddleware, compareBranches);
+router.get('/:username/:name/git/commits/:sha/diff', optionalAuthMiddleware, getCommitDiff);
 router.get('/:username/:name/git/commits/:sha', optionalAuthMiddleware, getCommit);
+router.post('/:username/:name/pulls', authMiddleware, createPullRequest);
+router.get('/:username/:name/pulls', optionalAuthMiddleware, listPullRequests);
+router.get('/:username/:name/pulls/:number', optionalAuthMiddleware, getPullRequest);
+router.patch('/:username/:name/pulls/:number', authMiddleware, updatePullRequest);
+
+router.get('/:username/:name/pulls/:number/commits', optionalAuthMiddleware, getPullRequestCommits);
+router.get('/:username/:name/pulls/:number/diff', optionalAuthMiddleware, getPullRequestDiff);
+router.get('/:username/:name/pulls/:number/mergeability', optionalAuthMiddleware, getPullRequestMergeability);
+router.post('/:username/:name/pulls/:number/merge', authMiddleware, mergePullRequest);
 router.get('/:username/:name', getOne);
 router.patch('/:username/:name', authMiddleware, update);
 router.delete('/:username/:name', authMiddleware, remove);
