@@ -15,6 +15,9 @@ import {
   getContent,
   getRawContent,
   getReadme,
+  getCommitDiff,
+  compareCommits,
+  compareBranches,
 } from '../controllers/repositories/repository-git.controller.js';
 import { getTree } from '../controllers/repositories/repository-tree.controller.js';
 import {
@@ -45,6 +48,21 @@ router.get('/:username/:name/git/raw', optionalAuthMiddleware, getRawContent);
 router.get('/:username/:name/git/readme', optionalAuthMiddleware, getReadme);
 router.get('/:username/:name/git/blobs/:sha', optionalAuthMiddleware, getBlob);
 router.get('/:username/:name/git/commits', optionalAuthMiddleware, getCommits);
+router.get(
+  '/:username/:name/git/compare/commits',
+  optionalAuthMiddleware,
+  compareCommits,
+);
+router.get(
+  '/:username/:name/git/compare/branches',
+  optionalAuthMiddleware,
+  compareBranches,
+);
+router.get(
+  '/:username/:name/git/commits/:sha/diff',
+  optionalAuthMiddleware,
+  getCommitDiff,
+);
 router.get('/:username/:name/git/commits/:sha', optionalAuthMiddleware, getCommit);
 router.get('/:username/:name', getOne);
 router.patch('/:username/:name', authMiddleware, update);

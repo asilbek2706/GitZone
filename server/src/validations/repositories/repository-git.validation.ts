@@ -65,3 +65,60 @@ export const repositoryRenameBranchSchema = z
     newName: safeRef,
   })
   .strict();
+
+const commitSha = z
+  .string()
+  .regex(/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i);
+
+const diffLimit = z.coerce
+  .number()
+  .int()
+  .min(1024)
+  .max(5 * 1024 * 1024);
+
+export const repositoryCommitDiffQuerySchema = z
+  .object({
+    maxBytes: diffLimit.optional(),
+    max_bytes: diffLimit.optional(),
+  })
+  .strict()
+  .transform((value) => ({
+    maxBytes:
+      value.maxBytes ??
+      value.max_bytes ??
+      1024 * 1024,
+  }));
+
+export const repositoryCompareCommitsQuerySchema = z
+  .object({
+    base: commitSha,
+    head: commitSha,
+    maxBytes: diffLimit.optional(),
+    max_bytes: diffLimit.optional(),
+  })
+  .strict()
+  .transform((value) => ({
+    base: value.base,
+    head: value.head,
+    maxBytes:
+      value.maxBytes ??
+      value.max_bytes ??
+      1024 * 1024,
+  }));
+
+export const repositoryCompareBranchesQuerySchema = z
+  .object({
+    base: safeRef,
+    head: safeRef,
+    maxBytes: diffLimit.optional(),
+    max_bytes: diffLimit.optional(),
+  })
+  .strict()
+  .transform((value) => ({
+    base: value.base,
+    head: value.head,
+    maxBytes:
+      value.maxBytes ??
+      value.max_bytes ??
+      1024 * 1024,
+  }));

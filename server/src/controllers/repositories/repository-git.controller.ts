@@ -9,6 +9,11 @@ import {
   getGitRawBlob,
 } from '../../services/git/git-content.service.js';
 import { getGitCommit, listGitCommits } from '../../services/git/git-commit.service.js';
+import {
+  compareGitBranches,
+  compareGitCommits,
+  getGitCommitDiff,
+} from '../../services/git/git-diff.service.js';
 import { createGitBranch, deleteGitBranch, renameGitBranch } from '../../services/git/git-branch-mutation.service.js';
 import { getGitBranch } from '../../services/git/git-branch.service.js';
 import { getGitRepositoryRefs } from '../../services/git/git-ref.service.js';
@@ -18,6 +23,9 @@ import { authorizeRepositoryContentRead } from '../../services/repositories/repo
 import {
   repositoryBranchQuerySchema,
   repositoryCommitsQuerySchema,
+  repositoryCommitDiffQuerySchema,
+  repositoryCompareCommitsQuerySchema,
+  repositoryCompareBranchesQuerySchema,
   repositoryCreateBranchSchema,
   repositoryDeleteBranchQuerySchema,
   repositoryRenameBranchSchema,
@@ -241,6 +249,113 @@ export const getCommit = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({ success: true, data: { commit } });
 };
 
+export const getCommitDiff = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { sha } = req.params;
+
+  if (typeof sha !== 'string') {
+    throw new AppError(
+      'Commit SHA is required',
+      400,
+      'INVALID_GIT_COMMIT_SHA',
+    );
+  }
+
+  const parsed =
+    repositoryCommitDiffQuerySchema.safeParse(
+      req.query,
+    );
+
+  if (!parsed.success) {
+    throw new AppError(
+      'Invalid Git commit diff query',
+      400,
+      'INVALID_GIT_DIFF_QUERY',
+    );
+  }
+
+  const { access } = await authorize(req);
+
+  const diff = await getGitCommitDiff(
+    access.repositoryOwnerUsername,
+    access.repositoryName,
+    sha,
+    parsed.data.maxBytes,
+  );
+
+  res.status(200).json({
+    success: true,
+    data: { diff },
+  });
+};
+
+export const compareCommits = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const parsed =
+    repositoryCompareCommitsQuerySchema.safeParse(
+      req.query,
+    );
+
+  if (!parsed.success) {
+    throw new AppError(
+      'Invalid Git commit comparison query',
+      400,
+      'INVALID_GIT_COMPARE_QUERY',
+    );
+  }
+
+  const { access } = await authorize(req);
+
+  const comparison = await compareGitCommits(
+    access.repositoryOwnerUsername,
+    access.repositoryName,
+    parsed.data.base,
+    parsed.data.head,
+    parsed.data.maxBytes,
+  );
+
+  res.status(200).json({
+    success: true,
+    data: { comparison },
+  });
+};
+
+export const compareBranches = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const parsed =
+    repositoryCompareBranchesQuerySchema.safeParse(
+      req.query,
+    );
+
+  if (!parsed.success) {
+    throw new AppError(
+      'Invalid Git branch comparison query',
+      400,
+      'INVALID_GIT_COMPARE_QUERY',
+    );
+  }
+
+  const { access } = await authorize(req);
+
+  const comparison = await compareGitBranches(
+    access.repositoryOwnerUsername,
+    access.repositoryName,
+    parsed.data.base,
+    parsed.data.head,
+    parsed.data.maxBytes,
+  );
+
+  res.status(200).json({
+    success: true,
+    data: { comparison },
+  });
+};
 export const deleteBranch = async (
   req: Request,
   res: Response,
