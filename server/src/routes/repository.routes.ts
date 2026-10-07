@@ -10,6 +10,20 @@ import {
   merge as mergePullRequest,
 } from '../controllers/pull-requests/pull-request.controller.js';
 
+import {
+  createConversationComment as createPullRequestConversationComment,
+  createGeneralComment as createPullRequestGeneralComment,
+  createInlineComment as createPullRequestInlineComment,
+  deleteComment as deletePullRequestComment,
+  editComment as editPullRequestComment,
+  getReviewState as getPullRequestReviewState,
+  listConversations as listPullRequestConversations,
+  listReviews as listPullRequestReviews,
+  reopenConversation as reopenPullRequestConversation,
+  resolveConversation as resolvePullRequestConversation,
+  submitReview as submitPullRequestReview,
+} from '../controllers/pull-requests/pull-request-review.controller.js';
+
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { optionalAuthMiddleware } from '../middleware/optional-auth.middleware.js';
 import { getRefs } from '../controllers/repositories/repository-content.controller.js';
@@ -71,6 +85,32 @@ router.get('/:username/:name/pulls/:number/commits', optionalAuthMiddleware, get
 router.get('/:username/:name/pulls/:number/diff', optionalAuthMiddleware, getPullRequestDiff);
 router.get('/:username/:name/pulls/:number/mergeability', optionalAuthMiddleware, getPullRequestMergeability);
 router.post('/:username/:name/pulls/:number/merge', authMiddleware, mergePullRequest);
+
+router.post(
+  '/:username/:name/pulls/:number/reviews',
+  authMiddleware,
+  submitPullRequestReview,
+);
+router.get(
+  '/:username/:name/pulls/:number/reviews',
+  optionalAuthMiddleware,
+  listPullRequestReviews,
+);
+router.get(
+  '/:username/:name/pulls/:number/review-state',
+  optionalAuthMiddleware,
+  getPullRequestReviewState,
+);
+router.post(
+  '/:username/:name/pulls/:number/comments',
+  authMiddleware,
+  createPullRequestGeneralComment,
+);
+router.get(
+  '/:username/:name/pulls/:number/conversations',
+  optionalAuthMiddleware,
+  listPullRequestConversations,
+);
 router.get('/:username/:name', getOne);
 router.patch('/:username/:name', authMiddleware, update);
 router.delete('/:username/:name', authMiddleware, remove);
@@ -89,3 +129,39 @@ router.delete(
 );
 
 export default router;
+
+router.post(
+  '/:username/:name/pulls/:number/inline-comments',
+  authMiddleware,
+  createPullRequestInlineComment,
+);
+
+router.patch(
+  '/:username/:name/pulls/:number/comments/:commentId',
+  authMiddleware,
+  editPullRequestComment,
+);
+
+router.delete(
+  '/:username/:name/pulls/:number/comments/:commentId',
+  authMiddleware,
+  deletePullRequestComment,
+);
+
+router.post(
+  '/:username/:name/pulls/:number/conversations/:conversationId/comments',
+  authMiddleware,
+  createPullRequestConversationComment,
+);
+
+router.post(
+  '/:username/:name/pulls/:number/conversations/:conversationId/resolve',
+  authMiddleware,
+  resolvePullRequestConversation,
+);
+
+router.post(
+  '/:username/:name/pulls/:number/conversations/:conversationId/reopen',
+  authMiddleware,
+  reopenPullRequestConversation,
+);
