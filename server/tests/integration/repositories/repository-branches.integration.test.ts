@@ -67,7 +67,7 @@ describe('repository branch API', () => {
 
   it('returns branch details', async () => {
     const response = await request(app)
-      .get('/api/repositories/asil/demo/git/branches/develop')
+      .get('/api/repositories/asil/demo/git/branches/details?name=develop')
       .expect(200);
 
     expect(response.body).toEqual({
@@ -84,13 +84,34 @@ describe('repository branch API', () => {
 
   it('passes authenticated user to authorization', async () => {
     await request(app)
-      .get('/api/repositories/asil/demo/git/branches/develop')
+      .get('/api/repositories/asil/demo/git/branches/details?name=develop')
       .set('Authorization', 'Bearer test-token')
       .expect(200);
 
     expect(mockedAuthorize).toHaveBeenCalledWith('asil', 'demo', 'viewer-1');
   });
 
+  it('supports branch names containing slashes', async () => {
+    mockedGetGitBranch.mockResolvedValue({
+      name: 'feature/login',
+      fullName: 'refs/heads/feature/login',
+      oid: '3333333333333333333333333333333333333333',
+      objectType: 'commit',
+      isDefault: false,
+    });
+
+    await request(app)
+      .get(
+        '/api/repositories/asil/demo/git/branches/details?name=feature%2Flogin',
+      )
+      .expect(200);
+
+    expect(mockedGetGitBranch).toHaveBeenCalledWith(
+      'asil',
+      'demo',
+      'feature/login',
+    );
+  });
   it('returns default branch details', async () => {
     mockedGetGitBranch.mockResolvedValue({
       name: 'main',
@@ -101,7 +122,7 @@ describe('repository branch API', () => {
     });
 
     const response = await request(app)
-      .get('/api/repositories/asil/demo/git/branches/main')
+      .get('/api/repositories/asil/demo/git/branches/details?name=main')
       .expect(200);
 
     expect(response.body.data.branch.isDefault).toBe(true);
@@ -113,7 +134,7 @@ describe('repository branch API', () => {
     );
 
     const response = await request(app)
-      .get('/api/repositories/asil/demo/git/branches/missing')
+      .get('/api/repositories/asil/demo/git/branches/details?name=missing')
       .expect(404);
 
     expect(response.body).toMatchObject({
@@ -130,7 +151,7 @@ describe('repository branch API', () => {
     );
 
     const response = await request(app)
-      .get('/api/repositories/asil/private-repo/git/branches/main')
+      .get('/api/repositories/asil/private-repo/git/branches/details?name=main')
       .expect(404);
 
     expect(response.body).toMatchObject({

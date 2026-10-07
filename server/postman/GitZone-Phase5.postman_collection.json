@@ -1,0 +1,416 @@
+{
+  "info": {
+    "_postman_id": "gitzone-phase5-branch-management",
+    "name": "GitZone Phase 5 - Branch Management E2E",
+    "description": "Real API E2E verification for GitZone Phase 5 branch management.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login returns 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Login succeeds', () => pm.expect(body.success).to.eql(true));",
+              "pm.test('Access token returned', () => pm.expect(body.data.accessToken).to.be.a('string').and.not.empty);",
+              "pm.collectionVariables.set('accessToken', body.data.accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Branch Listing",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Branch listing returns 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Default branch is main', () => pm.expect(body.data.defaultBranch).to.eql('main'));",
+              "pm.test('main is listed', () => pm.expect(body.data.branches.some(b => b.name === 'main')).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Default Branch Details",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches/details?name=main",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches", "details"],
+          "query": [
+            {
+              "key": "name",
+              "value": "main"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Branch details returns 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Branch is main', () => pm.expect(body.data.branch.name).to.eql('main'));",
+              "pm.test('main is default', () => pm.expect(body.data.branch.isDefault).to.eql(true));",
+              "pm.collectionVariables.set('mainOid', body.data.branch.oid);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Branch",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"phase5/feature\",\n  \"from\": \"main\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Create returns 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test('Branch created', () => pm.expect(body.data.branch.name).to.eql('phase5/feature'));",
+              "pm.test('Created from main OID', () => pm.expect(body.data.branch.oid).to.eql(pm.collectionVariables.get('mainOid')));",
+              "pm.test('Created branch is not default', () => pm.expect(body.data.branch.isDefault).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Slash Branch Details",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches/details?name=phase5%2Ffeature",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches", "details"],
+          "query": [
+            {
+              "key": "name",
+              "value": "phase5/feature"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Slash branch details returns 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Slash branch resolved', () => pm.expect(body.data.branch.name).to.eql('phase5/feature'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rename Branch",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"phase5/feature\",\n  \"newName\": \"phase5/renamed\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Rename returns 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Branch renamed', () => pm.expect(body.data.branch.name).to.eql('phase5/renamed'));",
+              "pm.test('OID preserved', () => pm.expect(body.data.branch.oid).to.eql(pm.collectionVariables.get('mainOid')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid Ref Protection",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"../evil\",\n  \"from\": \"main\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Invalid ref returns 400', () => pm.response.to.have.status(400));",
+              "const body = pm.response.json();",
+              "pm.test('Invalid ref rejected safely', () => pm.expect(body.error.code).to.eql('INVALID_GIT_BRANCH_REQUEST'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Protected Default Branch Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches?name=main",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches"],
+          "query": [
+            {
+              "key": "name",
+              "value": "main"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Default delete returns 409', () => pm.response.to.have.status(409));",
+              "const body = pm.response.json();",
+              "pm.test('Default branch protected from delete', () => pm.expect(body.error.code).to.eql('GIT_DEFAULT_BRANCH_PROTECTED'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Protected Default Branch Rename",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"main\",\n  \"newName\": \"main-renamed\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Default rename returns 409', () => pm.response.to.have.status(409));",
+              "const body = pm.response.json();",
+              "pm.test('Default branch protected from rename', () => pm.expect(body.error.code).to.eql('GIT_DEFAULT_BRANCH_PROTECTED'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unauthorized Mutation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"unauthorized-test\",\n  \"from\": \"main\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Unauthorized mutation returns 401', () => pm.response.to.have.status(401));",
+              "const body = pm.response.json();",
+              "pm.test('Mutation requires authentication', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Renamed Branch",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches?name=phase5%2Frenamed",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches"],
+          "query": [
+            {
+              "key": "name",
+              "value": "phase5/renamed"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Delete returns 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Final Branch Listing",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/repositories/{{username}}/{{repo}}/git/branches",
+          "host": ["{{baseUrl}}"],
+          "path": ["repositories", "{{username}}", "{{repo}}", "git", "branches"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Final listing returns 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('main survived all operations', () => pm.expect(body.data.branches.some(b => b.name === 'main')).to.eql(true));",
+              "pm.test('renamed branch was deleted', () => pm.expect(body.data.branches.some(b => b.name === 'phase5/renamed')).to.eql(false));",
+              "pm.test('original feature ref is gone', () => pm.expect(body.data.branches.some(b => b.name === 'phase5/feature')).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

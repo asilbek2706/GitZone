@@ -103,3 +103,201 @@ export const createGitBranch = async ({
     isDefault: false,
   };
 };
+
+export type DeleteGitBranchInput = {
+  username: string;
+  repositoryName: string;
+  branchName: string;
+};
+
+export const deleteGitBranch = async ({
+  username,
+  repositoryName,
+  branchName,
+}: DeleteGitBranchInput): Promise<void> => {
+  if (!isSafeGitRefName(branchName)) {
+    throw new AppError(
+      'Invalid Git branch name',
+      400,
+      'INVALID_GIT_BRANCH_NAME',
+    );
+  }
+
+  try {
+    await executeGitReadCommand({
+      username,
+      repositoryName,
+      args: [
+        'check-ref-format',
+        '--branch',
+        branchName,
+      ],
+    });
+  } catch {
+    throw new AppError(
+      'Invalid Git branch name',
+      400,
+      'INVALID_GIT_BRANCH_NAME',
+    );
+  }
+
+  const refs = await getGitRepositoryRefs(
+    username,
+    repositoryName,
+  );
+
+  const branch = refs.branches.find(
+    (reference) =>
+      reference.name === branchName,
+  );
+
+  if (!branch) {
+    throw new AppError(
+      'Git branch not found',
+      404,
+      'GIT_BRANCH_NOT_FOUND',
+    );
+  }
+
+  if (branch.name === refs.defaultBranch) {
+    throw new AppError(
+      'Default branch cannot be deleted',
+      409,
+      'GIT_DEFAULT_BRANCH_PROTECTED',
+    );
+  }
+
+  try {
+    await executeGitWriteCommand({
+      username,
+      repositoryName,
+      args: [
+        'update-ref',
+        '-d',
+        branch.fullName,
+        branch.oid,
+      ],
+    });
+  } catch (error) {
+    if (
+      error instanceof GitWriteError &&
+      error.code ===
+        'GIT_WRITE_COMMAND_FAILED'
+    ) {
+      throw new AppError(
+        'Git branch deletion conflict',
+        409,
+        'GIT_BRANCH_CONFLICT',
+      );
+    }
+
+    throw error;
+  }
+};
+export type RenameGitBranchInput = {
+  username: string;
+  repositoryName: string;
+  branchName: string;
+  newBranchName: string;
+};
+
+export const renameGitBranch = async ({
+  username,
+  repositoryName,
+  branchName,
+  newBranchName,
+}: RenameGitBranchInput): Promise<GitReference> => {
+  await validateBranchName(
+    username,
+    repositoryName,
+    branchName,
+  );
+
+  await validateBranchName(
+    username,
+    repositoryName,
+    newBranchName,
+  );
+
+  const refs = await getGitRepositoryRefs(
+    username,
+    repositoryName,
+  );
+
+  const branch = refs.branches.find(
+    (reference) =>
+      reference.name === branchName,
+  );
+
+  if (!branch) {
+    throw new AppError(
+      'Git branch not found',
+      404,
+      'GIT_BRANCH_NOT_FOUND',
+    );
+  }
+
+  if (branch.name === refs.defaultBranch) {
+    throw new AppError(
+      'Default branch cannot be renamed',
+      409,
+      'GIT_DEFAULT_BRANCH_PROTECTED',
+    );
+  }
+
+  const existingTarget =
+    refs.branches.find(
+      (reference) =>
+        reference.name === newBranchName,
+    );
+
+  if (existingTarget) {
+    throw new AppError(
+      'Git branch already exists',
+      409,
+      'GIT_BRANCH_ALREADY_EXISTS',
+    );
+  }
+
+  const newFullName =
+    `refs/heads/${newBranchName}`;
+
+  const transaction = [
+    `create ${newFullName} ${branch.oid}`,
+    `delete ${branch.fullName} ${branch.oid}`,
+    '',
+  ].join('\n');
+
+  try {
+    await executeGitWriteCommand({
+      username,
+      repositoryName,
+      args: [
+        'update-ref',
+        '--stdin',
+      ],
+      stdin: transaction,
+    });
+  } catch (error) {
+    if (
+      error instanceof GitWriteError &&
+      error.code ===
+        'GIT_WRITE_COMMAND_FAILED'
+    ) {
+      throw new AppError(
+        'Git branch rename conflict',
+        409,
+        'GIT_BRANCH_CONFLICT',
+      );
+    }
+
+    throw error;
+  }
+
+  return {
+    name: newBranchName,
+    fullName: newFullName,
+    oid: branch.oid,
+    objectType: branch.objectType,
+  };
+};

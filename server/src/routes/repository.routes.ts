@@ -4,6 +4,9 @@ import { authMiddleware } from '../middleware/auth.middleware.js';
 import { optionalAuthMiddleware } from '../middleware/optional-auth.middleware.js';
 import { getRefs } from '../controllers/repositories/repository-content.controller.js';
 import {
+  createBranch,
+  deleteBranch,
+  renameBranch,
   getBranch,
   getBranches,
   getBlob,
@@ -31,8 +34,11 @@ const router = Router();
 router.post('/', authMiddleware, create);
 router.get('/:username', listByUsername);
 router.get('/:username/:name/git/refs', optionalAuthMiddleware, getRefs);
+router.post('/:username/:name/git/branches', authMiddleware, createBranch);
+router.delete('/:username/:name/git/branches', authMiddleware, deleteBranch);
+router.patch('/:username/:name/git/branches', authMiddleware, renameBranch);
 router.get('/:username/:name/git/branches', optionalAuthMiddleware, getBranches);
-router.get('/:username/:name/git/branches/:branch', optionalAuthMiddleware, getBranch);
+router.get('/:username/:name/git/branches/details', optionalAuthMiddleware, getBranch);
 router.get('/:username/:name/git/tree', optionalAuthMiddleware, getTree);
 router.get('/:username/:name/git/contents', optionalAuthMiddleware, getContent);
 router.get('/:username/:name/git/raw', optionalAuthMiddleware, getRawContent);
