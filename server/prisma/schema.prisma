@@ -16,15 +16,18 @@ model User {
   avatarUrl String?
   bio       String?
 
-  sessions                 Session[]
-  repositories             Repository[]
-  personalAccessTokens     PersonalAccessToken[]
-  repositoryCollaborations RepositoryCollaborator[]
-  twoFactorAuthentication  TwoFactorAuthentication?
-  recoveryCodes            RecoveryCode[]
-  twoFactorChallenges      TwoFactorChallenge[]
-  pullRequestsAuthored     PullRequest[]            @relation("PullRequestAuthor")
-  pullRequestsMerged       PullRequest[]            @relation("PullRequestMergedBy")
+  sessions                         Session[]
+  repositories                     Repository[]
+  personalAccessTokens             PersonalAccessToken[]
+  repositoryCollaborations         RepositoryCollaborator[]
+  twoFactorAuthentication          TwoFactorAuthentication?
+  recoveryCodes                    RecoveryCode[]
+  twoFactorChallenges              TwoFactorChallenge[]
+  pullRequestsAuthored             PullRequest[]              @relation("PullRequestAuthor")
+  pullRequestsMerged               PullRequest[]              @relation("PullRequestMergedBy")
+  pullRequestReviews               PullRequestReview[]        @relation("PullRequestReviewer")
+  pullRequestComments              PullRequestReviewComment[] @relation("PullRequestCommentAuthor")
+  pullRequestConversationsResolved PullRequestConversation[]  @relation("PullRequestConversationResolvedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -188,9 +191,11 @@ model PullRequest {
   mergedById String?
   mergeSha   String?
 
-  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-  author     User       @relation("PullRequestAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  mergedBy   User?      @relation("PullRequestMergedBy", fields: [mergedById], references: [id], onDelete: SetNull)
+  repository    Repository                @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  author        User                      @relation("PullRequestAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  mergedBy      User?                     @relation("PullRequestMergedBy", fields: [mergedById], references: [id], onDelete: SetNull)
+  reviews       PullRequestReview[]
+  conversations PullRequestConversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -200,4 +205,90 @@ model PullRequest {
   @@index([repositoryId, sourceBranch, targetBranch, state])
   @@index([authorId])
   @@index([mergedById])
+}
+
+enum PullRequestReviewState {
+  COMMENTED
+  APPROVED
+  CHANGES_REQUESTED
+}
+
+enum PullRequestConversationType {
+  GENERAL
+  INLINE
+}
+
+enum PullRequestDiffSide {
+  LEFT
+  RIGHT
+}
+
+model PullRequestReview {
+  id            String                 @id @default(cuid())
+  pullRequestId String
+  reviewerId    String
+  state         PullRequestReviewState
+  body          String?
+  headSha       String
+
+  pullRequest PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  reviewer    User        @relation("PullRequestReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  comments PullRequestReviewComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pullRequestId])
+  @@index([pullRequestId, reviewerId])
+  @@index([pullRequestId, state])
+  @@index([reviewerId])
+}
+
+model PullRequestConversation {
+  id            String                      @id @default(cuid())
+  pullRequestId String
+  type          PullRequestConversationType
+
+  path    String?
+  line    Int?
+  side    PullRequestDiffSide?
+  baseSha String?
+  headSha String?
+
+  resolvedAt   DateTime?
+  resolvedById String?
+
+  pullRequest PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  resolvedBy  User?       @relation("PullRequestConversationResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  comments PullRequestReviewComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pullRequestId])
+  @@index([pullRequestId, type])
+  @@index([pullRequestId, resolvedAt])
+  @@index([resolvedById])
+}
+
+model PullRequestReviewComment {
+  id             String  @id @default(cuid())
+  conversationId String
+  authorId       String
+  reviewId       String?
+
+  body String
+
+  conversation PullRequestConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User                    @relation("PullRequestCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  review       PullRequestReview?      @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([conversationId])
+  @@index([authorId])
+  @@index([reviewId])
 }
