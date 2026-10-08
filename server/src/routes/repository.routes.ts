@@ -128,8 +128,6 @@ router.delete(
   removeCollaborator,
 );
 
-export default router;
-
 router.post(
   '/:username/:name/pulls/:number/inline-comments',
   authMiddleware,
@@ -165,3 +163,5 @@ router.post(
   authMiddleware,
   reopenPullRequestConversation,
 );
+
+export default router;
