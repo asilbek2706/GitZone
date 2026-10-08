@@ -28,6 +28,9 @@ model User {
   pullRequestReviews               PullRequestReview[]        @relation("PullRequestReviewer")
   pullRequestComments              PullRequestReviewComment[] @relation("PullRequestCommentAuthor")
   pullRequestConversationsResolved PullRequestConversation[]  @relation("PullRequestConversationResolvedBy")
+  issuesCreated                    Issue[]                    @relation("IssueCreator")
+  issueComments                    IssueComment[]             @relation("IssueCommentAuthor")
+  issueAssignments                 IssueAssignee[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -137,6 +140,8 @@ model Repository {
 
   collaborators RepositoryCollaborator[]
   pullRequests  PullRequest[]
+  issues        Issue[]
+  issueCounter  RepositoryIssueCounter?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -291,4 +296,72 @@ model PullRequestReviewComment {
   @@index([conversationId])
   @@index([authorId])
   @@index([reviewId])
+}
+
+enum IssueState {
+  OPEN
+  CLOSED
+}
+
+model RepositoryIssueCounter {
+  repositoryId String @id
+  nextNumber   Int    @default(1)
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+}
+
+model Issue {
+  id           String @id @default(cuid())
+  repositoryId String
+  number       Int
+  creatorId    String
+
+  title String
+  body  String?
+
+  state    IssueState @default(OPEN)
+  closedAt DateTime?
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  creator    User       @relation("IssueCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  comments  IssueComment[]
+  assignees IssueAssignee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([repositoryId, number])
+  @@index([repositoryId, state])
+  @@index([creatorId])
+}
+
+model IssueComment {
+  id       String @id @default(cuid())
+  issueId  String
+  authorId String
+
+  body String
+
+  issue  Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  author User  @relation("IssueCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([issueId, createdAt])
+  @@index([authorId])
+}
+
+model IssueAssignee {
+  issueId String
+  userId  String
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([issueId, userId])
+  @@index([userId])
 }

@@ -1,3 +1,15 @@
+import {
+  create as addIssueAssignee,
+  list as listIssueAssignees,
+  remove as removeIssueAssignee,
+} from '../controllers/issues/issue-assignee.controller.js';
+import {
+  create as createIssueComment,
+  list as listIssueComments,
+  update as updateIssueComment,
+  remove as deleteIssueComment,
+} from '../controllers/issues/issue-comment.controller.js';
+import { create as createIssue, list as listIssues, getOne as getIssue, update as updateIssue } from '../controllers/issues/issue.controller.js';
 import { Router } from 'express';
 import {
   create as createPullRequest,
@@ -76,6 +88,38 @@ router.get('/:username/:name/git/compare/commits', optionalAuthMiddleware, compa
 router.get('/:username/:name/git/compare/branches', optionalAuthMiddleware, compareBranches);
 router.get('/:username/:name/git/commits/:sha/diff', optionalAuthMiddleware, getCommitDiff);
 router.get('/:username/:name/git/commits/:sha', optionalAuthMiddleware, getCommit);
+router.post('/:username/:name/issues/:number/assignees', authMiddleware, addIssueAssignee);
+router.get('/:username/:name/issues/:number/assignees', optionalAuthMiddleware, listIssueAssignees);
+router.delete('/:username/:name/issues/:number/assignees/:assigneeUsername', authMiddleware, removeIssueAssignee);
+router.post('/:username/:name/issues', authMiddleware, createIssue);
+router.get('/:username/:name/issues', optionalAuthMiddleware, listIssues);
+router.get('/:username/:name/issues/:number', optionalAuthMiddleware, getIssue);
+router.patch('/:username/:name/issues/:number', authMiddleware, updateIssue);
+
+router.post(
+  '/:username/:name/issues/:number/comments',
+  authMiddleware,
+  createIssueComment,
+);
+
+router.get(
+  '/:username/:name/issues/:number/comments',
+  optionalAuthMiddleware,
+  listIssueComments,
+);
+
+router.patch(
+  '/:username/:name/issues/:number/comments/:commentId',
+  authMiddleware,
+  updateIssueComment,
+);
+
+router.delete(
+  '/:username/:name/issues/:number/comments/:commentId',
+  authMiddleware,
+  deleteIssueComment,
+);
+
 router.post('/:username/:name/pulls', authMiddleware, createPullRequest);
 router.get('/:username/:name/pulls', optionalAuthMiddleware, listPullRequests);
 router.get('/:username/:name/pulls/:number', optionalAuthMiddleware, getPullRequest);
@@ -83,14 +127,14 @@ router.patch('/:username/:name/pulls/:number', authMiddleware, updatePullRequest
 
 router.get('/:username/:name/pulls/:number/commits', optionalAuthMiddleware, getPullRequestCommits);
 router.get('/:username/:name/pulls/:number/diff', optionalAuthMiddleware, getPullRequestDiff);
-router.get('/:username/:name/pulls/:number/mergeability', optionalAuthMiddleware, getPullRequestMergeability);
+router.get(
+  '/:username/:name/pulls/:number/mergeability',
+  optionalAuthMiddleware,
+  getPullRequestMergeability,
+);
 router.post('/:username/:name/pulls/:number/merge', authMiddleware, mergePullRequest);
 
-router.post(
-  '/:username/:name/pulls/:number/reviews',
-  authMiddleware,
-  submitPullRequestReview,
-);
+router.post('/:username/:name/pulls/:number/reviews', authMiddleware, submitPullRequestReview);
 router.get(
   '/:username/:name/pulls/:number/reviews',
   optionalAuthMiddleware,
