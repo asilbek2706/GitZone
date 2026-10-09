@@ -514,6 +514,9 @@ describe('Git HTTP integration', () => {
 
       setImmediate(() => {
         child.emit('error', new Error('Unable to start git-http-backend'));
+        child.stdout.end();
+        child.stderr.end();
+        child.emit('close', -2);
       });
 
       return child as never;
@@ -587,6 +590,12 @@ describe('Git HTTP integration', () => {
 
         kill: vi.fn(function (this: { killed: boolean }) {
           this.killed = true;
+
+          setImmediate(() => {
+            child.stdout.end();
+            child.stderr.end();
+            child.emit('close', null);
+          });
 
           return true;
         }),

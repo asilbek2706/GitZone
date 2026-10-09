@@ -165,8 +165,7 @@ export const executeGitHttpBackend = async ({
             'Git HTTP backend returned invalid headers',
           );
 
-          complete();
-
+          // Wait for child close before settling the Promise.
           return;
         }
 
@@ -196,8 +195,7 @@ export const executeGitHttpBackend = async ({
           'Git HTTP backend returned invalid headers',
         );
 
-        complete();
-
+        // Wait for child close before settling the Promise.
         return;
       }
 
@@ -278,7 +276,7 @@ export const executeGitHttpBackend = async ({
 
       sendBackendError(res, 500, 'GIT_HTTP_BACKEND_ERROR', 'Git HTTP backend error');
 
-      complete();
+      // Wait for the child process close event.
     });
 
     child.on('close', (code) => {
@@ -322,7 +320,7 @@ export const executeGitHttpBackend = async ({
 
       terminateChild();
 
-      complete();
+      // Wait for child close before settling the Promise.
     });
 
     req.pipe(child.stdin);
