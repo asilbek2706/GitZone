@@ -99,12 +99,32 @@ export const renameGitUserDirectory = async (
   try {
     await fs.rename(source, destination);
   } catch (error) {
-    if (hasErrorCode(error, 'EEXIST') || hasErrorCode(error, 'ENOTEMPTY')) {
-      throw new AppError(
-        'Target Git user directory already exists',
-        409,
-        'GIT_USER_DIRECTORY_ALREADY_EXISTS',
-      );
+    if (
+      hasErrorCode(error, 'EEXIST') ||
+      hasErrorCode(error, 'ENOTEMPTY') ||
+      hasErrorCode(error, 'EPERM')
+    ) {
+      try {
+        await fs.lstat(destination);
+
+        throw new AppError(
+          'Target Git user directory already exists',
+          409,
+          'GIT_USER_DIRECTORY_ALREADY_EXISTS',
+        );
+      } catch (inspectionError) {
+        if (inspectionError instanceof AppError) {
+          throw inspectionError;
+        }
+
+        if (!hasErrorCode(inspectionError, 'ENOENT')) {
+          throw new AppError(
+            'Failed to inspect target Git user directory',
+            500,
+            'GIT_USER_DIRECTORY_INSPECTION_FAILED',
+          );
+        }
+      }
     }
 
     throw new AppError(
