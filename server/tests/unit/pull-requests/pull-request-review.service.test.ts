@@ -101,6 +101,7 @@ const HEAD_SHA = '2222222222222222222222222222222222222222';
 const pullRequest = {
   id: 'pr-1',
   repositoryId: 'repo-1',
+  milestoneId: null,
   number: 1,
   authorId: 'author-1',
   title: 'Feature PR',

@@ -76,6 +76,9 @@ const mockedUpdate = vi.mocked(updatePullRequest);
 const pullRequest = {
   id: 'pr-1',
   repositoryId: 'repo-1',
+  milestoneId: null,
+  milestone: null,
+  labels: [],
   number: 1,
   authorId: 'user-1',
   title: 'Feature PR',
@@ -231,6 +234,80 @@ describe('repository pull request API', () => {
     );
   });
 
+  it('returns the assigned pull request milestone', async () => {
+    const assignedMilestone = {
+      id: 'milestone-1',
+      repositoryId: 'repo-1',
+      title: 'Version 1.0',
+      description: 'First release',
+      state: 'OPEN' as const,
+      dueDate: new Date('2026-12-31T13:00:00Z'),
+      closedAt: null,
+    };
+
+    mockedGet.mockResolvedValue({
+      ...pullRequest,
+      milestoneId: assignedMilestone.id,
+      milestone: assignedMilestone,
+    });
+
+    const response = await request(app)
+      .get('/api/repositories/asil/demo/pulls/1')
+      .expect(200);
+
+    expect(response.body.data.pullRequest).toMatchObject({
+      milestoneId: assignedMilestone.id,
+      milestone: {
+        id: assignedMilestone.id,
+        repositoryId: 'repo-1',
+        title: 'Version 1.0',
+        description: 'First release',
+        state: 'OPEN',
+        dueDate: '2026-12-31T13:00:00.000Z',
+        closedAt: null,
+      },
+    });
+
+    expect(response.body.data.pullRequest.milestoneId).toBe(
+      response.body.data.pullRequest.milestone.id,
+    );
+  });
+  it('returns assigned pull request labels', async () => {
+    const assignedLabel = {
+      id: 'cl12345678901234567890123',
+      repositoryId: 'repo-1',
+      name: 'enhancement',
+      color: '#22C55E',
+      description: null,
+      createdAt: new Date('2026-10-08T10:00:00Z'),
+      updatedAt: new Date('2026-10-08T10:00:00Z'),
+    };
+
+    mockedGet.mockResolvedValue({
+      ...pullRequest,
+      labels: [
+        {
+          pullRequestId: pullRequest.id,
+          labelId: assignedLabel.id,
+          createdAt: new Date('2026-10-08T10:00:00Z'),
+          label: assignedLabel,
+        },
+      ],
+    });
+
+    const response = await request(app)
+      .get('/api/repositories/asil/demo/pulls/1');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.pullRequest.labels).toHaveLength(1);
+    expect(
+      response.body.data.pullRequest.labels[0].label,
+    ).toMatchObject({
+      id: assignedLabel.id,
+      name: 'enhancement',
+      color: '#22C55E',
+    });
+  });
   it('updates a pull request', async () => {
     await request(app)
       .patch('/api/repositories/asil/demo/pulls/1')

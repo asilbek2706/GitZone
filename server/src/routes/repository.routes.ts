@@ -1,4 +1,14 @@
 import {
+  updateIssueMilestone,
+  updatePullRequestMilestone,
+} from '../controllers/milestones/milestone-assignment.controller.js';
+import {
+  createIssueLabel,
+  deleteIssueLabel,
+  createPullRequestLabel,
+  deletePullRequestLabel,
+} from '../controllers/labels/label-assignment.controller.js';
+import {
   create as addIssueAssignee,
   list as listIssueAssignees,
   remove as removeIssueAssignee,
@@ -68,6 +78,20 @@ import {
   removeCollaborator,
 } from '../controllers/repositories/repository.controller.js';
 
+import {
+  create as createLabel,
+  list as listLabels,
+  getOne as getLabel,
+  update as updateLabel,
+  remove as deleteLabel,
+} from '../controllers/labels/label.controller.js';
+import {
+  create as createMilestone,
+  list as listMilestones,
+  getOne as getMilestone,
+  update as updateMilestone,
+  remove as deleteMilestone,
+} from '../controllers/milestones/milestone.controller.js';
 const router = Router();
 
 router.post('/', authMiddleware, create);
@@ -88,9 +112,23 @@ router.get('/:username/:name/git/compare/commits', optionalAuthMiddleware, compa
 router.get('/:username/:name/git/compare/branches', optionalAuthMiddleware, compareBranches);
 router.get('/:username/:name/git/commits/:sha/diff', optionalAuthMiddleware, getCommitDiff);
 router.get('/:username/:name/git/commits/:sha', optionalAuthMiddleware, getCommit);
+router.post('/:username/:name/milestones', authMiddleware, createMilestone);
+router.get('/:username/:name/milestones', optionalAuthMiddleware, listMilestones);
+router.get('/:username/:name/milestones/:milestoneId', optionalAuthMiddleware, getMilestone);
+router.patch('/:username/:name/milestones/:milestoneId', authMiddleware, updateMilestone);
+router.delete('/:username/:name/milestones/:milestoneId', authMiddleware, deleteMilestone);
+router.patch('/:username/:name/issues/:number/milestone', authMiddleware, updateIssueMilestone);
+router.patch('/:username/:name/pulls/:number/milestone', authMiddleware, updatePullRequestMilestone);
+router.post('/:username/:name/labels', authMiddleware, createLabel);
+router.get('/:username/:name/labels', optionalAuthMiddleware, listLabels);
+router.get('/:username/:name/labels/:labelId', optionalAuthMiddleware, getLabel);
+router.patch('/:username/:name/labels/:labelId', authMiddleware, updateLabel);
+router.delete('/:username/:name/labels/:labelId', authMiddleware, deleteLabel);
 router.post('/:username/:name/issues/:number/assignees', authMiddleware, addIssueAssignee);
 router.get('/:username/:name/issues/:number/assignees', optionalAuthMiddleware, listIssueAssignees);
 router.delete('/:username/:name/issues/:number/assignees/:assigneeUsername', authMiddleware, removeIssueAssignee);
+router.post('/:username/:name/issues/:number/labels', authMiddleware, createIssueLabel);
+router.delete('/:username/:name/issues/:number/labels/:labelId', authMiddleware, deleteIssueLabel);
 router.post('/:username/:name/issues', authMiddleware, createIssue);
 router.get('/:username/:name/issues', optionalAuthMiddleware, listIssues);
 router.get('/:username/:name/issues/:number', optionalAuthMiddleware, getIssue);
@@ -120,6 +158,8 @@ router.delete(
   deleteIssueComment,
 );
 
+router.post('/:username/:name/pulls/:number/labels', authMiddleware, createPullRequestLabel);
+router.delete('/:username/:name/pulls/:number/labels/:labelId', authMiddleware, deletePullRequestLabel);
 router.post('/:username/:name/pulls', authMiddleware, createPullRequest);
 router.get('/:username/:name/pulls', optionalAuthMiddleware, listPullRequests);
 router.get('/:username/:name/pulls/:number', optionalAuthMiddleware, getPullRequest);

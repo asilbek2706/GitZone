@@ -1,4 +1,4 @@
-﻿import type { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,6 +52,9 @@ const base = '/api/repositories/asil/demo/issues';
 const issue = {
   id: 'issue-1',
   repositoryId: 'repo-1',
+  milestoneId: null,
+  milestone: null,
+  labels: [],
   number: 1,
   creatorId: 'user-1',
   title: 'Example bug',
@@ -200,6 +203,77 @@ describe('Repository issue API integration', () => {
     );
   });
 
+  it('returns the assigned issue milestone', async () => {
+    const assignedMilestone = {
+      id: 'milestone-1',
+      repositoryId: 'repo-1',
+      title: 'Version 1.0',
+      description: 'First release',
+      state: 'OPEN' as const,
+      dueDate: new Date('2026-12-31T13:00:00Z'),
+      closedAt: null,
+    };
+
+    mockedGet.mockResolvedValue({
+      ...issue,
+      milestoneId: assignedMilestone.id,
+      milestone: assignedMilestone,
+    });
+
+    const response = await request(app)
+      .get(`${base}/1`)
+      .expect(200);
+
+    expect(response.body.data.issue).toMatchObject({
+      milestoneId: assignedMilestone.id,
+      milestone: {
+        id: assignedMilestone.id,
+        repositoryId: 'repo-1',
+        title: 'Version 1.0',
+        description: 'First release',
+        state: 'OPEN',
+        dueDate: '2026-12-31T13:00:00.000Z',
+        closedAt: null,
+      },
+    });
+
+    expect(response.body.data.issue.milestoneId).toBe(
+      response.body.data.issue.milestone.id,
+    );
+  });
+  it('returns assigned issue labels', async () => {
+    const assignedLabel = {
+      id: 'cl12345678901234567890123',
+      repositoryId: 'repo-1',
+      name: 'bug',
+      color: '#FF5733',
+      description: null,
+      createdAt: new Date('2026-10-08T10:00:00Z'),
+      updatedAt: new Date('2026-10-08T10:00:00Z'),
+    };
+
+    mockedGet.mockResolvedValue({
+      ...issue,
+      labels: [
+        {
+          issueId: issue.id,
+          labelId: assignedLabel.id,
+          createdAt: new Date('2026-10-08T10:00:00Z'),
+          label: assignedLabel,
+        },
+      ],
+    });
+
+    const response = await request(app).get(`${base}/1`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.issue.labels).toHaveLength(1);
+    expect(response.body.data.issue.labels[0].label).toMatchObject({
+      id: assignedLabel.id,
+      name: 'bug',
+      color: '#FF5733',
+    });
+  });
   it('rejects invalid issue number', async () => {
     const response = await request(app).get(`${base}/invalid`);
 

@@ -45,6 +45,22 @@ const pullRequestInclude = {
       avatarUrl: true,
     },
   },
+  labels: {
+    include: {
+      label: true,
+    },
+  },
+  milestone: {
+    select: {
+      id: true,
+      repositoryId: true,
+      title: true,
+      description: true,
+      state: true,
+      dueDate: true,
+      closedAt: true,
+    },
+  },
 } satisfies Prisma.PullRequestInclude;
 
 const findRepository = async (

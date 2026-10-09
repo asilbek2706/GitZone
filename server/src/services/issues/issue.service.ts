@@ -15,6 +15,22 @@ const issueInclude = {
       avatarUrl: true,
     },
   },
+  labels: {
+    include: {
+      label: true,
+    },
+  },
+  milestone: {
+    select: {
+      id: true,
+      repositoryId: true,
+      title: true,
+      description: true,
+      state: true,
+      dueDate: true,
+      closedAt: true,
+    },
+  },
 } satisfies Prisma.IssueInclude;
 
 export const createIssue = async (
