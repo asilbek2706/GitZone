@@ -2072,3 +2072,158 @@ Production deployment infrastructure
 ```
 
 GitZone should grow by extending clear subsystem boundaries rather than replacing the foundation with disconnected feature implementations.
+
+---
+
+## 82. Labels & Milestones Architecture
+
+Phase 10 extends repository collaboration with labels and milestones.
+
+These features are stored as PostgreSQL metadata and do not modify Git objects.
+
+### 82.1 Module Boundaries
+
+The implementation follows the existing modular monolith architecture:
+
+```text
+HTTP routes
+    |
+    v
+Authentication and validation
+    |
+    v
+Controllers
+    |
+    v
+Label and milestone services
+    |
+    v
+Repository authorization
+    |
+    v
+Prisma / PostgreSQL
+```
+
+The main service modules are:
+
+- Label CRUD service
+- Label assignment service
+- Milestone CRUD service
+- Milestone assignment service
+- Milestone progress service
+- Milestone batch progress service
+
+### 82.2 Database Relationships
+
+The primary Prisma models are:
+
+- `Label`: repository-scoped label metadata.
+- `IssueLabel`: issue-to-label junction table.
+- `PullRequestLabel`: pull-request-to-label junction table.
+- `Milestone`: repository-scoped milestone metadata.
+
+Issues and pull requests can each reference one milestone.
+
+Issue and pull request label assignments use junction tables.
+
+Repository-scoped unique constraints protect label names and milestone titles.
+
+Composite foreign keys ensure that milestone assignments reference
+a milestone belonging to the same repository as the issue or pull request.
+
+### 82.3 Authorization Boundary
+
+All label and milestone operations pass through repository authorization.
+
+- Public repository reads may be anonymous.
+- Private repository reads require authorized access.
+- Mutations require authenticated repository WRITE access.
+- Repository owners retain full access.
+- READ collaborators cannot perform mutations.
+
+Repository authorization is enforced by services rather than relying
+only on frontend visibility or route-level checks.
+
+### 82.4 Label Assignment Lifecycle
+
+Labels are managed independently from their issue and pull request assignments.
+
+A label belongs to exactly one repository.
+
+Issue and pull request assignments are represented by separate junction tables.
+
+Assignment operations validate repository membership and WRITE authorization.
+
+Database uniqueness constraints prevent duplicate assignments.
+
+Deleting a label removes its assignments without deleting issues or pull requests.
+
+### 82.5 Milestone Assignment and Deletion
+
+An issue or pull request may reference one milestone or no milestone.
+
+Assignments must reference a milestone in the same repository.
+
+Composite foreign keys enforce this relationship at the database level.
+
+Assigning or removing a milestone requires repository WRITE access.
+
+Milestone deletion uses a database transaction:
+
+```text
+Begin transaction
+    |
+    v
+Detach related issues
+    |
+    v
+Detach related pull requests
+    |
+    v
+Delete milestone
+    |
+    v
+Commit transaction
+```
+
+If a transaction operation fails, the database rolls back the transaction.
+
+### 82.6 Milestone Progress Calculation
+
+Milestone progress is calculated from assigned issues and pull requests.
+
+Closed issues contribute to completed issue counts.
+
+Closed and merged pull requests contribute to completed pull request counts.
+
+Progress includes total, open, and completed counts.
+
+The completion percentage is derived from completed items divided by total items.
+
+Batch progress calculations use grouped database queries to avoid
+repeating individual count queries for every milestone in a list.
+
+### 82.7 Migrations and Verification
+
+Phase 10 introduced two PostgreSQL migrations:
+
+- `20261008144540_add_labels_and_milestones`
+- `20261008160938_scope_milestone_foreign_keys`
+
+The second migration enforces repository-scoped milestone foreign keys.
+
+Verification included:
+
+- Prisma migration status checks.
+- Isolated PostgreSQL migration application.
+- Composite foreign key inspection.
+- Cross-repository milestone assignment rejection.
+- Unit and HTTP integration tests.
+- TypeScript checks, ESLint, and production build.
+
+The Phase 10 automated quality gate passed 83 test files and 961 tests.
+
+The HTTP integration tests use mocked dependencies and are not
+a replacement for complete real PostgreSQL-backed HTTP E2E testing.
+
+See `docs/phase-10-labels-milestones.md` for API details and limitations.

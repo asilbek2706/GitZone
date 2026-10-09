@@ -22,12 +22,18 @@ Development is phase-based: each major layer is implemented, tested, security-au
 
 # Development Status
 
-| Phase    | Name                            | Status      |
-| -------- | ------------------------------- | ----------- |
-| Phase 1  | Core Platform Foundation        | ✅ Complete |
-| Phase 2  | Authentication & Sessions       | ✅ Complete |
-| Phase 3  | Repository Core & Git Transport | 🚧 Next     |
-| Phase 4+ | Advanced GitZone Features       | ⏳ Planned  |
+| Phase | Name | Status |
+| --- | --- | --- |
+| Phase 1 | Core Platform Foundation | Complete |
+| Phase 2 | Authentication & Sessions | Complete |
+| Phase 3 | Repository Core & Git Transport | Complete |
+| Phase 4 | Repository Content & Git Data | Complete |
+| Phase 5 | Branch Management | Complete |
+| Phase 6 | Commit History & Diff | Complete |
+| Phase 7 | Pull Requests | Complete |
+| Phase 8 | Code Review | Complete |
+| Phase 9 | Issues | Complete |
+| Phase 10 | Labels & Milestones | Complete |
 
 ---
 
@@ -432,11 +438,13 @@ These repository and Git transport foundations will be audited and hardened duri
 
 # Phase 3 — Repository Core & Git Transport
 
-## Status: 🚧 Next
+## Status: ✅ Complete
 
-Phase 3 focuses on completing and hardening GitZone's repository and real Git transport layer.
+Phase 3 established and hardened GitZone's repository management and real Git transport layer.
 
-Planned work includes:
+The original implementation checklist is preserved below for historical reference.
+
+Implemented work includes:
 
 - Repository lifecycle audit
 - Repository creation hardening
@@ -465,7 +473,7 @@ Planned work includes:
 | WRITE collaborator           | ✅   | ✅   |
 | Unrelated authenticated user | ❌   | ❌   |
 
-Phase 3 will verify these rules through both REST API tests and real Git operations.
+Phase 3 implemented and verified repository permissions through REST API tests and real Git operations.
 
 ---
 
@@ -735,18 +743,24 @@ Monitoring & Security Hardening
 
 # Current Milestone
 
-```text
-GitZone
-│
-├── Phase 1 — Core Platform Foundation
-│      └── ✅ COMPLETE
-│
-├── Phase 2 — Authentication & Sessions
-│      └── ✅ COMPLETE
-│
-└── Phase 3 — Repository Core & Git Transport
-       └── 🚧 NEXT
-```
+GitZone backend development progress:
+
+| Phase | Feature | Status |
+| --- | --- | --- |
+| 1 | Core Platform Foundation | Complete |
+| 2 | Authentication & Sessions | Complete |
+| 3 | Repository Core & Git Transport | Complete |
+| 4 | Repository Content & Git Data | Complete |
+| 5 | Branch Management | Complete |
+| 6 | Commit History & Diff | Complete |
+| 7 | Pull Requests | Complete |
+| 8 | Code Review | Complete |
+| 9 | Issues | Complete |
+| 10 | Labels & Milestones | Complete |
+
+Phase 10 implementation commit: `db25989`.
+
+See [Phase 10 documentation](docs/phase-10-labels-milestones.md).
 
 ---
 

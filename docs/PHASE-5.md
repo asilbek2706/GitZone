@@ -2,7 +2,7 @@
 
 ## Status
 
-**PHASE 5 — implementation and verification complete; final commit/push pending.**
+**PHASE 5 — implementation, verification and Git commit complete (`912d56b`).**
 
 ## Implemented
 
@@ -89,4 +89,4 @@ Collection: server/postman/GitZone-Phase5.postman_collection.json
 - [x] Postman E2E
 - [x] Full quality gate
 - [x] Documentation
-- [ ] Commit & push
+- [x] Commit & push
