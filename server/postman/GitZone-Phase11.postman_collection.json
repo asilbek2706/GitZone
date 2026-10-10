@@ -407,6 +407,45 @@
                                    {
                                        "script":  {
                                                       "exec":  [
+                                                                   "pm.test(\u0027HTTP status is 400\u0027, function () {",
+                                                                   "    pm.response.to.have.status(400);",
+                                                                   "});"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "GET",
+                                     "url":  {
+                                                 "host":  [
+                                                              "{{baseUrl}}"
+                                                          ],
+                                                 "raw":  "{{baseUrl}}/users/avatars/00000000-0000-4000-8000-000000000000.webp",
+                                                 "path":  [
+                                                              "users",
+                                                              "avatars",
+                                                              "00000000-0000-4000-8000-000000000000.webp"
+                                                          ]
+                                             },
+                                     "header":  [
+
+                                                ],
+                                     "auth":  {
+                                                  "type":  "noauth"
+                                              }
+                                 },
+                     "name":  "Reject Missing Avatar",
+                     "response":  [
+
+                                  ],
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
                                                                    "pm.test(\u0027HTTP status is 404\u0027, function () {",
                                                                    "    pm.response.to.have.status(404);",
                                                                    "});"
