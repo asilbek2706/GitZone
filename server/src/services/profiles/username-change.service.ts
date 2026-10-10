@@ -61,6 +61,20 @@ export const changeUsername = async (
       newUsername,
     );
 
+    if (!directoryMoved) {
+      const repositoryCount = await prisma.repository.count({
+        where: { ownerId: userId },
+      });
+
+      if (repositoryCount > 0) {
+        throw new AppError(
+          'Git user directory is missing for existing repositories',
+          409,
+          'GIT_USER_DIRECTORY_MISSING',
+        );
+      }
+    }
+
     try {
       await prisma.user.update({
         where: { id: userId },

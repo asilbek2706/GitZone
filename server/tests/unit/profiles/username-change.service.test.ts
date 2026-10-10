@@ -11,6 +11,9 @@ vi.mock('../../../src/config/prisma.js', () => ({
       findFirst: vi.fn(),
       update: vi.fn(),
     },
+    repository: {
+      count: vi.fn(),
+    },
   },
 }));
 
@@ -21,6 +24,7 @@ vi.mock('../../../src/services/git/git-user-directory.service.js', () => ({
 const findUnique = vi.mocked(prisma.user.findUnique);
 const findFirst = vi.mocked(prisma.user.findFirst);
 const update = vi.mocked(prisma.user.update);
+const repositoryCount = vi.mocked(prisma.repository.count);
 const renameDirectory = vi.mocked(renameGitUserDirectory);
 
 describe('username change service', () => {
@@ -35,6 +39,7 @@ describe('username change service', () => {
     findFirst.mockResolvedValue(null as never);
     update.mockResolvedValue({ id: 'user-1' } as never);
     renameDirectory.mockResolvedValue(true);
+    repositoryCount.mockResolvedValue(0);
   });
 
   it('renames Git storage and updates the database', async () => {
@@ -48,6 +53,45 @@ describe('username change service', () => {
     });
   });
 
+  it('skips repository count when Git directory was moved', async () => {
+    await changeUsername('user-1', 'newuser');
+
+    expect(repositoryCount).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledOnce();
+  });
+
+  it('allows username change without a Git directory when there are no repositories', async () => {
+    renameDirectory.mockResolvedValue(false);
+    repositoryCount.mockResolvedValue(0);
+
+    await changeUsername('user-1', 'newuser');
+
+    expect(repositoryCount).toHaveBeenCalledWith({
+      where: { ownerId: 'user-1' },
+    });
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { username: 'newuser' },
+      select: { id: true },
+    });
+  });
+
+  it('rejects username change when Git directory is missing but repositories exist', async () => {
+    renameDirectory.mockResolvedValue(false);
+    repositoryCount.mockResolvedValue(1);
+
+    await expect(
+      changeUsername('user-1', 'newuser'),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'GIT_USER_DIRECTORY_MISSING',
+    });
+
+    expect(repositoryCount).toHaveBeenCalledWith({
+      where: { ownerId: 'user-1' },
+    });
+    expect(update).not.toHaveBeenCalled();
+  });
   it('does nothing when username is unchanged', async () => {
     await changeUsername('user-1', 'olduser');
 
