@@ -151,6 +151,35 @@ describe('username change service', () => {
     expect(renameDirectory).toHaveBeenCalledTimes(2);
   });
 
+  it('updates database when user has no Git storage directory', async () => {
+    renameDirectory.mockResolvedValueOnce(false);
+
+    await changeUsername('user-1', 'newuser');
+
+    expect(renameDirectory).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { username: 'newuser' },
+      select: { id: true },
+    });
+  });
+
+  it('reports rollback failure when directory restoration returns false', async () => {
+    update.mockRejectedValueOnce(new Error('Database unavailable'));
+
+    renameDirectory
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+
+    await expect(
+      changeUsername('user-1', 'newuser'),
+    ).rejects.toMatchObject({
+      statusCode: 500,
+      code: 'USERNAME_ROLLBACK_FAILED',
+    });
+
+    expect(renameDirectory).toHaveBeenCalledTimes(2);
+  });
   it('reports a failed Git directory rollback', async () => {
     update.mockRejectedValueOnce(new Error('Database unavailable'));
 

@@ -70,13 +70,28 @@ export const changeUsername = async (
     } catch (error) {
       if (directoryMoved) {
         try {
-          await renameGitUserDirectory(newUsername, oldUsername);
-        } catch {
-          throw new AppError(
+          const restored = await renameGitUserDirectory(
+            newUsername,
+            oldUsername,
+          );
+
+          if (!restored) {
+            throw new Error(
+              'Git directory rollback did not restore the source',
+              { cause: error },
+            );
+          }
+        } catch (rollbackError) {
+          const failure = new AppError(
             'Username update failed and Git directory rollback failed',
             500,
             'USERNAME_ROLLBACK_FAILED',
+            { cause: rollbackError },
           );
+
+          Object.assign(failure, { databaseError: error });
+
+          throw failure;
         }
       }
 
