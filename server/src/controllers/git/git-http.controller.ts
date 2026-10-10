@@ -7,6 +7,7 @@ import { AppError } from '../../errors/app.error.js';
 import { verifyPersonalAccessToken } from '../../services/auth/pat.service.js';
 
 import { executeGitHttpBackend } from '../../services/git/git-http-backend.service.js';
+import { withGitUserReadLock } from '../../services/git/git-user-lock.service.js';
 
 import { authorizeRepositoryAccess } from '../../services/repositories/repository-authorization.service.js';
 
@@ -76,104 +77,125 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
 
   const requestInfo = classifyGitHttpRequest(req.method, req.path, req.query.service);
 
-  const gitRepository = await getGitRepository(username, repository);
+  const initialRepository = await getGitRepository(username, repository);
 
-  const repositoryOwner = gitRepository.owner.username;
-
-  const repositoryName = gitRepository.name;
-
-  const pathInfo = buildGitHttpPathInfo(repositoryOwner, repositoryName, req.path);
-
-  const authenticationRequired = gitRepository.isPrivate || requestInfo.accessType === 'WRITE';
-
-  logger.info(
-    {
-      method: req.method,
-      path: req.path,
-      username: repositoryOwner,
-      repository: repositoryName,
-      pathInfo,
-      service: requestInfo.service,
-      accessType: requestInfo.accessType,
-      isPrivate: gitRepository.isPrivate,
-      authenticationRequired,
-    },
-    'Git HTTP request received',
-  );
-
-  let remoteUser: string | null = null;
-
-  try {
-    if (authenticationRequired) {
-      const authenticatedUser = await authenticateGitRequest(req);
-
-      const access = await authorizeRepositoryAccess(
-        gitRepository.id,
-        requestInfo.accessType,
-        authenticatedUser.userId,
-      );
-
-      remoteUser = authenticatedUser.username;
-
-      logger.info(
-        {
-          username: authenticatedUser.username,
+  await withGitUserReadLock(initialRepository.owner.id, async () => {
+    const gitRepository = await prisma.repository.findUnique({
+      where: {
+        id: initialRepository.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        isPrivate: true,
+        defaultBranch: true,
+        owner: {
+          select: {
+            id: true,
+            username: true,
+          },
         },
-        'Git HTTP user authenticated',
-      );
+      },
+    });
 
-      logger.info(
-        {
-          permission: access.permission,
-
-          repository: repositoryName,
-
-          username: repositoryOwner,
-
-          authenticatedUsername: authenticatedUser.username,
-        },
-        'Git HTTP access authorized',
-      );
-    } else {
-      const access = await authorizeRepositoryAccess(gitRepository.id, requestInfo.accessType);
-
-      logger.info(
-        {
-          permission: access.permission,
-
-          repository: repositoryName,
-
-          username: repositoryOwner,
-        },
-        'Git HTTP access authorized',
-      );
+    if (
+      !gitRepository ||
+      gitRepository.owner.id !== initialRepository.owner.id ||
+      gitRepository.owner.username !== username ||
+      gitRepository.name !== repository
+    ) {
+      throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
     }
-  } catch (error) {
-    if (error instanceof AppError) {
-      if (error.statusCode === 401) {
-        res.setHeader('WWW-Authenticate', 'Basic realm="GitZone"');
+
+    const repositoryOwner = gitRepository.owner.username;
+    const repositoryName = gitRepository.name;
+
+    const pathInfo = buildGitHttpPathInfo(repositoryOwner, repositoryName, req.path);
+
+    const authenticationRequired = gitRepository.isPrivate || requestInfo.accessType === 'WRITE';
+
+    logger.info(
+      {
+        method: req.method,
+        path: req.path,
+        username: repositoryOwner,
+        repository: repositoryName,
+        pathInfo,
+        service: requestInfo.service,
+        accessType: requestInfo.accessType,
+        isPrivate: gitRepository.isPrivate,
+        authenticationRequired,
+      },
+      'Git HTTP request received',
+    );
+
+    let remoteUser: string | null = null;
+
+    try {
+      if (authenticationRequired) {
+        const authenticatedUser = await authenticateGitRequest(req);
+
+        const access = await authorizeRepositoryAccess(
+          gitRepository.id,
+          requestInfo.accessType,
+          authenticatedUser.userId,
+        );
+
+        remoteUser = authenticatedUser.username;
+
+        logger.info(
+          {
+            username: authenticatedUser.username,
+          },
+          'Git HTTP user authenticated',
+        );
+
+        logger.info(
+          {
+            permission: access.permission,
+            repository: repositoryName,
+            username: repositoryOwner,
+            authenticatedUsername: authenticatedUser.username,
+          },
+          'Git HTTP access authorized',
+        );
+      } else {
+        const access = await authorizeRepositoryAccess(gitRepository.id, requestInfo.accessType);
+
+        logger.info(
+          {
+            permission: access.permission,
+            repository: repositoryName,
+            username: repositoryOwner,
+          },
+          'Git HTTP access authorized',
+        );
+      }
+    } catch (error) {
+      if (error instanceof AppError) {
+        if (error.statusCode === 401) {
+          res.setHeader('WWW-Authenticate', 'Basic realm="GitZone"');
+        }
+
+        res.status(error.statusCode).json({
+          success: false,
+          message: error.message,
+          code: error.code,
+        });
+
+        return;
       }
 
-      res.status(error.statusCode).json({
-        success: false,
-
-        message: error.message,
-
-        code: error.code,
-      });
-
-      return;
+      throw error;
     }
 
-    throw error;
-  }
-
-  await executeGitHttpBackend({
-    req,
-    res,
-    pathInfo,
-    remoteUser,
-    repositoryOwner,
-    repositoryName,
+    await executeGitHttpBackend({
+      req,
+      res,
+      pathInfo,
+      remoteUser,
+      repositoryOwner,
+      repositoryName,
+    });
   });
 };

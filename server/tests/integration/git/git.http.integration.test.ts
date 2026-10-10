@@ -14,11 +14,13 @@ import { AppError } from '../../../src/errors/app.error.js';
 import { verifyPersonalAccessToken } from '../../../src/services/auth/pat.service.js';
 
 import { authorizeRepositoryAccess } from '../../../src/services/repositories/repository-authorization.service.js';
+import { withGitUserWriteLock } from '../../../src/services/git/git-user-lock.service.js';
 
 vi.mock('../../../src/config/prisma.js', () => ({
   default: {
     repository: {
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
     },
   },
 }));
@@ -41,6 +43,7 @@ vi.mock('node:child_process', async (importOriginal) => {
 });
 
 const mockedFindRepository = vi.mocked(prisma.repository.findFirst);
+const mockedFindRepositoryById = vi.mocked(prisma.repository.findUnique);
 
 const mockedVerifyPersonalAccessToken = vi.mocked(verifyPersonalAccessToken);
 
@@ -100,9 +103,158 @@ const mockSuccessfulGitBackend = () => {
   });
 };
 
+describe('Git HTTP username locking', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+
+    mockedFindRepository.mockResolvedValue(gitRepository as never);
+    mockedFindRepositoryById.mockResolvedValue(gitRepository as never);
+    mockedAuthorizeRepositoryAccess.mockResolvedValue({
+      permission: 'PUBLIC',
+    } as never);
+  });
+
+  it('rejects an old username after repository recheck', async () => {
+    mockedFindRepositoryById.mockResolvedValue({
+      ...gitRepository,
+      owner: {
+        ...gitRepository.owner,
+        username: 'renamed-user',
+      },
+    } as never);
+
+    const response = await request(app)
+      .get('/asil/demo.git/info/refs?service=git-upload-pack');
+
+    expect(response.status).toBe(404);
+    expect(response.body).toMatchObject({
+      success: false,
+      error: {
+        code: 'REPOSITORY_NOT_FOUND',
+        message: 'Repository not found',
+      },
+    });
+    expect(mockedSpawn).not.toHaveBeenCalled();
+  });
+
+  it('keeps the user read lock until the Git backend closes', async () => {
+    let releaseBackend!: () => void;
+    let backendStarted!: () => void;
+
+    const backendStartedPromise = new Promise<void>((resolve) => {
+      backendStarted = resolve;
+    });
+
+    const backendGate = new Promise<void>((resolve) => {
+      releaseBackend = resolve;
+    });
+
+    mockedSpawn.mockImplementation(() => {
+      const child = createGitBackendProcess();
+
+      backendStarted();
+
+      void backendGate.then(() => {
+        const headers = [
+          'Status: 200 OK',
+          'Content-Type: application/octet-stream',
+          '',
+          '',
+        ].join('\r\n');
+
+        child.stdout.write(Buffer.from(headers));
+        child.stdout.end();
+        child.emit('close', 0);
+      });
+
+      return child as never;
+    });
+
+    const responsePromise = request(app)
+      .get('/asil/demo.git/info/refs?service=git-upload-pack')
+      .then((response) => response);
+
+    await backendStartedPromise;
+
+    let writerStarted = false;
+
+    const writerPromise = withGitUserWriteLock('owner-1', async () => {
+      writerStarted = true;
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(writerStarted).toBe(false);
+
+    releaseBackend();
+
+    const response = await responsePromise;
+    await writerPromise;
+
+    expect(response.status).toBe(200);
+    expect(writerStarted).toBe(true);
+  });
+
+  it('rechecks repository state after a queued writer releases the lock', async () => {
+    let releaseWriter!: () => void;
+    let writerStarted!: () => void;
+
+    const writerStartedPromise = new Promise<void>((resolve) => {
+      writerStarted = resolve;
+    });
+
+    const writerGate = new Promise<void>((resolve) => {
+      releaseWriter = resolve;
+    });
+
+    const writerPromise = withGitUserWriteLock('owner-1', async () => {
+      writerStarted();
+      await writerGate;
+    });
+
+    await writerStartedPromise;
+
+    mockedFindRepositoryById.mockResolvedValue({
+      ...gitRepository,
+      owner: {
+        ...gitRepository.owner,
+        username: 'renamed-user',
+      },
+    } as never);
+
+    const responsePromise = request(app)
+      .get('/asil/demo.git/info/refs?service=git-upload-pack')
+      .then((response) => response);
+
+    await Promise.resolve();
+
+    expect(mockedSpawn).not.toHaveBeenCalled();
+
+    releaseWriter();
+
+    await writerPromise;
+
+    const response = await responsePromise;
+
+    expect(response.status).toBe(404);
+    expect(response.body).toMatchObject({
+      success: false,
+      error: {
+        code: 'REPOSITORY_NOT_FOUND',
+        message: 'Repository not found',
+      },
+    });
+    expect(mockedSpawn).not.toHaveBeenCalled();
+  });
+});
 describe('Git HTTP integration', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+
+    mockedFindRepositoryById.mockImplementation(() => {
+      return mockedFindRepository.mock.results.at(-1)?.value ?? null;
+    });
   });
 
   it('allows anonymous read access to a public repository', async () => {
