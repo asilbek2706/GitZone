@@ -17,3 +17,6 @@ coverage/
 # Git repository storage
 server/storage/repositories/*
 !server/storage/repositories/.gitkeep
+
+# Local VS Code settings
+/.vscode/settings.json
