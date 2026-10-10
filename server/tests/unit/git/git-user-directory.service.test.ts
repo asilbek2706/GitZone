@@ -84,6 +84,28 @@ describe('Git user directory rename service', () => {
     expect(mockedRename).not.toHaveBeenCalled();
   });
 
+  it('rejects destination collision even when source is missing', async () => {
+    mockedLstat.mockImplementation(async (target: string) => {
+      if (target.endsWith(`${path.sep}olduser`)) {
+        throw missingEntry();
+      }
+
+      if (target.endsWith(`${path.sep}newuser`)) {
+        return directoryStat();
+      }
+
+      throw missingEntry();
+    });
+
+    await expect(
+      renameGitUserDirectory('olduser', 'newuser'),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'GIT_USER_DIRECTORY_ALREADY_EXISTS',
+    });
+
+    expect(mockedRename).not.toHaveBeenCalled();
+  });
   it('rejects an existing destination directory', async () => {
     mockedLstat.mockResolvedValue(directoryStat());
 

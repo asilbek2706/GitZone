@@ -39,6 +39,8 @@ export const renameGitUserDirectory = async (
     );
   }
 
+  let sourceMissing = false;
+
   try {
     const sourceStat = await fs.lstat(source);
 
@@ -55,14 +57,15 @@ export const renameGitUserDirectory = async (
     }
 
     if (hasErrorCode(error, 'ENOENT')) {
-      return false;
+      sourceMissing = true;
+    } else {
+      throw new AppError(
+        'Failed to inspect Git user storage directory',
+        500,
+        'GIT_USER_DIRECTORY_INSPECTION_FAILED',
+        { cause: error },
+      );
     }
-
-    throw new AppError(
-      'Failed to inspect Git user storage directory',
-      500,
-      'GIT_USER_DIRECTORY_INSPECTION_FAILED',
-    );
   }
 
   try {
@@ -85,6 +88,10 @@ export const renameGitUserDirectory = async (
         'GIT_USER_DIRECTORY_INSPECTION_FAILED',
       );
     }
+  }
+
+  if (sourceMissing) {
+    return false;
   }
 
   // The source and destination must remain within the same storage root.
