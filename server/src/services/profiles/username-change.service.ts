@@ -2,7 +2,12 @@ import prisma from '../../config/prisma.js';
 import { AppError } from '../../errors/app.error.js';
 import { renameGitUserDirectory } from '../git/git-user-directory.service.js';
 import { withGitUserWriteLock } from '../git/git-user-lock.service.js';
-import { profileUsernameSchema } from '../../validations/profiles/profile.validation.js';
+import {
+  profileUsernameSchema,
+  type UpdateProfileInput,
+} from '../../validations/profiles/profile.validation.js';
+
+type UsernameProfileFields = Omit<UpdateProfileInput, 'username'>;
 
 const isUniqueConstraintError = (error: unknown): boolean =>
   typeof error === 'object' &&
@@ -13,6 +18,7 @@ const isUniqueConstraintError = (error: unknown): boolean =>
 export const changeUsername = async (
   userId: string,
   newUsername: string,
+  profileFields: UsernameProfileFields = {},
 ): Promise<void> =>
   withGitUserWriteLock(userId, async () => {
     if (!profileUsernameSchema.safeParse(newUsername).success) {
@@ -78,7 +84,13 @@ export const changeUsername = async (
     try {
       await prisma.user.update({
         where: { id: userId },
-        data: { username: newUsername },
+        data: {
+          username: newUsername,
+          ...(profileFields.name !== undefined ? { name: profileFields.name } : {}),
+          ...(profileFields.bio !== undefined ? { bio: profileFields.bio } : {}),
+          ...(profileFields.location !== undefined ? { location: profileFields.location } : {}),
+          ...(profileFields.website !== undefined ? { website: profileFields.website } : {}),
+        },
         select: { id: true },
       });
     } catch (error) {

@@ -53,6 +53,71 @@ describe('username change service', () => {
     });
   });
 
+  it('updates username and profile fields in one database operation', async () => {
+    await changeUsername('user-1', 'newuser', {
+      name: 'New Name',
+      bio: 'Full Stack Developer',
+      location: 'Bukhara',
+      website: 'https://example.com',
+    });
+
+    expect(update).toHaveBeenCalledOnce();
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: {
+        username: 'newuser',
+        name: 'New Name',
+        bio: 'Full Stack Developer',
+        location: 'Bukhara',
+        website: 'https://example.com',
+      },
+      select: { id: true },
+    });
+  });
+
+  it('preserves omitted fields and supports clearing profile fields', async () => {
+    await changeUsername('user-1', 'newuser', {
+      bio: null,
+      website: null,
+    });
+
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: {
+        username: 'newuser',
+        bio: null,
+        website: null,
+      },
+      select: { id: true },
+    });
+  });
+
+  it('rolls back Git storage if combined profile update fails', async () => {
+    update.mockRejectedValueOnce(
+      new Error('Combined database update failed'),
+    );
+
+    await expect(
+      changeUsername('user-1', 'newuser', {
+        name: 'New Name',
+        location: 'Bukhara',
+      }),
+    ).rejects.toThrow('Combined database update failed');
+
+    expect(update).toHaveBeenCalledOnce();
+
+    expect(renameDirectory).toHaveBeenNthCalledWith(
+      1,
+      'olduser',
+      'newuser',
+    );
+
+    expect(renameDirectory).toHaveBeenNthCalledWith(
+      2,
+      'newuser',
+      'olduser',
+    );
+  });
   it('skips repository count when Git directory was moved', async () => {
     await changeUsername('user-1', 'newuser');
 
