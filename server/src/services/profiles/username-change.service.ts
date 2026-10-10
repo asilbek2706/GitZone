@@ -1,0 +1,93 @@
+import prisma from '../../config/prisma.js';
+import { AppError } from '../../errors/app.error.js';
+import { renameGitUserDirectory } from '../git/git-user-directory.service.js';
+import { withGitUserWriteLock } from '../git/git-user-lock.service.js';
+import { profileUsernameSchema } from '../../validations/profiles/profile.validation.js';
+
+const isUniqueConstraintError = (error: unknown): boolean =>
+  typeof error === 'object' &&
+  error !== null &&
+  'code' in error &&
+  error.code === 'P2002';
+
+export const changeUsername = async (
+  userId: string,
+  newUsername: string,
+): Promise<void> =>
+  withGitUserWriteLock(userId, async () => {
+    if (!profileUsernameSchema.safeParse(newUsername).success) {
+      throw new AppError('Invalid username', 400, 'INVALID_USERNAME');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, username: true },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+    }
+
+    const oldUsername = user.username;
+
+    if (oldUsername === newUsername) {
+      return;
+    }
+
+    if (oldUsername.toLowerCase() === newUsername.toLowerCase()) {
+      throw new AppError(
+        'Case-only username changes are not supported',
+        409,
+        'USERNAME_CASE_CONFLICT',
+      );
+    }
+
+    const existing = await prisma.user.findFirst({
+      where: {
+        username: {
+          equals: newUsername,
+          mode: 'insensitive',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new AppError('Username is already taken', 409, 'USERNAME_TAKEN');
+    }
+
+    const directoryMoved = await renameGitUserDirectory(
+      oldUsername,
+      newUsername,
+    );
+
+    try {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { username: newUsername },
+        select: { id: true },
+      });
+    } catch (error) {
+      if (directoryMoved) {
+        try {
+          await renameGitUserDirectory(newUsername, oldUsername);
+        } catch {
+          throw new AppError(
+            'Username update failed and Git directory rollback failed',
+            500,
+            'USERNAME_ROLLBACK_FAILED',
+          );
+        }
+      }
+
+      if (isUniqueConstraintError(error)) {
+        throw new AppError(
+          'Username is already taken',
+          409,
+          'USERNAME_TAKEN',
+        );
+      }
+
+      throw error;
+    }
+  });

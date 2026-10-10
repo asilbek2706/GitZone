@@ -33,6 +33,7 @@ const websiteSchema = z
 
 export const updateProfileSchema = z
   .strictObject({
+    username: profileUsernameSchema.optional(),
     name: z.string().trim().min(1).max(100).nullable().optional(),
     bio: nullableProfileText(500),
     location: nullableProfileText(100),
