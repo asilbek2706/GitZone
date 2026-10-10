@@ -1,3 +1,4 @@
+import { MulterError } from 'multer';
 import type { ErrorRequestHandler } from 'express';
 
 import { logger } from '../config/logger.js';
@@ -13,6 +14,32 @@ type PayloadTooLargeError = Error & {
 };
 
 export const errorMiddleware: ErrorRequestHandler = (error, req, res, _next): void => {
+  if (error instanceof MulterError) {
+    const isFileTooLarge = error.code === 'LIMIT_FILE_SIZE';
+    const isUnexpectedFile = error.code === 'LIMIT_UNEXPECTED_FILE';
+
+    const statusCode = isFileTooLarge ? 413 : 400;
+
+    const code = isFileTooLarge
+      ? 'AVATAR_TOO_LARGE'
+      : isUnexpectedFile
+        ? 'INVALID_AVATAR_FIELD'
+        : error.code === 'LIMIT_FILE_COUNT'
+          ? 'AVATAR_UPLOAD_LIMIT_EXCEEDED'
+          : 'INVALID_AVATAR_UPLOAD';
+
+    res.status(statusCode).json({
+      success: false,
+      error: {
+        code,
+        message: isFileTooLarge
+          ? 'Avatar file exceeds the 5 MB limit'
+          : 'Invalid avatar upload',
+      },
+    });
+
+    return;
+  }
   if (error instanceof AppError) {
     res.status(error.statusCode).json({
       success: false,

@@ -11,3 +11,6 @@ dist/
 /skills-lock.json
 
 coverage/
+
+# Uploaded user avatars - never commit private upload files
+/storage/avatars/
