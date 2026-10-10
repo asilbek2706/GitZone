@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import prisma from '../../../src/config/prisma.js';
 import { updateUserProfile } from '../../../src/services/profiles/profile.service.js';
 import { updateProfileSchema } from '../../../src/validations/profiles/profile.validation.js';
+import { changeUsername } from '../../../src/services/profiles/username-change.service.js';
+import { AppError } from '../../../src/errors/app.error.js';
 
 vi.mock('../../../src/config/prisma.js', () => ({
   default: {
@@ -13,6 +15,11 @@ vi.mock('../../../src/config/prisma.js', () => ({
   },
 }));
 
+vi.mock('../../../src/services/profiles/username-change.service.js', () => ({
+  changeUsername: vi.fn(),
+}));
+
+const mockedChangeUsername = vi.mocked(changeUsername);
 const mockedFindUnique = vi.mocked(prisma.user.findUnique);
 const mockedUpdate = vi.mocked(prisma.user.update);
 
@@ -152,6 +159,80 @@ describe('profile update service', () => {
     });
   });
 
+  it('delegates username and profile fields to the username change service', async () => {
+    mockedFindUnique
+      .mockResolvedValueOnce({ id: 'user-1' } as never)
+      .mockResolvedValueOnce({
+        ...publicUser,
+        username: 'newuser',
+        name: 'New Name',
+      } as never);
+
+    const result = await updateUserProfile('user-1', {
+      username: 'newuser',
+      name: 'New Name',
+      bio: null,
+    });
+
+    expect(mockedChangeUsername).toHaveBeenCalledOnce();
+    expect(mockedChangeUsername).toHaveBeenCalledWith(
+      'user-1',
+      'newuser',
+      {
+        name: 'New Name',
+        bio: null,
+      },
+    );
+
+    expect(mockedUpdate).not.toHaveBeenCalled();
+    expect(result.username).toBe('newuser');
+    expect(result.name).toBe('New Name');
+  });
+
+  it('supports username-only profile updates', async () => {
+    mockedFindUnique
+      .mockResolvedValueOnce({ id: 'user-1' } as never)
+      .mockResolvedValueOnce({
+        ...publicUser,
+        username: 'newuser',
+      } as never);
+
+    const result = await updateUserProfile('user-1', {
+      username: 'newuser',
+    });
+
+    expect(mockedChangeUsername).toHaveBeenCalledWith(
+      'user-1',
+      'newuser',
+      {},
+    );
+
+    expect(mockedUpdate).not.toHaveBeenCalled();
+    expect(result.username).toBe('newuser');
+  });
+
+  it('propagates username conflicts without updating other profile fields', async () => {
+    mockedFindUnique.mockResolvedValueOnce({
+      id: 'user-1',
+    } as never);
+
+    mockedChangeUsername.mockRejectedValueOnce(
+      new AppError('Username is already taken', 409, 'USERNAME_TAKEN'),
+    );
+
+    await expect(
+      updateUserProfile('user-1', {
+        username: 'takenuser',
+        name: 'New Name',
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'USERNAME_TAKEN',
+    });
+
+    expect(mockedUpdate).not.toHaveBeenCalled();
+    expect(mockedFindUnique).toHaveBeenCalledOnce();
+  });
   it('allows clearing profile fields using null', async () => {
     mockedFindUnique.mockResolvedValue({ id: 'user-1' } as never);
     mockedUpdate.mockResolvedValue(publicUser as never);

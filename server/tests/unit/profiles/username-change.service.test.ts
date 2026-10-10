@@ -165,6 +165,38 @@ describe('username change service', () => {
     expect(update).not.toHaveBeenCalled();
   });
 
+  it('updates profile fields without renaming Git storage when username is unchanged', async () => {
+    await changeUsername('user-1', 'olduser', {
+      name: 'Updated Name',
+      bio: null,
+    });
+
+    expect(renameDirectory).not.toHaveBeenCalled();
+    expect(findFirst).not.toHaveBeenCalled();
+
+    expect(update).toHaveBeenCalledOnce();
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: {
+        name: 'Updated Name',
+        bio: null,
+      },
+      select: { id: true },
+    });
+  });
+
+  it('propagates database errors when updating fields with unchanged username', async () => {
+    update.mockRejectedValueOnce(new Error('Database unavailable'));
+
+    await expect(
+      changeUsername('user-1', 'olduser', {
+        location: 'Bukhara',
+      }),
+    ).rejects.toThrow('Database unavailable');
+
+    expect(renameDirectory).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledOnce();
+  });
   it('rejects an invalid username', async () => {
     await expect(
       changeUsername('user-1', '../unsafe'),

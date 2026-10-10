@@ -84,6 +84,155 @@ describe('profile update API integration', () => {
     );
   });
 
+  it('updates username successfully', async () => {
+    mockedUpdateUserProfile.mockResolvedValue({
+      ...publicUser,
+      username: 'newuser',
+    });
+
+    const response = await request(app)
+      .patch(endpoint)
+      .set('Authorization', 'Bearer valid-test-token')
+      .send({ username: 'newuser' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      success: true,
+      data: {
+        user: {
+          id: 'user-1',
+          username: 'newuser',
+        },
+      },
+    });
+
+    expect(mockedUpdateUserProfile).toHaveBeenCalledWith(
+      'user-1',
+      { username: 'newuser' },
+    );
+  });
+
+  it('updates username and other profile fields together', async () => {
+    mockedUpdateUserProfile.mockResolvedValue({
+      ...publicUser,
+      username: 'newuser',
+      name: 'Updated Name',
+      bio: null,
+    });
+
+    const response = await request(app)
+      .patch(endpoint)
+      .set('Authorization', 'Bearer valid-test-token')
+      .send({
+        username: 'newuser',
+        name: 'Updated Name',
+        bio: null,
+      });
+
+    expect(response.status).toBe(200);
+
+    expect(response.body.data.user).toMatchObject({
+      username: 'newuser',
+      name: 'Updated Name',
+      bio: null,
+    });
+
+    expect(mockedUpdateUserProfile).toHaveBeenCalledWith(
+      'user-1',
+      {
+        username: 'newuser',
+        name: 'Updated Name',
+        bio: null,
+      },
+    );
+  });
+
+  it('returns 409 when username is already taken', async () => {
+    mockedUpdateUserProfile.mockRejectedValue(
+      new AppError(
+        'Username is already taken',
+        409,
+        'USERNAME_TAKEN',
+      ),
+    );
+
+    const response = await request(app)
+      .patch(endpoint)
+      .set('Authorization', 'Bearer valid-test-token')
+      .send({
+        username: 'takenuser',
+        name: 'Updated Name',
+      });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('USERNAME_TAKEN');
+
+    expect(mockedUpdateUserProfile).toHaveBeenCalledOnce();
+  });
+
+  it('rejects invalid username formats before calling the service', async () => {
+    const response = await request(app)
+      .patch(endpoint)
+      .set('Authorization', 'Bearer valid-test-token')
+      .send({
+        username: 'invalid username!',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('INVALID_PROFILE_DATA');
+
+    expect(mockedUpdateUserProfile).not.toHaveBeenCalled();
+  });
+
+  it('returns 409 when Git storage is missing for existing repositories', async () => {
+    mockedUpdateUserProfile.mockRejectedValue(
+      new AppError(
+        'Git user directory is missing for existing repositories',
+        409,
+        'GIT_USER_DIRECTORY_MISSING',
+      ),
+    );
+
+    const response = await request(app)
+      .patch(endpoint)
+      .set('Authorization', 'Bearer valid-test-token')
+      .send({ username: 'newuser' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe(
+      'GIT_USER_DIRECTORY_MISSING',
+    );
+  });
+
+  it('accepts an unchanged username with updated profile fields', async () => {
+    mockedUpdateUserProfile.mockResolvedValue({
+      ...publicUser,
+      name: 'Updated Name',
+    });
+
+    const response = await request(app)
+      .patch(endpoint)
+      .set('Authorization', 'Bearer valid-test-token')
+      .send({
+        username: 'asil',
+        name: 'Updated Name',
+      });
+
+    expect(response.status).toBe(200);
+
+    expect(response.body.data.user).toMatchObject({
+      username: 'asil',
+      name: 'Updated Name',
+    });
+
+    expect(mockedUpdateUserProfile).toHaveBeenCalledWith(
+      'user-1',
+      {
+        username: 'asil',
+        name: 'Updated Name',
+      },
+    );
+  });
   it('rejects requests without authorization', async () => {
     const response = await request(app)
       .patch(endpoint)

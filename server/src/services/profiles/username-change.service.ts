@@ -37,6 +37,19 @@ export const changeUsername = async (
     const oldUsername = user.username;
 
     if (oldUsername === newUsername) {
+      if (Object.keys(profileFields).length > 0) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            ...(profileFields.name !== undefined ? { name: profileFields.name } : {}),
+            ...(profileFields.bio !== undefined ? { bio: profileFields.bio } : {}),
+            ...(profileFields.location !== undefined ? { location: profileFields.location } : {}),
+            ...(profileFields.website !== undefined ? { website: profileFields.website } : {}),
+          },
+          select: { id: true },
+        });
+      }
+
       return;
     }
 
