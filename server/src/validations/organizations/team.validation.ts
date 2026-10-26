@@ -26,3 +26,8 @@ export const updateTeamSchema = z
   });
 
 export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;
+export const addTeamMemberSchema = z.strictObject({
+  username: z.string().trim().min(3).max(30).regex(/^[a-zA-Z0-9_-]+$/),
+});
+
+export type AddTeamMemberInput = z.infer<typeof addTeamMemberSchema>;

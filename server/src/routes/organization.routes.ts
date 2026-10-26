@@ -21,6 +21,8 @@ import {
   createTeamController,
   updateTeamController,
   deleteTeamController,
+  addTeamMemberController,
+  removeTeamMemberController,
 } from '../controllers/organizations/team.controller.js';
 
 const router = Router();
@@ -31,6 +33,8 @@ router.post('/:slug/repositories', authMiddleware, createOrganizationRepositoryC
 router.post('/:slug/teams', authMiddleware, createTeamController);
 router.patch('/:slug/teams/:teamId', authMiddleware, updateTeamController);
 router.delete('/:slug/teams/:teamId', authMiddleware, deleteTeamController);
+router.post('/:slug/teams/:teamId/members', authMiddleware, addTeamMemberController);
+router.delete('/:slug/teams/:teamId/members/:userId', authMiddleware, removeTeamMemberController);
 router.post('/:slug/invitations', authMiddleware, inviteMember);
 router.get('/:slug/owners', optionalAuthMiddleware, getOwners);
 router.post('/:slug/leave', authMiddleware, leave);
