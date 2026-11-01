@@ -24,6 +24,12 @@ import {
   addTeamMemberController,
   removeTeamMemberController,
 } from '../controllers/organizations/team.controller.js';
+import {
+  addTeamRepositoryController,
+  listTeamRepositoriesController,
+  updateTeamRepositoryController,
+  removeTeamRepositoryController,
+} from '../controllers/organizations/team-repository.controller.js';
 
 const router = Router();
 router.post('/', authMiddleware, create);
@@ -35,6 +41,18 @@ router.patch('/:slug/teams/:teamId', authMiddleware, updateTeamController);
 router.delete('/:slug/teams/:teamId', authMiddleware, deleteTeamController);
 router.post('/:slug/teams/:teamId/members', authMiddleware, addTeamMemberController);
 router.delete('/:slug/teams/:teamId/members/:userId', authMiddleware, removeTeamMemberController);
+router.post('/:slug/teams/:teamId/repositories', authMiddleware, addTeamRepositoryController);
+router.get('/:slug/teams/:teamId/repositories', authMiddleware, listTeamRepositoriesController);
+router.patch(
+  '/:slug/teams/:teamId/repositories/:repositoryId',
+  authMiddleware,
+  updateTeamRepositoryController,
+);
+router.delete(
+  '/:slug/teams/:teamId/repositories/:repositoryId',
+  authMiddleware,
+  removeTeamRepositoryController,
+);
 router.post('/:slug/invitations', authMiddleware, inviteMember);
 router.get('/:slug/owners', optionalAuthMiddleware, getOwners);
 router.post('/:slug/leave', authMiddleware, leave);

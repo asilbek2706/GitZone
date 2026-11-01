@@ -17,6 +17,7 @@ vi.mock('../../../src/config/prisma.js', () => ({
     },
     repository: { findUnique: vi.fn() },
     organizationMember: { findUnique: vi.fn() },
+    teamRepository: { findMany: vi.fn() },
   },
 }));
 
@@ -36,6 +37,7 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 const findRepository = vi.mocked(prisma.repository.findUnique);
 const findMembership = vi.mocked(prisma.organizationMember.findUnique);
+const findTeamRepositories = vi.mocked(prisma.teamRepository.findMany);
 const mockedLookup = vi.mocked(lookupGitRepository);
 const mockedPAT = vi.mocked(verifyPersonalAccessToken);
 const mockedSpawn = vi.mocked(spawn);
@@ -94,6 +96,7 @@ describe('Organization Git HTTP authorization service integration', () => {
 
     findRepository.mockResolvedValue(repository as never);
     findMembership.mockResolvedValue(null);
+    findTeamRepositories.mockResolvedValue([]);
     mockedLookup.mockResolvedValue(lookupResult);
     mockedPAT.mockResolvedValue({ userId: 'user-1', username: 'developer' });
     mockBackend();

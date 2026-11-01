@@ -54,16 +54,45 @@ export const authorizeOrganizationRepositoryAccess = async (
       })
     : null;
 
+  // A team grant is valid only when the user is still a member of that team
+  // and the team belongs to this repository's organization.
+  const teamGrants =
+    userId && membership?.role === 'MEMBER'
+      ? await prisma.teamRepository.findMany({
+          where: {
+            repositoryId: repository.id,
+            team: {
+              organizationId: repository.organizationId,
+              members: {
+                some: { userId },
+              },
+            },
+          },
+          select: { permission: true },
+        })
+      : [];
+
+  const teamGrant = teamGrants.some((grant) => grant.permission === 'WRITE')
+    ? 'WRITE'
+    : teamGrants.some((grant) => grant.permission === 'READ')
+      ? 'READ'
+      : undefined;
+
   let permission: 'OWNER' | 'MEMBER' | 'READ' | 'WRITE' | 'PUBLIC' | null = null;
 
+  // Organization owners always retain full repository access.
   if (membership?.role === 'OWNER') {
     permission = 'OWNER';
   } else if (collaborator?.permission === 'WRITE') {
+    permission = 'WRITE';
+  } else if (membership?.role === 'MEMBER' && teamGrant === 'WRITE') {
     permission = 'WRITE';
   } else if (accessType === 'READ') {
     if (membership?.role === 'MEMBER') {
       permission = 'MEMBER';
     } else if (collaborator?.permission === 'READ') {
+      permission = 'READ';
+    } else if (membership && teamGrant === 'READ') {
       permission = 'READ';
     } else if (!repository.isPrivate) {
       permission = 'PUBLIC';
