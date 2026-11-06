@@ -16,6 +16,7 @@ import { getHealth, getLiveness, getReadiness } from './controllers/health/healt
 import repositoryRoutes from './routes/repository.routes.js';
 import profileRoutes from './routes/profile.routes.js';
 import organizationRoutes from './routes/organization.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 
 const corsOptions: CorsOptions = {
   origin(origin, callback) {
@@ -60,6 +61,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/repositories', repositoryRoutes);
 app.use('/api/users', profileRoutes);
 app.use('/api/organizations', organizationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

@@ -40,6 +40,9 @@ model User {
   issuesCreated                    Issue[]                    @relation("IssueCreator")
   issueComments                    IssueComment[]             @relation("IssueCommentAuthor")
   issueAssignments                 IssueAssignee[]
+  notifications                    Notification[] @relation("NotificationRecipient")
+  notificationsActed               Notification[] @relation("NotificationActor")
+  notificationPreference           NotificationPreference?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -656,4 +659,50 @@ model TeamRepository {
 
   @@unique([teamId, repositoryId])
   @@index([repositoryId])
+}
+
+enum NotificationType {
+  PULL_REQUEST
+  REVIEW
+  ISSUE
+  COMMENT
+  MENTION
+  COLLABORATOR
+  ORGANIZATION
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  actorId     String?
+  type        NotificationType
+  title       String
+  message     String?
+  resourceType String?
+  resourceId   String?
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+
+  user  User  @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@index([resourceType, resourceId])
+}
+
+model NotificationPreference {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  pullRequest  Boolean  @default(true)
+  review       Boolean  @default(true)
+  issue        Boolean  @default(true)
+  comment      Boolean  @default(true)
+  mention      Boolean  @default(true)
+  collaborator Boolean  @default(true)
+  organization Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

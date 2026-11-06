@@ -20,3 +20,13 @@ server/storage/repositories/*
 
 # Local VS Code settings
 /.vscode/settings.json
+
+# Local database backups
+/backups/
+/server/backups/
+
+# Temporary migration backup
+/server/phase13-original.tmp
+
+# Test backup files
+/server/tests/unit/notifications/*.bak
