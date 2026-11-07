@@ -12,6 +12,9 @@ import '../docs/repositories/repository-forks.docs.js';
 import '../docs/git/git-rest.docs.js';
 import '../docs/git/git-http.docs.js';
 import '../docs/issues/issues.docs.js';
+import '../docs/milestones/milestones.docs.js';
+import '../docs/labels/labels.docs.js';
+import '../docs/pull-requests/pull-requests.docs.js';
 
 export { openApiRegistry };
 
@@ -65,6 +68,4 @@ Features:
     ],
   });
 };
-
-
 
