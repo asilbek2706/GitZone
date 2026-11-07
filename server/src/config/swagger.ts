@@ -16,6 +16,7 @@ import '../docs/milestones/milestones.docs.js';
 import '../docs/labels/labels.docs.js';
 import '../docs/organizations/organization.docs.js';
 import '../docs/pull-requests/pull-requests.docs.js';
+import '../docs/teams/team.docs.js';
 
 export { openApiRegistry };
 
@@ -64,10 +65,9 @@ Features:
       { name: 'Pull Requests', description: 'Pull request management' },
       { name: 'Labels', description: 'Label management' },
       { name: 'Milestones', description: 'Milestone management' },
-      { name: 'Organizations', description: 'Organizations and teams' },
+      { name: 'Organizations', description: 'Organizations' },
+      { name: 'Teams', description: 'Team management' },
       { name: 'Notifications', description: 'Notifications' },
     ],
   });
 };
-
-
