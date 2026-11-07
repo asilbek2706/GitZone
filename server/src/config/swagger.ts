@@ -9,6 +9,9 @@ import '../docs/repositories/repository-collaborators.docs.js';
 import '../docs/repositories/repository-stars.docs.js';
 import '../docs/repositories/repository-watchers.docs.js';
 import '../docs/repositories/repository-forks.docs.js';
+import '../docs/git/git-rest.docs.js';
+import '../docs/git/git-http.docs.js';
+import '../docs/issues/issues.docs.js';
 
 export { openApiRegistry };
 
@@ -62,3 +65,6 @@ Features:
     ],
   });
 };
+
+
+
