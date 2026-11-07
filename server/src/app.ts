@@ -3,6 +3,9 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import helmet from 'helmet';
 
+import swaggerUi from 'swagger-ui-express';
+import { getOpenApiDocument } from './config/swagger.js';
+
 import { env } from './config/env.js';
 import type { CorsOptions } from 'cors';
 
@@ -62,6 +65,12 @@ app.use('/api/repositories', repositoryRoutes);
 app.use('/api/users', profileRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+app.get('/api/docs.json', (_req, res) => {
+  res.json(getOpenApiDocument());
+});
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(getOpenApiDocument()));
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
