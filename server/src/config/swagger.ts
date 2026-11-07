@@ -4,6 +4,11 @@ import { openApiRegistry } from './openapi.registry.js';
 import '../docs/health/health.docs.js';
 import '../docs/auth/auth.docs.js';
 import '../docs/users/profile.docs.js';
+import '../docs/repositories/repository.docs.js';
+import '../docs/repositories/repository-collaborators.docs.js';
+import '../docs/repositories/repository-stars.docs.js';
+import '../docs/repositories/repository-watchers.docs.js';
+import '../docs/repositories/repository-forks.docs.js';
 
 export { openApiRegistry };
 
