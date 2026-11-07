@@ -17,6 +17,7 @@ import '../docs/labels/labels.docs.js';
 import '../docs/organizations/organization.docs.js';
 import '../docs/pull-requests/pull-requests.docs.js';
 import '../docs/teams/team.docs.js';
+import '../docs/notifications/notification.docs.js';
 
 export { openApiRegistry };
 
@@ -71,3 +72,4 @@ Features:
     ],
   });
 };
+

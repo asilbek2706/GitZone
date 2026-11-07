@@ -66,11 +66,11 @@ app.use('/api/users', profileRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-app.get('/api/docs.json', (_req, res) => {
+app.get('/api/swagger.json', (_req, res) => {
   res.json(getOpenApiDocument());
 });
 
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(getOpenApiDocument()));
+app.use('/api/swagger', swaggerUi.serve, swaggerUi.setup(getOpenApiDocument()));
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
