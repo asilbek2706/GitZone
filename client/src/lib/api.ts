@@ -1,63 +1,57 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
-interface FetchOptions extends Omit<RequestInit, 'body'> {
+interface FetchOptions extends RequestInit {
   token?: string;
-  params?: Record<string, string | number | boolean | undefined>;
-  body?: unknown;
 }
 
-export async function apiFetch<T>(
-  endpoint: string,
-  options: FetchOptions = {}
-): Promise<T> {
-  const { token, headers, params, body, ...customOptions } = options;
+class ApiClient {
+  private async request<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
+    const { token, headers, ...customOptions } = options;
 
-  let url = `${API_BASE_URL}${endpoint}`;
-  if (params) {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        searchParams.append(key, String(value));
-      }
+    const defaultHeaders: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    };
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...customOptions,
+      headers: defaultHeaders,
+      credentials: 'include',
     });
-    const queryString = searchParams.toString();
-    if (queryString) {
-      url += `?${queryString}`;
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      throw new Error(data.error?.message || data.message || 'Serverda xatolik yuz berdi');
     }
+
+    return data;
   }
 
-  const isFormData = body instanceof FormData;
-  const defaultHeaders: HeadersInit = {
-    ...(!isFormData && body ? { 'Content-Type': 'application/json' } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...headers,
-  };
-
-  const response = await fetch(url, {
-    headers: defaultHeaders,
-    credentials: 'include',
-    body: isFormData ? (body as FormData) : body ? JSON.stringify(body) : undefined,
-    ...customOptions,
-  });
-
-  if (response.status === 204) {
-    return {} as T;
+  async get<T>(endpoint: string, options?: FetchOptions) {
+    return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
-  let data;
-  try {
-    data = await response.json();
-  } catch {
-    data = {};
+  async post<T>(endpoint: string, body: unknown, options?: FetchOptions) {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
   }
 
-  if (!response.ok || (data && data.success === false)) {
-    const errorMessage =
-      data.error?.message ||
-      data.message ||
-      `Xatolik yuz berdi: ${response.statusText}`;
-    throw new Error(errorMessage);
+  async patch<T>(endpoint: string, body: unknown, options?: FetchOptions) {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
   }
 
-  return data as T;
+  async delete<T>(endpoint: string, options?: FetchOptions) {
+    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+  }
 }
+
+export const api = new ApiClient();

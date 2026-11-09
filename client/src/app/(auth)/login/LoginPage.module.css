@@ -1,0 +1,1210 @@
+/* =========================================
+   GitZone Authentication
+   Premium Dark + Amber Design
+========================================= */
+
+.page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: #080a09;
+  color: #f5f5f5;
+  font-family: inherit;
+}
+
+/* Background */
+
+.backgroundGlow {
+  position: absolute;
+  width: 650px;
+  height: 650px;
+  top: -280px;
+  left: -180px;
+  background: radial-gradient(circle, rgba(255, 166, 0, 0.09), transparent 70%);
+  /* filter: blur(50px); */
+  pointer-events: none;
+  /* animation: glowMove 10s ease-in-out infinite alternate; */
+  z-index: -1;
+}
+
+.gridBackground {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 45px 45px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Main container */
+
+.container {
+  width: 100%;
+  max-width: 1050px;
+  min-height: 610px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  background: #0c100e;
+  box-shadow:
+    0 30px 100px rgba(0, 0, 0, 0.55),
+    0 0 60px rgba(255, 166, 0, 0.025);
+  animation: containerAppear 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* =========================================
+   LEFT BRAND PANEL
+========================================= */
+
+.brandPanel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 48px;
+  background: linear-gradient(145deg, #101713 0%, #0b100e 60%, #080d0b 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.brandPanel::before {
+  content: '';
+  position: absolute;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: rgba(180, 132, 43, 0.045);
+  filter: blur(90px);
+  animation: brandGlow 7s ease-in-out infinite alternate;
+}
+
+.brandContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: brandAppear 1s 0.2s both;
+}
+
+/* Logo */
+
+.logoWrapper {
+  width: 230px;
+  height: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.hexagonOuter,
+.hexagonMiddle,
+.hexagonInner {
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(255, 166, 0, 0.25);
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+}
+
+.hexagonOuter {
+  inset: 0;
+  border: 1px dashed rgba(255, 166, 0, 0.4);
+  animation: hexRotate 35s linear infinite;
+}
+
+.hexagonMiddle {
+  inset: 15px;
+  border-color: rgba(255, 166, 0, 0.35);
+  animation: hexRotateReverse 25s linear infinite;
+}
+
+.hexagonInner {
+  inset: 30px;
+  border-color: rgba(255, 166, 0, 0.15);
+  animation: hexPulse 4s ease-in-out infinite;
+}
+
+.logo {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: logoFloat 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(255, 166, 0, 0.18));
+}
+
+.logo img {
+  object-fit: contain;
+  width: 150px;
+  height: 150px;
+  transition: transform 0.4s ease;
+}
+
+.logo:hover img {
+  transform: scale(1.08) rotate(-3deg);
+}
+
+/* Brand text */
+
+.brandTitle {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: #ffffff;
+  margin: 0;
+}
+
+.brandTitle span {
+  color: #ffad1f;
+}
+
+.brandDescription {
+  font-size: 13px;
+  color: #818b84;
+  margin-top: 10px;
+  letter-spacing: 0.2px;
+}
+
+.brandFooter {
+  position: absolute;
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 10px;
+  color: #69736c;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #43cf82;
+  box-shadow: 0 0 12px rgba(67, 207, 130, 0.7);
+  animation: statusPulse 2s infinite;
+}
+
+/* =========================================
+   RIGHT AUTH PANEL
+========================================= */
+
+.authPanel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px;
+  background: rgba(8, 13, 11, 0.94);
+}
+
+.authContent {
+  width: 100%;
+  max-width: 390px;
+  animation: authAppear 0.7s 0.25s both;
+}
+
+/* Heading */
+
+.heading {
+  margin-bottom: 35px;
+}
+
+.welcomeBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #a5a99f;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 17px;
+}
+
+.welcomeBadge span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffad1f;
+  box-shadow: 0 0 10px rgba(255, 173, 31, 0.7);
+}
+
+.heading h2 {
+  color: #f5f5f5;
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.8px;
+  margin: 0;
+}
+
+.heading p {
+  color: #828c85;
+  font-size: 13px;
+  margin-top: 9px;
+  line-height: 1.6;
+}
+
+/* Tabs */
+
+.tabs {
+  display: flex;
+  gap: 30px;
+  border-bottom: 1px solid #222a24;
+  margin-bottom: 28px;
+}
+
+.tab,
+.activeTab {
+  position: relative;
+  border: none;
+  background: none;
+  padding: 0 0 13px;
+  color: #747d76;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.tab:hover {
+  color: #ffffff;
+}
+
+.activeTab {
+  color: #ffad1f;
+}
+
+.activeTab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 5px;
+  background: #ffad1f;
+  box-shadow: 0 0 10px rgba(255, 173, 31, 0.5);
+  animation: tabSlide 0.3s ease;
+}
+
+/* Form */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 21px;
+  animation: formAppear 0.4s ease;
+}
+
+.registerFields {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.field label {
+  color: #a4aca5;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15px;
+}
+
+.field input {
+  width: 100%;
+  height: 47px;
+  padding: 0 15px;
+  border-radius: 8px;
+  border: 1px solid #252d27;
+  background: #111713;
+  color: #f5f5f5;
+  outline: none;
+  font-size: 12px;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+}
+
+.field input::placeholder {
+  color: #566159;
+}
+
+.field input:hover {
+  border-color: #465147;
+}
+
+.field input:focus {
+  border-color: #ffad1f;
+  background: #141a15;
+  box-shadow: 0 0 0 3px rgba(255, 173, 31, 0.09);
+}
+
+/* Submit button */
+
+.submitButton {
+  width: 100%;
+  min-height: 47px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(110deg, #ffad1f, #ffc247);
+  color: #171008;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.3s ease,
+    filter 0.3s ease;
+}
+
+.submitButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transition: left 0.6s ease;
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 173, 31, 0.22);
+  filter: brightness(1.08);
+}
+
+.submitButton:hover::before {
+  left: 140%;
+}
+
+.submitButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.submitButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.buttonArrow {
+  position: absolute;
+  right: 17px;
+  font-size: 17px;
+  transition: transform 0.3s ease;
+}
+
+.submitButton:hover .buttonArrow {
+  transform: translateX(4px);
+}
+
+/* Loading */
+
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #171008;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* Error */
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  background: rgba(127, 29, 29, 0.14);
+  border: 1px solid rgba(220, 65, 65, 0.3);
+  border-radius: 8px;
+  color: #ff9999;
+  font-size: 12px;
+  animation: errorAppear 0.3s ease;
+}
+
+.error span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #a83232;
+  color: white;
+  font-weight: bold;
+}
+
+/* =========================================
+   TWO FACTOR AUTHENTICATION
+========================================= */
+
+.twoFactor {
+  padding: 22px;
+  border: 1px solid #252d27;
+  border-radius: 12px;
+  background: #101713;
+  animation: formAppear 0.45s ease;
+}
+
+.twoFactorHeader {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 24px;
+}
+
+.lockIcon {
+  width: 39px;
+  height: 39px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 173, 31, 0.25);
+  border-radius: 9px;
+  background: rgba(255, 173, 31, 0.08);
+  color: #ffad1f;
+}
+
+.lockIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.twoFactorHeader h3 {
+  font-size: 13px;
+  color: white;
+  margin: 0 0 5px;
+}
+
+.twoFactorHeader p {
+  color: #7e8981;
+  font-size: 10px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.otpContainer {
+  display: flex;
+  gap: 7px;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.otpContainer input {
+  width: 100%;
+  min-width: 0;
+  height: 45px;
+  border: 1px solid #303a32;
+  border-radius: 7px;
+  background: #0b100d;
+  color: #ffb52c;
+  font-size: 17px;
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.otpContainer input:focus {
+  border-color: #ffad1f;
+  background: #171b13;
+  box-shadow: 0 0 0 3px rgba(255, 173, 31, 0.08);
+  transform: translateY(-2px);
+}
+
+.backButton {
+  display: block;
+  margin: 15px auto 0;
+  background: none;
+  border: none;
+  color: #929c94;
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.backButton:hover {
+  color: #ffad1f;
+}
+
+/* Footer */
+
+.authFooter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 42px;
+}
+
+.authFooter p {
+  flex-shrink: 0;
+  color: #657068;
+  font-size: 10px;
+  margin: 0;
+}
+
+.authFooter strong {
+  color: #9ba59d;
+  font-weight: 600;
+}
+
+.footerLine {
+  height: 1px;
+  flex: 1;
+  background: #222a24;
+}
+
+/* =========================================
+   ANIMATIONS
+========================================= */
+
+@keyframes containerAppear {
+  from {
+    opacity: 0;
+    transform: translateY(25px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes brandAppear {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes authAppear {
+  from {
+    opacity: 0;
+    transform: translateX(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes formAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes logoFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes hexRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hexRotateReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes hexPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes brandGlow {
+  from {
+    transform: scale(0.8);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1.3);
+    opacity: 0.8;
+  }
+}
+
+@keyframes glowMove {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(150px, 100px);
+  }
+}
+
+@keyframes statusPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(67, 207, 130, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(67, 207, 130, 0.9);
+  }
+}
+
+@keyframes tabSlide {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes errorAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+@media (max-width: 900px) {
+  .page {
+    padding: 22px;
+  }
+
+  .container {
+    max-width: 700px;
+    min-height: 550px;
+  }
+
+  .brandPanel {
+    padding: 30px;
+  }
+
+  .authPanel {
+    padding: 35px;
+  }
+
+  .logoWrapper {
+    width: 175px;
+    height: 175px;
+  }
+
+  .logo img {
+    width: 120px;
+    height: 120px;
+  }
+
+  .brandTitle {
+    font-size: 28px;
+  }
+
+  .heading h2 {
+    font-size: 25px;
+  }
+}
+
+@media (max-width: 650px) {
+  .page {
+    min-height: 100vh;
+    padding: 18px;
+    align-items: center;
+  }
+
+  .container {
+    max-width: 430px;
+    min-height: auto;
+    grid-template-columns: 1fr;
+    border-radius: 15px;
+  }
+
+  .brandPanel {
+    min-height: 190px;
+    padding: 25px 20px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .logoWrapper {
+    width: 95px;
+    height: 95px;
+    margin-bottom: 10px;
+  }
+
+  .hexagonOuter {
+    inset: 0;
+  }
+
+  .hexagonMiddle {
+    inset: 8px;
+  }
+
+  .hexagonInner {
+    inset: 15px;
+  }
+
+  .logo img {
+    width: 65px;
+    height: 65px;
+  }
+
+  .brandTitle {
+    font-size: 23px;
+  }
+
+  .brandDescription {
+    font-size: 11px;
+    margin-top: 5px;
+  }
+
+  .brandFooter {
+    display: none;
+  }
+
+  .authPanel {
+    padding: 35px 25px;
+  }
+
+  .heading {
+    margin-bottom: 27px;
+  }
+
+  .heading h2 {
+    font-size: 25px;
+  }
+
+  .authFooter {
+    margin-top: 30px;
+  }
+}
+
+@media (max-width: 380px) {
+  .page {
+    padding: 10px;
+  }
+
+  .authPanel {
+    padding: 28px 17px;
+  }
+
+  .tabs {
+    gap: 20px;
+  }
+
+  .tab,
+  .activeTab {
+    font-size: 11px;
+  }
+
+  .otpContainer {
+    gap: 5px;
+  }
+
+  .otpContainer input {
+    height: 40px;
+    font-size: 15px;
+  }
+}
+
+/* Accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================
+   REGISTER PAGE ADDITIONS
+========================================= */
+
+.optional {
+  color: #626d65;
+  font-size: 10px;
+  font-weight: 400;
+  margin-left: 5px;
+}
+
+/* Password wrapper */
+
+.passwordWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.passwordWrapper input {
+  width: 100%;
+  height: 47px;
+  padding: 0 48px 0 15px;
+  border-radius: 8px;
+  border: 1px solid #252d27;
+  background: #111713;
+  color: #f5f5f5;
+  outline: none;
+  font-size: 12px;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+}
+
+.passwordWrapper input::placeholder {
+  color: #566159;
+}
+
+.passwordWrapper input:focus {
+  border-color: #ffad1f;
+  background: #141a15;
+  box-shadow: 0 0 0 3px rgba(255, 173, 31, 0.09);
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: #778179;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.passwordToggle:hover {
+  color: #ffad1f;
+}
+
+.passwordToggle svg {
+  width: 19px;
+  height: 19px;
+}
+
+.passwordHint {
+  color: #626d65;
+  font-size: 10px;
+  margin-top: -2px;
+}
+
+/* Login link */
+
+.authSwitch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  color: #818c84;
+  font-size: 11px;
+}
+
+.authSwitch a {
+  color: #ffad1f;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.authSwitch a:hover {
+  color: #ffd078;
+}
+
+.authSwitch a span {
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+
+.authSwitch a:hover span {
+  transform: translateX(3px);
+}
+
+/* Register form spacing */
+
+.authContent:has(.authSwitch) .form {
+  gap: 17px;
+}
+
+.authContent:has(.authSwitch) .heading {
+  margin-bottom: 27px;
+}
+
+@media (max-width: 650px) {
+  .authSwitch {
+    margin-top: 22px;
+  }
+}
+
+/* =========================================
+   GITZONE — REFINED PREMIUM DESIGN
+   Shared Login + Register
+========================================= */
+
+/* Calm background */
+.page {
+  background: #080b09;
+  color: #f5f5f5;
+  isolation: isolate;
+  max-height: 50vh;
+  height: 100vh;
+}
+
+.backgroundGlow {
+  width: 650px;
+  height: 650px;
+  top: -250px;
+  left: -180px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 173, 31, 0.055) 0%,
+    rgba(255, 173, 31, 0.015) 40%,
+    transparent 70%
+  );
+  filter: blur(65px);
+  animation: none;
+}
+
+.gridBackground {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: linear-gradient(to bottom, black, transparent 80%);
+}
+
+/* Main container */
+.container {
+  background: #0b100d;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  box-shadow:
+    0 30px 100px rgba(0, 0, 0, 0.55),
+    0 0 50px rgba(255, 173, 31, 0.018);
+}
+
+/* Left brand panel */
+.brandPanel {
+  background: linear-gradient(145deg, #101713 0%, #0c120e 100%);
+}
+
+.brandPanel::before {
+  background: rgba(255, 173, 31, 0.035);
+  filter: blur(100px);
+  animation: none;
+}
+
+/* =========================================
+   LOGO — FIXED POSITION
+========================================= */
+
+.logoWrapper {
+  width: 230px;
+  height: 230px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* First ring — dashed, clockwise */
+.hexagonOuter {
+  position: absolute;
+  inset: 0;
+  border: 1.5px dashed rgba(255, 173, 31, 0.65);
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  transform-origin: center;
+  animation: hexRotate 22s linear infinite;
+}
+
+/* Second ring — solid, counter-clockwise */
+.hexagonMiddle {
+  position: absolute;
+  inset: 17px;
+  border: 1.5px solid rgba(255, 173, 31, 0.4);
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  transform-origin: center;
+  animation: hexRotateReverse 16s linear infinite;
+}
+
+/* Only two visible rings */
+.hexagonInner {
+  display: none;
+}
+
+/* Lion logo stays completely still */
+.logo {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: none !important;
+  transform: none !important;
+  filter: drop-shadow(0 0 15px rgba(255, 173, 31, 0.15));
+}
+
+.logo img {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  transition: none !important;
+  transform: none !important;
+}
+
+.logo:hover,
+.logo:hover img {
+  transform: none !important;
+  animation: none !important;
+}
+
+/* Rotation animations */
+@keyframes hexRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hexRotateReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+/* Brand glow stays subtle */
+@keyframes brandGlow {
+  from,
+  to {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+}
+
+/* Auth panel */
+.authPanel {
+  background: #0b100d;
+}
+
+/* Keep form elements consistent */
+.field input,
+.passwordWrapper input {
+  background: #111713;
+  border-color: #252d27;
+  border-radius: 9px;
+}
+
+.submitButton {
+  border-radius: 9px;
+  background: linear-gradient(110deg, #ffad1f, #ffc247);
+}
+
+/* Responsive logo */
+@media (max-width: 900px) {
+  .logoWrapper {
+    width: 175px;
+    height: 175px;
+  }
+
+  .logo img {
+    width: 115px;
+    height: 115px;
+  }
+}
+
+@media (max-width: 650px) {
+  .logoWrapper {
+    width: 95px;
+    height: 95px;
+  }
+
+  .hexagonMiddle {
+    inset: 8px;
+  }
+
+  .logo img {
+    width: 62px;
+    height: 62px;
+  }
+}

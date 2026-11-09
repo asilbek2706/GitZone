@@ -1,4 +1,0 @@
-.menu { display: flex; align-items: center; gap: 10px; }
-.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--accent-fg); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
-.name { font-size: 14px; }
-@media (max-width: 767px) { .name { display: none; } }
