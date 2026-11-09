@@ -82,7 +82,7 @@ describe('environment configuration', () => {
 
     expect(env.NODE_ENV).toBe('development');
     expect(env.PORT).toBe(5000);
-    expect(env.CORS_ORIGIN).toBe('http://localhost:5173');
+    expect(env.CORS_ORIGIN).toBe('http://localhost:3000');
     expect(env.TRUST_PROXY).toBe(false);
     expect(env.BODY_LIMIT).toBe('1mb');
   });

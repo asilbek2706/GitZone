@@ -1,0 +1,7 @@
+.wrap { display: flex; flex-wrap: wrap; min-height: 100vh; }
+.brand { flex: 1 1 420px; background: var(--bg-rail); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 48px 32px; text-align: center; }
+.brand h2 { font-size: 36px; }
+.brand span { color: var(--accent); }
+.brand p { color: var(--muted); }
+.main { flex: 1 1 420px; display: flex; align-items: center; justify-content: center; padding: 40px 24px; outline: none; }
+.card { width: 100%; max-width: 420px; }

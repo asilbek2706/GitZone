@@ -7,7 +7,7 @@ const envSchema = z.object({
 
   PORT: z.coerce.number().int().min(1).max(65535).default(5000),
 
-  CORS_ORIGIN: z.url('CORS_ORIGIN must be a valid URL').default('http://localhost:5173'),
+  CORS_ORIGIN: z.url('CORS_ORIGIN must be a valid URL').default('http://localhost:3000'),
 
   TRUST_PROXY: z
     .enum(['true', 'false'], {

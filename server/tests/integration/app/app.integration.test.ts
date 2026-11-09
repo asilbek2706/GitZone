@@ -91,9 +91,9 @@ describe('App integration', () => {
   });
 
   it('allows the configured CORS origin', async () => {
-    const response = await request(app).get('/api/health').set('Origin', 'http://localhost:5173');
+    const response = await request(app).get('/api/health').set('Origin', 'http://localhost:3000');
 
-    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:3000');
     expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 
