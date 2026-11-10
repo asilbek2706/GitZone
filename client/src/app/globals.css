@@ -3,26 +3,66 @@
 :root {
   color-scheme: dark;
 
-  --background: #0a100e;
-  --surface: #0f1614;
-  --surface-hover: #151f1b;
-  --border: #1d2a26;
+  --background: #0f1115;
+  --surface: #171a21;
+  --surface-elevated: #1d2129;
+  --surface-hover: #252a34;
 
-  --primary: #ffb020;
-  --primary-hover: #ffc04d;
-  --accent: #34d399;
+  --border: #2b303b;
+  --border-strong: #3a4150;
 
-  --foreground: #edf3ef;
-  --muted: #8fa39a;
-  --danger: #f87171;
+  --primary: #8b9cff;
+  --primary-hover: #a3b1ff;
+  --accent: #8b9cff;
+
+  --foreground: #f3f4f6;
+  --muted: #9ca3af;
+
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
 
   --radius: 12px;
 }
 
-/* stylelint-disable-next-line at-rule-no-unknown */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --background: #f8f9fb;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f1f3f6;
+
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --accent: #4f46e5;
+
+  --foreground: #18181b;
+  --muted: #71717a;
+
+  --danger: #dc2626;
+  --success: #059669;
+  --warning: #d97706;
+}
+
+/* Tailwind CSS theme tokens */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -43,11 +83,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
 }
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -60,7 +104,7 @@ button:disabled {
 }
 
 ::selection {
-  background: rgb(255 176 32 / 25%);
+  background: color-mix(in srgb, var(--primary) 25%, transparent);
   color: var(--foreground);
 }
 
@@ -74,6 +118,7 @@ button:disabled {
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-5px);
   }
@@ -83,6 +128,7 @@ button:disabled {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -93,6 +139,7 @@ button:disabled {
   100% {
     opacity: 0.45;
   }
+
   50% {
     opacity: 1;
   }
@@ -103,6 +150,7 @@ button:disabled {
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-8px);
   }

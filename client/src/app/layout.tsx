@@ -1,14 +1,14 @@
-// src/app/layout.tsx
-import { Toaster } from 'sonner';
+import type { ReactNode } from 'react';
+
+import { ThemeProvider } from '@/providers/theme-provider';
+
 import './globals.css';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="uz">
-      <body className="bg-[#0a0a0a] text-white antialiased">
-        {children}
-        {/* Sonner Toaster komponenti */}
-        <Toaster theme="dark" position="top-right" richColors />
+    <html lang="uz" suppressHydrationWarning>
+      <body className="bg-background text-foreground antialiased">
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

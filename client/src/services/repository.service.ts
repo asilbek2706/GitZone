@@ -41,14 +41,12 @@ export interface CreateRepositoryRequest {
   name: string;
   description?: string;
   isPrivate?: boolean;
-  defaultBranch?: string;
 }
 
 export interface UpdateRepositoryRequest {
   name?: string;
-  description?: string;
+  description?: string | null;
   isPrivate?: boolean;
-  defaultBranch?: string;
 }
 
 export const repositoryService = {

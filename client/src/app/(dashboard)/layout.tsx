@@ -2,11 +2,14 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 
 import ProtectedRoute from '@/components/ProtectedRoute';
 import UserProfileDropdown from '@/components/UserProfileDropdown';
+import RepositoryCreateCTA from '@/components/repositories/RepositoryCreateCTA';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
+
 import { authService } from '@/services/auth.service';
 import type { AuthUser } from '@/types/api';
 
@@ -30,7 +33,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       const token = localStorage.getItem('accessToken');
 
       if (!token) {
-        if (isMounted) setIsLoadingUser(false);
+        if (isMounted) {
+          setIsLoadingUser(false);
+        }
         return;
       }
 
@@ -71,48 +76,62 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <ProtectedRoute>
-      <div className="flex min-h-screen flex-col bg-[#0d1117] text-white selection:bg-amber-500 selection:text-neutral-950">
-        {/* Header */}
-        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-[#30363d] bg-[#161b22] px-4 lg:px-8">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="group flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg font-bold text-neutral-950 shadow-lg">
-                <Image src="/brand/gitzone-mark.svg" alt="GitZone Mark" width={32} height={32} />
-              </div>
+      <div className="flex min-h-screen flex-col bg-background text-foreground">
+        <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-xl">
+          <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 lg:px-8">
+            <Link
+              href="/dashboard"
+              className="group flex min-w-0 items-center gap-2.5"
+              aria-label="GitZone dashboard"
+            >
+              <Image
+                src="/brand/gitzone-mark.svg"
+                alt="GitZone"
+                width={32}
+                height={32}
+                priority
+                className="shrink-0"
+              />
 
-              <span className="hidden text-md text-white transition group-hover:text-amber-500 sm:inline-block">
+              <span className="hidden truncate text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary sm:inline-block">
                 {user?.username || 'GitZone'}
               </span>
             </Link>
-          </div>
 
-          <div className="flex items-center gap-4">
-            <span className="hidden rounded-md border border-[#30363d] bg-[#21262d] px-2.5 py-1 font-mono text-xs text-gray-300 sm:inline-block">
-              v1.0.0-cyber
-            </span>
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              <span className="hidden rounded-lg border border-border bg-background px-2.5 py-1.5 font-mono text-[11px] text-muted md:inline-flex">
+                v1.0.0
+              </span>
 
-            {isLoadingUser ? (
-              <div className="h-9 w-9 animate-pulse rounded-full bg-[#30363d]" />
-            ) : (
-              <UserProfileDropdown user={user} />
-            )}
+              <ThemeSwitcher />
+
+              <div className="hidden h-7 w-px bg-border sm:block" />
+
+              <RepositoryCreateCTA variant="header" />
+
+              <div className="hidden h-7 w-px bg-border sm:block" />
+
+              {isLoadingUser ? (
+                <div className="h-9 w-9 animate-pulse rounded-full bg-surface-hover" />
+              ) : (
+                <UserProfileDropdown user={user} />
+              )}
+            </div>
           </div>
         </header>
 
-        {/* Main content */}
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 lg:px-8">
-          {/* Dashboard navigation */}
           <nav
             aria-label="Dashboard navigation"
-            className="mb-6 flex gap-6 overflow-x-auto border-b border-[#30363d] text-sm font-medium"
+            className="mb-7 flex gap-6 overflow-x-auto border-b border-border text-sm font-medium"
           >
             <Link
               href="/dashboard"
               aria-current={isOverviewActive ? 'page' : undefined}
-              className={`flex items-center gap-2 whitespace-nowrap border-b-2 pb-3 transition ${
+              className={`-mb-px flex shrink-0 items-center border-b-2 px-1 pb-3 transition-colors ${
                 isOverviewActive
-                  ? 'border-amber-500 text-white'
-                  : 'border-transparent text-gray-400 hover:border-[#8b949e] hover:text-white'
+                  ? 'border-primary text-foreground'
+                  : 'border-transparent text-muted hover:border-border-strong hover:text-foreground'
               }`}
             >
               Overview
@@ -121,10 +140,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Link
               href="/dashboard/repositories"
               aria-current={isRepositoriesActive ? 'page' : undefined}
-              className={`flex items-center gap-2 whitespace-nowrap border-b-2 pb-3 transition ${
+              className={`-mb-px flex shrink-0 items-center border-b-2 px-1 pb-3 transition-colors ${
                 isRepositoriesActive
-                  ? 'border-amber-500 text-white'
-                  : 'border-transparent text-gray-400 hover:border-[#8b949e] hover:text-white'
+                  ? 'border-primary text-foreground'
+                  : 'border-transparent text-muted hover:border-border-strong hover:text-foreground'
               }`}
             >
               Repositories
@@ -134,9 +153,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
 
-        {/* Footer */}
-        <footer className="border-t border-[#30363d] px-8 py-6 text-center text-xs text-gray-500">
-          &copy; {currentYear ?? ''} GitZone Inc. Cyberpunk Open Source Platform.
+        <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted">
+          © {currentYear ?? new Date().getFullYear()} GitZone. Built for developers.
         </footer>
       </div>
     </ProtectedRoute>

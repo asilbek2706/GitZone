@@ -11,6 +11,10 @@ import RepositoryFilters, {
 
 import RepositoryList from '@/components/repositories/RepositoryList';
 
+import Link from 'next/link';
+import { FiAperture } from 'react-icons/fi';
+import RepositoryCreateCTA from '@/components/repositories/RepositoryCreateCTA';
+
 export default function RepositoriesPage() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,13 +102,19 @@ export default function RepositoriesPage() {
         </div>
       </header>
 
-      <RepositoryFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-        counts={counts}
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <RepositoryFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+            counts={counts}
+          />
+        </div>
+
+        <RepositoryCreateCTA variant="inline" />
+      </div>
 
       <RepositoryList
         repositories={filteredRepositories}
