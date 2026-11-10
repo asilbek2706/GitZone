@@ -1208,3 +1208,161 @@
     height: 62px;
   }
 }
+
+/* =========================================
+   AUTH PAGES — CENTERED & COMPACT LAYOUT
+========================================= */
+
+.page {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.container {
+  width: 100%;
+  max-width: 1100px;
+  min-height: min(720px, calc(100svh - 48px));
+  margin: auto;
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  align-items: stretch;
+}
+
+/* Center the authentication panel */
+
+.authPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 40px;
+}
+
+.authContent {
+  width: 100%;
+  max-width: 520px;
+  margin: auto;
+}
+
+/* Compact heading */
+
+.heading {
+  margin-bottom: 24px;
+}
+
+.heading h2 {
+  margin-bottom: 8px;
+}
+
+.heading p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Two-column form */
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.field {
+  min-width: 0;
+  margin: 0;
+}
+
+.field input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Password field */
+
+.passwordWrapper {
+  width: 100%;
+}
+
+/* Error and submit take full width */
+
+.error,
+.submitButton {
+  grid-column: 1 / -1;
+}
+
+.submitButton {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* Reduce vertical spacing */
+
+.authSwitch {
+  margin-top: 20px;
+}
+
+.authFooter {
+  margin-top: 22px;
+}
+
+/* Logo panel */
+
+.brandPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brandContent {
+  margin: auto;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 768px) {
+  .page {
+    padding: 16px;
+  }
+
+  .container {
+    min-height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .brandPanel {
+    padding: 24px 16px;
+  }
+
+  .authPanel {
+    padding: 24px 16px;
+  }
+
+  .authContent {
+    max-width: 520px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .error,
+  .submitButton {
+    grid-column: auto;
+  }
+
+  .authPanel {
+    padding: 20px 8px;
+  }
+
+  .heading {
+    margin-bottom: 20px;
+  }
+}

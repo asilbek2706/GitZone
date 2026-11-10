@@ -1,0 +1,36 @@
+/* src/styles/cyber.css */
+
+/* Cyberpunk va GitHub uyg'unlashgan maxsus uslublar */
+.cyber-glow {
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.cyber-card {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  transition: all 0.2s ease-in-out;
+}
+
+.cyber-card:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Contribution katakchalari uchun custom hover va animatsiya */
+.contribution-cell {
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.contribution-cell:hover {
+  transform: scale(1.35);
+  z-index: 20;
+}
+
+/* Avatar uchun neon gradient ramka */
+.cyber-avatar-gradient {
+  background: linear-gradient(135deg, #f59e0b 0%, #3b82f6 100%);
+  padding: 2px;
+}

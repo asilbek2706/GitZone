@@ -1,16 +1,15 @@
 // src/app/layout.tsx
-import './globals.css'; // <--- Shu qator albatta bo'lishi kerak!
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'GitZone',
-  description: 'Git hosting and collaboration platform',
-};
+import { Toaster } from 'sonner';
+import './globals.css';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="uz">
-      <body className="bg-[#0d1117] text-white antialiased">{children}</body>
+      <body className="bg-[#0a0a0a] text-white antialiased">
+        {children}
+        {/* Sonner Toaster komponenti */}
+        <Toaster theme="dark" position="top-right" richColors />
+      </body>
     </html>
   );
 }

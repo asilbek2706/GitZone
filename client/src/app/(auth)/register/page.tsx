@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { toast } from 'sonner';
 
 import { authService } from '@/services/auth.service';
 import styles from '../login/LoginPage.module.css';
@@ -34,26 +35,42 @@ export default function RegisterPage() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (loading) return;
+
     setError('');
     setLoading(true);
 
     try {
       const res = await authService.register({
-        username,
-        email,
+        username: username.trim(),
+        email: email.trim(),
         password,
-        name,
+        name: name.trim() || undefined,
       });
 
-      if (res.data.accessToken) {
-        localStorage.setItem('accessToken', res.data.accessToken);
+      const data = res.data.data;
+      const { accessToken } = data;
+
+      if (accessToken) {
+        localStorage.setItem('accessToken', accessToken);
+
+        toast.success('Hisobingiz muvaffaqiyatli yaratildi! Xush kelibsiz.');
 
         router.push('/dashboard');
+      } else {
+        toast.success('Ro‘yxatdan o‘tish muvaffaqiyatli yakunlandi.');
+
+        router.push('/login');
       }
     } catch (err: unknown) {
       const apiError = err as ApiErrorResponse;
 
-      setError(apiError.response?.data?.message || "Ro'yxatdan o'tishda xatolik yuz berdi.");
+      const message =
+        apiError.response?.data?.message ||
+        'Ro‘yxatdan o‘tishda xatolik yuz berdi. Qaytadan urinib ko‘ring.';
+
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -88,7 +105,7 @@ export default function RegisterPage() {
               Git<span>Zone</span>
             </h1>
 
-            <p className={styles.brandDescription}>Kodingiz uchun o&apos;z hududingiz.</p>
+            <p className={styles.brandDescription}>Kodingiz uchun o‘z hududingiz.</p>
           </div>
 
           <div className={styles.brandFooter}>
@@ -100,7 +117,7 @@ export default function RegisterPage() {
         {/* RIGHT REGISTER PANEL */}
         <section className={styles.authPanel}>
           <div className={styles.authContent}>
-            {/* Heading */}
+            {/* HEADING */}
             <header className={styles.heading}>
               <div className={styles.welcomeBadge}>
                 <span />
@@ -109,10 +126,10 @@ export default function RegisterPage() {
 
               <h2>Hisob yarating</h2>
 
-              <p>GitZone hamjamiyatiga qo&apos;shiling. Dasturlash sayohatingizni boshlang.</p>
+              <p>GitZone hamjamiyatiga qo‘shiling. Dasturlash sayohatingizni boshlang.</p>
             </header>
 
-            {/* Error message */}
+            {/* ERROR MESSAGE */}
             {error && (
               <div className={styles.error} role="alert">
                 <span>!</span>
@@ -120,9 +137,9 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Register form */}
+            {/* REGISTER FORM */}
             <form onSubmit={handleSubmit} className={styles.form}>
-              {/* Username */}
+              {/* USERNAME */}
               <div className={styles.field}>
                 <label htmlFor="username">Username</label>
 
@@ -130,32 +147,36 @@ export default function RegisterPage() {
                   id="username"
                   type="text"
                   required
+                  minLength={3}
+                  maxLength={30}
                   autoComplete="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="asilbek"
-                  className="flex "
+                  disabled={loading}
                 />
               </div>
 
-              {/* Full name */}
+              {/* FULL NAME */}
               <div className={styles.field}>
                 <label htmlFor="name">
-                  To&apos;liq ism
-                  <span className={styles.optional}>(ixtiyoriy)</span>
+                  To‘liq ism
+                  <span className={styles.optional}> (ixtiyoriy)</span>
                 </label>
 
                 <input
                   id="name"
                   type="text"
+                  maxLength={100}
                   autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ismingiz va familiyangiz"
+                  disabled={loading}
                 />
               </div>
 
-              {/* Email */}
+              {/* EMAIL */}
               <div className={styles.field}>
                 <label htmlFor="email">Email manzil</label>
 
@@ -167,10 +188,11 @@ export default function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
+                  disabled={loading}
                 />
               </div>
 
-              {/* Password */}
+              {/* PASSWORD */}
               <div className={styles.field}>
                 <label htmlFor="password">Parol</label>
 
@@ -184,23 +206,38 @@ export default function RegisterPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Kamida 8 ta belgi"
+                    disabled={loading}
                   />
 
                   <button
                     type="button"
                     className={styles.passwordToggle}
                     onClick={() => setShowPassword((prev) => !prev)}
-                    aria-label={showPassword ? 'Parolni yashirish' : "Parolni ko'rsatish"}
+                    aria-label={showPassword ? 'Parolni yashirish' : 'Parolni ko‘rsatish'}
+                    aria-pressed={showPassword}
+                    disabled={loading}
                   >
                     {showPassword ? (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        aria-hidden="true"
+                      >
                         <path d="M3 3l18 18" />
                         <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
                         <path d="M9.9 5.2A11 11 0 0 1 12 5c5 0 9 5 9 7s-1.7 4-4.3 5.8" />
                         <path d="M6.2 6.2C3.9 7.6 3 10 3 12c0 2 4 7 9 7a10 10 0 0 0 2.5-.3" />
                       </svg>
                     ) : (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        aria-hidden="true"
+                      >
                         <path d="M3 12s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7Z" />
                         <circle cx="12" cy="12" r="3" />
                       </svg>
@@ -211,7 +248,7 @@ export default function RegisterPage() {
                 <span className={styles.passwordHint}>Kamida 8 ta belgidan foydalaning.</span>
               </div>
 
-              {/* Submit button */}
+              {/* SUBMIT BUTTON */}
               <button type="submit" disabled={loading} className={styles.submitButton}>
                 {loading ? (
                   <>
@@ -227,7 +264,7 @@ export default function RegisterPage() {
               </button>
             </form>
 
-            {/* Login link */}
+            {/* LOGIN LINK */}
             <div className={styles.authSwitch}>
               <span>Akkauntingiz mavjudmi?</span>
 
@@ -237,7 +274,7 @@ export default function RegisterPage() {
               </Link>
             </div>
 
-            {/* Footer */}
+            {/* FOOTER */}
             <footer className={styles.authFooter}>
               <span className={styles.footerLine} />
 
