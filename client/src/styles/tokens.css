@@ -1,0 +1,36 @@
+:root {
+  /* Additional dark theme tokens */
+  --background-subtle: #13161c;
+  --surface-muted: #20242d;
+  --surface-overlay: rgb(10 12 16 / 80%);
+
+  --border-subtle: #242933;
+  --text-secondary: #b0b7c3;
+
+  --ring: #8b9cff;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 20%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 18%);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 24%);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+}
+
+:root[data-theme='light'] {
+  /* Additional light theme tokens */
+  --background-subtle: #f1f3f7;
+  --surface-muted: #f6f7f9;
+  --surface-overlay: rgb(255 255 255 / 85%);
+
+  --border-subtle: #eceef2;
+  --text-secondary: #525866;
+
+  --ring: #4f46e5;
+
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 5%);
+  --shadow-md: 0 4px 12px rgb(15 23 42 / 7%);
+  --shadow-lg: 0 12px 32px rgb(15 23 42 / 10%);
+}

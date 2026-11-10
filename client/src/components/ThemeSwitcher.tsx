@@ -4,6 +4,8 @@ import { Monitor, Moon, Sun } from 'lucide-react';
 
 import { useTheme, type Theme } from '@/providers/theme-provider';
 
+import styles from './ThemeSwitcher.module.css';
+
 const themes: {
   value: Theme;
   label: string;
@@ -21,7 +23,7 @@ export default function ThemeSwitcher() {
     <div
       role="group"
       aria-label="Choose appearance"
-      className="inline-flex items-center gap-1 rounded-xl border border-border bg-surface p-1"
+      className={styles.switcher}
     >
       {themes.map(({ value, label, icon: Icon }) => {
         const isActive = theme === value;
@@ -33,14 +35,10 @@ export default function ThemeSwitcher() {
             onClick={() => setTheme(value)}
             aria-label={`${label} theme`}
             aria-pressed={isActive}
-            title={label}
-            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
-              isActive
-                ? 'bg-surface-hover text-foreground shadow-sm'
-                : 'text-muted hover:bg-surface-hover hover:text-foreground'
-            }`}
+            title={`${label} theme`}
+            className={`${styles.option} ${isActive ? styles.active : ''}`}
           >
-            <Icon size={16} strokeWidth={1.8} />
+            <Icon size={16} strokeWidth={1.9} aria-hidden="true" />
           </button>
         );
       })}

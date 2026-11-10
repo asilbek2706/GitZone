@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { authService } from '@/services/auth.service';
 import type { AuthUser } from '@/types/api';
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+function DashboardLayoutContent({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
@@ -22,6 +22,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const isOverviewActive = pathname === '/dashboard';
   const isRepositoriesActive = pathname.startsWith('/dashboard/repositories');
+  const isRepositoryDetail =
+    /^\/dashboard\/repositories\/[^/]+\/[^/]+(?:\/|$)/.test(pathname);
 
   const [currentYear, setCurrentYear] = useState<number | null>(null);
 
@@ -125,7 +127,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </header>
 
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 lg:px-8">
-          {pathname !== '/new' && (
+          {pathname !== '/new' && !isRepositoryDetail && (
             <nav
               aria-label="Dashboard navigation"
               className="mb-7 flex gap-6 overflow-x-auto border-b border-border text-sm font-medium"
@@ -166,3 +168,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </ProtectedRoute>
   );
 }
+
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={<div className="min-h-screen bg-background" aria-busy="true" />}
+    >
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </Suspense>
+  );
+}
+

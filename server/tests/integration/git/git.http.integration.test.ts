@@ -17,6 +17,8 @@ import { authorizeRepositoryAccess } from '../../../src/services/repositories/re
 import { withGitUserWriteLock } from '../../../src/services/git/git-user-lock.service.js';
 import { lookupGitRepository } from '../../../src/services/git/git-repository-lookup.service.js';
 
+import { withGitDistributedLock } from '../../../src/services/git/git-distributed-lock.service.js';
+
 vi.mock('../../../src/config/prisma.js', () => ({
   default: {
     repositoryTransfer: {
@@ -27,6 +29,10 @@ vi.mock('../../../src/config/prisma.js', () => ({
       findUnique: vi.fn(),
     },
   },
+}));
+
+vi.mock('../../../src/services/git/git-distributed-lock.service.js', () => ({
+  withGitDistributedLock: vi.fn(),
 }));
 
 vi.mock('../../../src/services/git/git-repository-lookup.service.js', () => ({
@@ -58,6 +64,8 @@ const mockedAuthorizeRepositoryAccess = vi.mocked(authorizeRepositoryAccess);
 
 const mockedSpawn = vi.mocked(spawn);
 const mockedLookupGitRepository = vi.mocked(lookupGitRepository);
+
+const mockedWithGitDistributedLock = vi.mocked(withGitDistributedLock);
 
 const gitRepository = {
   id: 'repo-1',
@@ -114,6 +122,12 @@ const mockSuccessfulGitBackend = () => {
 describe('Git HTTP username locking', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+
+    mockedWithGitDistributedLock.mockImplementation(async (_owner, _mode, operation) =>
+      operation({
+        signal: new AbortController().signal,
+      }),
+    );
 
     mockedFindRepository.mockResolvedValue(gitRepository as never);
     mockedFindRepositoryById.mockResolvedValue(gitRepository as never);
@@ -283,6 +297,11 @@ describe('Git HTTP username locking', () => {
 describe('Git HTTP integration', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockedWithGitDistributedLock.mockImplementation(async (_owner, _mode, operation) =>
+      operation({
+        signal: new AbortController().signal,
+      }),
+    );
 
     mockedFindRepositoryById.mockImplementation(() => {
       return mockedFindRepository.mock.results.at(-1)?.value ?? null;
@@ -336,6 +355,69 @@ describe('Git HTTP integration', () => {
     expect(mockedAuthorizeRepositoryAccess).toHaveBeenCalledWith('repo-1', 'READ', undefined);
 
     expect(mockedSpawn).toHaveBeenCalledOnce();
+  });
+
+  it('uses a shared distributed lock for Git read requests', async () => {
+    mockedFindRepository.mockResolvedValue(gitRepository as never);
+
+    mockedAuthorizeRepositoryAccess.mockResolvedValue({
+      permission: 'PUBLIC',
+      repositoryId: 'repo-1',
+      repositoryOwnerId: 'owner-1',
+      repositoryOwnerUsername: 'asil',
+    } as never);
+
+    mockSuccessfulGitBackend();
+
+    const response = await request(app).get('/asil/demo.git/info/refs?service=git-upload-pack');
+
+    expect(response.status).toBe(200);
+
+    expect(mockedWithGitDistributedLock).toHaveBeenCalledWith(
+      {
+        type: 'USER',
+        id: 'owner-1',
+      },
+      'read',
+      expect.any(Function),
+    );
+  });
+
+  it('uses an exclusive distributed lock for Git write requests', async () => {
+    mockedFindRepository.mockResolvedValue(gitRepository as never);
+
+    mockedVerifyPersonalAccessToken.mockResolvedValue({
+      userId: 'user-2',
+      username: 'testuser',
+    });
+
+    mockedAuthorizeRepositoryAccess.mockResolvedValue({
+      permission: 'WRITE',
+      repositoryId: 'repo-1',
+      repositoryOwnerId: 'owner-1',
+      repositoryOwnerUsername: 'asil',
+    } as never);
+
+    mockSuccessfulGitBackend();
+
+    const credentials = Buffer.from('testuser:gzp_testtoken').toString('base64');
+
+    const response = await request(app)
+      .post('/asil/demo.git/git-receive-pack')
+      .set('Authorization', `Basic ${credentials}`)
+      .set('Content-Type', 'application/x-git-receive-pack-request')
+      .send(Buffer.from('git-receive-request'));
+
+    expect(response.status).toBe(200);
+
+    expect(mockedWithGitDistributedLock).toHaveBeenCalledWith(
+      {
+        type: 'USER',
+        id: 'owner-1',
+      },
+      'write',
+      expect.any(Function),
+    );
   });
 
   it('requires authentication for private repository read access', async () => {

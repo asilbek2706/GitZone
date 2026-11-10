@@ -13,6 +13,7 @@ import type {
   UpdateRepositoryInput,
 } from '../../validations/repositories/repository.validation.js';
 import type { RepositoryResponse, RepositoryWithOwner } from '../../types/repository.types.js';
+import { authorizeRepositoryAccess } from './repository-authorization.service.js';
 
 const toRepositoryResponse = (repository: {
   id: string;
@@ -133,29 +134,48 @@ export const getUserRepositories = async (username: string): Promise<RepositoryR
   return repositories.map(toRepositoryResponse);
 };
 
-export const getMyRepositories = async (ownerId: string): Promise<RepositoryResponse[]> => {
+export const getMyRepositories = async (ownerId: string): Promise<RepositoryWithOwner[]> => {
   const repositories = await prisma.repository.findMany({
     where: {
       ownerId,
       organizationId: null,
+    },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          avatarUrl: true,
+        },
+      },
     },
     orderBy: {
       createdAt: 'desc',
     },
   });
 
-  return repositories.map(toRepositoryResponse);
+  return repositories.map((repository) => {
+    if (!repository.owner) {
+      throw new AppError('Repository owner not found', 404, 'REPOSITORY_OWNER_NOT_FOUND');
+    }
+
+    return {
+      ...toRepositoryResponse(repository),
+      owner: repository.owner,
+    };
+  });
 };
 
 export const getRepositoryByUsernameAndName = async (
   username: string,
   name: string,
+  viewerId?: string,
 ): Promise<RepositoryWithOwner> => {
   const repository = await prisma.repository.findFirst({
     where: {
       name,
       organizationId: null,
-      isPrivate: false,
       owner: {
         username,
       },
@@ -175,6 +195,8 @@ export const getRepositoryByUsernameAndName = async (
   if (!repository || !repository.ownerId || !repository.owner) {
     throw new AppError('Repository not found', 404, 'REPOSITORY_NOT_FOUND');
   }
+
+  await authorizeRepositoryAccess(repository.id, 'READ', viewerId);
 
   return {
     id: repository.id,

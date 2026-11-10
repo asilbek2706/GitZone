@@ -229,7 +229,7 @@ router.get('/:username/:name/watchers/count', optionalAuthMiddleware, getWatcher
 router.patch('/:username/:name/watch/preferences', authMiddleware, updateWatchPreference);
 router.delete('/:username/:name/star', authMiddleware, unstar);
 router.get('/:username/:name/stars/count', optionalAuthMiddleware, getStarCount);
-router.get('/:username/:name', getOne);
+router.get('/:username/:name', optionalAuthMiddleware, getOne);
 router.post('/:username/:name/transfer', authMiddleware, transferRepositoryToOrganization);
 router.patch('/:username/:name', authMiddleware, update);
 router.delete('/:username/:name', authMiddleware, remove);

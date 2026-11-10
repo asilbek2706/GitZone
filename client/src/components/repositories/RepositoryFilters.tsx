@@ -26,13 +26,14 @@ export default function RepositoryFilters({
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="relative">
+    <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="relative min-w-0 flex-1">
         <svg
-          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <circle cx="11" cy="11" r="7" strokeWidth="1.8" />
           <path strokeLinecap="round" strokeWidth="1.8" d="m16 16 4 4" />
@@ -42,13 +43,13 @@ export default function RepositoryFilters({
           type="search"
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Find a repository..."
+          placeholder="Search repositories..."
           aria-label="Search repositories"
-          className="w-full rounded-lg border border-[#30363d] bg-[#0d1117] py-2.5 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
+          className="h-11 w-full rounded-xl border border-border bg-background px-4 pl-10 text-sm text-foreground outline-none transition placeholder:text-muted/70 hover:border-border-strong focus:border-primary focus:ring-2 focus:ring-ring/20"
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2" aria-label="Repository visibility filters">
         {filters.map((filter) => {
           const isActive = activeFilter === filter.value;
 
@@ -58,17 +59,19 @@ export default function RepositoryFilters({
               type="button"
               onClick={() => onFilterChange(filter.value)}
               aria-pressed={isActive}
-              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+              className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3.5 text-sm font-medium transition ${
                 isActive
-                  ? 'border-amber-500/50 bg-amber-500/10 text-amber-400'
-                  : 'border-[#30363d] bg-[#161b22] text-gray-400 hover:border-gray-500 hover:text-white'
+                  ? 'border-primary/30 bg-primary/10 text-primary'
+                  : 'border-border bg-surface text-muted hover:border-border-strong hover:bg-surface-hover hover:text-foreground'
               }`}
             >
               {filter.label}
 
               <span
-                className={`rounded-full px-1.5 py-0.5 text-[11px] ${
-                  isActive ? 'bg-amber-500/20 text-amber-300' : 'bg-[#30363d] text-gray-400'
+                className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-surface-muted text-muted'
                 }`}
               >
                 {filter.count}

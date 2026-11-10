@@ -1,23 +1,20 @@
 'use client';
-import styles from './RepositoriesPage.module.css';
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { repositoryService, type Repository } from '@/services/repository.service';
-
+import RepositoryCreateCTA from '@/components/repositories/RepositoryCreateCTA';
 import RepositoryFilters, {
   type RepositoryFilter,
 } from '@/components/repositories/RepositoryFilters';
-
 import RepositoryList from '@/components/repositories/RepositoryList';
+import { repositoryService, type Repository } from '@/services/repository.service';
 
-import RepositoryCreateCTA from '@/components/repositories/RepositoryCreateCTA';
+import styles from './RepositoriesPage.module.css';
 
 export default function RepositoriesPage() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<RepositoryFilter>('all');
 
@@ -40,15 +37,14 @@ export default function RepositoriesPage() {
 
         console.error('Repositorylarni yuklashda xatolik:', err);
 
-        const message =
-          err instanceof Error ? err.message : 'Something went wrong while loading repositories.';
-
-        setError(message);
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Something went wrong while loading repositories.',
+        );
       })
       .finally(() => {
-        if (isActive) {
-          setLoading(false);
-        }
+        if (isActive) setLoading(false);
       });
 
     return () => {
@@ -84,23 +80,34 @@ export default function RepositoriesPage() {
   }, [repositories, searchQuery, activeFilter]);
 
   return (
-    <section className={`${styles.page} space-y-6`}>
-      <header className="flex flex-col gap-2 border-b border-[#30363d] pb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Repositories</h1>
-            <p className="mt-1 text-sm text-gray-400">
-              Manage your personal projects and source code.
-            </p>
+    <section className={`${styles.page} space-y-7`}>
+      <header className="flex flex-col gap-5 border-b border-border pb-7 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            Your workspace
           </div>
 
-          <span className="rounded-full border border-[#30363d] bg-[#161b22] px-3 py-1 text-xs text-gray-300">
-            {repositories.length} repositories
-          </span>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            Repositories
+          </h1>
+
+          <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
+            Manage your projects, organize your source code, and keep everything in one place.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-border bg-surface px-4 py-2.5">
+            <span className="block text-xl font-semibold tabular-nums text-foreground">
+              {repositories.length}
+            </span>
+            <span className="text-xs text-muted">Total repositories</span>
+          </div>
         </div>
       </header>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 flex-1">
           <RepositoryFilters
             searchQuery={searchQuery}
@@ -112,6 +119,19 @@ export default function RepositoriesPage() {
         </div>
 
         <RepositoryCreateCTA variant="inline" />
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">All projects</h2>
+          <p className="mt-1 text-xs text-muted">
+            {loading
+              ? 'Loading your repositories...'
+              : `${filteredRepositories.length} ${
+                  filteredRepositories.length === 1 ? 'repository' : 'repositories'
+                } found`}
+          </p>
+        </div>
       </div>
 
       <RepositoryList

@@ -54,7 +54,7 @@ export const gitHttpController = async (req: Request, res: Response): Promise<vo
           type: initialRepository.owner.type,
           id: initialRepository.owner.id,
         },
-        'read',
+        requestInfo.accessType === 'WRITE' ? 'write' : 'read',
         async ({ signal }) => {
           const gitRepository = await lookupGitRepository(username, repository);
 

@@ -23,6 +23,7 @@ import {
   updateRepositoryCollaboratorSchema,
   updateRepositorySchema,
 } from '../../validations/repositories/repository.validation.js';
+import { OptionalAuthenticatedRequest } from '../../middleware/optional-auth.middleware.js';
 
 export const create = async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;
@@ -76,6 +77,7 @@ export const listMine = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const getOne = async (req: Request, res: Response): Promise<void> => {
+  const optionalReq = req as OptionalAuthenticatedRequest;
   const { username, name } = req.params;
 
   if (typeof username !== 'string' || typeof name !== 'string') {
@@ -86,7 +88,7 @@ export const getOne = async (req: Request, res: Response): Promise<void> => {
     );
   }
 
-  const repository = await getRepositoryByUsernameAndName(username, name);
+  const repository = await getRepositoryByUsernameAndName(username, name, optionalReq.userId);
 
   res.status(200).json({
     success: true,
