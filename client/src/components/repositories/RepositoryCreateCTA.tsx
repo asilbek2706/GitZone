@@ -11,7 +11,7 @@ export default function RepositoryCreateCTA({ variant = 'inline' }: RepositoryCr
   if (variant === 'header') {
     return (
       <Link
-        href="/dashboard/repositories/new"
+        href="/new"
         aria-label="Create a new repository"
         className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-violet-400/30 bg-linear-to-br from-[#35234e] via-[#25203c] to-[#171b2b] px-3 py-2 text-sm font-semibold text-violet-200 shadow-lg shadow-violet-950/20 transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300/60 hover:shadow-violet-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
       >
@@ -27,7 +27,7 @@ export default function RepositoryCreateCTA({ variant = 'inline' }: RepositoryCr
 
   return (
     <Link
-      href="/dashboard/repositories/new"
+      href="/new"
       className="group relative flex min-h-11 shrink-0 items-center gap-3 overflow-hidden rounded-xl border border-violet-400/30 bg-linear-to-br from-[#35234e] via-[#25203c] to-[#171b2b] px-4 py-2.5 text-violet-100 shadow-lg shadow-violet-950/20 transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300/60 hover:shadow-xl hover:shadow-violet-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
     >
       <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-violet-300/20 bg-violet-300/10">
@@ -49,3 +49,4 @@ export default function RepositoryCreateCTA({ variant = 'inline' }: RepositoryCr
     </Link>
   );
 }
+

@@ -1,9 +1,8 @@
-// src/app/(dashboard)/dashboard/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { userService, User, ContributionStats } from '@/services/user.service';
+import { userService, type User, type ContributionStats } from '@/services/user.service';
 
 export default function DashboardProfilePage() {
   const [user, setUser] = useState<User | null>(null);

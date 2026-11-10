@@ -15,7 +15,6 @@ import type { AuthUser } from '@/types/api';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [currentYear, setCurrentYear] = useState<number | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   const router = useRouter();
@@ -24,12 +23,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const isOverviewActive = pathname === '/dashboard';
   const isRepositoriesActive = pathname.startsWith('/dashboard/repositories');
 
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCurrentYear(new Date().getFullYear());
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
     const loadDashboardData = async () => {
-      setCurrentYear(new Date().getFullYear());
-
       const token = localStorage.getItem('accessToken');
 
       if (!token) {
@@ -94,7 +98,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               />
 
               <span className="hidden truncate text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary sm:inline-block">
-                {user?.username || 'GitZone'}
+                {pathname === '/new' ? 'New Repository' : user?.username || 'GitZone'}
               </span>
             </Link>
 
@@ -121,40 +125,42 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </header>
 
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 lg:px-8">
-          <nav
-            aria-label="Dashboard navigation"
-            className="mb-7 flex gap-6 overflow-x-auto border-b border-border text-sm font-medium"
-          >
-            <Link
-              href="/dashboard"
-              aria-current={isOverviewActive ? 'page' : undefined}
-              className={`-mb-px flex shrink-0 items-center border-b-2 px-1 pb-3 transition-colors ${
-                isOverviewActive
-                  ? 'border-primary text-foreground'
-                  : 'border-transparent text-muted hover:border-border-strong hover:text-foreground'
-              }`}
+          {pathname !== '/new' && (
+            <nav
+              aria-label="Dashboard navigation"
+              className="mb-7 flex gap-6 overflow-x-auto border-b border-border text-sm font-medium"
             >
-              Overview
-            </Link>
+              <Link
+                href="/dashboard"
+                aria-current={isOverviewActive ? 'page' : undefined}
+                className={`-mb-px flex shrink-0 items-center border-b-2 px-1 pb-3 transition-colors ${
+                  isOverviewActive
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted hover:border-border-strong hover:text-foreground'
+                }`}
+              >
+                Overview
+              </Link>
 
-            <Link
-              href="/dashboard/repositories"
-              aria-current={isRepositoriesActive ? 'page' : undefined}
-              className={`-mb-px flex shrink-0 items-center border-b-2 px-1 pb-3 transition-colors ${
-                isRepositoriesActive
-                  ? 'border-primary text-foreground'
-                  : 'border-transparent text-muted hover:border-border-strong hover:text-foreground'
-              }`}
-            >
-              Repositories
-            </Link>
-          </nav>
+              <Link
+                href="/dashboard/repositories"
+                aria-current={isRepositoriesActive ? 'page' : undefined}
+                className={`-mb-px flex shrink-0 items-center border-b-2 px-1 pb-3 transition-colors ${
+                  isRepositoriesActive
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted hover:border-border-strong hover:text-foreground'
+                }`}
+              >
+                Repositories
+              </Link>
+            </nav>
+          )}
 
           {children}
         </main>
 
         <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted">
-          © {currentYear ?? new Date().getFullYear()} GitZone. Built for developers.
+          © {currentYear ?? 2026} GitZone. Built for developers.
         </footer>
       </div>
     </ProtectedRoute>

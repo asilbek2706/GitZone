@@ -11,8 +11,6 @@ import RepositoryFilters, {
 
 import RepositoryList from '@/components/repositories/RepositoryList';
 
-import Link from 'next/link';
-import { FiAperture } from 'react-icons/fi';
 import RepositoryCreateCTA from '@/components/repositories/RepositoryCreateCTA';
 
 export default function RepositoriesPage() {
