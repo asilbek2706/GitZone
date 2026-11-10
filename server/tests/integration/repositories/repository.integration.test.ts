@@ -11,6 +11,7 @@ import {
   getRepositoryByUsernameAndName,
   getUserRepositories,
   updateRepository,
+  getMyRepositories,
 } from '../../../src/services/repositories/repository.service.js';
 
 vi.mock('../../../src/controllers/git/git-http.controller.js', () => ({
@@ -23,6 +24,7 @@ vi.mock('../../../src/services/repositories/repository.service.js', () => ({
   getRepositoryByUsernameAndName: vi.fn(),
   getUserRepositories: vi.fn(),
   updateRepository: vi.fn(),
+  getMyRepositories: vi.fn(),
 }));
 
 vi.mock('../../../src/services/repositories/repository-collaborator.service.js', () => ({
@@ -47,6 +49,8 @@ vi.mock('../../../src/middleware/auth.middleware.js', () => ({
 const mockedCreateRepository = vi.mocked(createRepository);
 
 const mockedDeleteRepository = vi.mocked(deleteRepository);
+
+const mockedGetMyRepositories = vi.mocked(getMyRepositories);
 
 const mockedGetRepositoryByUsernameAndName = vi.mocked(getRepositoryByUsernameAndName);
 
@@ -114,6 +118,35 @@ describe('repository API integration', () => {
       description: 'Demo repository',
       isPrivate: false,
     });
+  });
+
+  it('lists repositories owned by the authenticated user', async () => {
+    mockedGetMyRepositories.mockResolvedValue([
+      repository,
+      {
+        ...repository,
+        id: 'repo-2',
+        name: 'private-demo',
+        isPrivate: true,
+      },
+    ]);
+
+    const response = await request(app).get('/api/repositories');
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.repositories).toHaveLength(2);
+    expect(response.body.data.repositories[1].isPrivate).toBe(true);
+
+    expect(mockedGetMyRepositories).toHaveBeenCalledWith('owner-1');
+  });
+
+  it('does not use a user ID supplied through query parameters', async () => {
+    mockedGetMyRepositories.mockResolvedValue([]);
+
+    await request(app).get('/api/repositories?userId=other-user');
+
+    expect(mockedGetMyRepositories).toHaveBeenCalledWith('owner-1');
   });
 
   it('rejects invalid repository creation data', async () => {

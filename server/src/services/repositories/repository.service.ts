@@ -133,6 +133,20 @@ export const getUserRepositories = async (username: string): Promise<RepositoryR
   return repositories.map(toRepositoryResponse);
 };
 
+export const getMyRepositories = async (ownerId: string): Promise<RepositoryResponse[]> => {
+  const repositories = await prisma.repository.findMany({
+    where: {
+      ownerId,
+      organizationId: null,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return repositories.map(toRepositoryResponse);
+};
+
 export const getRepositoryByUsernameAndName = async (
   username: string,
   name: string,

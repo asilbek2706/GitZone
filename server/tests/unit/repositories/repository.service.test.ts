@@ -13,6 +13,7 @@ import {
 import {
   createRepository,
   deleteRepository,
+  getMyRepositories,
   getRepositoryByUsernameAndName,
   getUserRepositories,
   updateRepository,
@@ -190,6 +191,40 @@ describe('repository service', () => {
     expect(result).toHaveLength(2);
     expect(result[0]?.name).toBe('demo');
     expect(result[1]?.name).toBe('demo-2');
+  });
+
+  it('lists all repositories owned by the authenticated user', async () => {
+    mockedRepositoryFindMany.mockResolvedValue([
+      baseRepository,
+      {
+        ...baseRepository,
+        id: 'repo-2',
+        name: 'private-demo',
+        isPrivate: true,
+      },
+    ] as never);
+
+    const result = await getMyRepositories('owner-1');
+
+    expect(result).toHaveLength(2);
+    expect(result[0]?.name).toBe('demo');
+    expect(result[1]?.name).toBe('private-demo');
+  });
+
+  it('only queries repositories owned by the authenticated user', async () => {
+    mockedRepositoryFindMany.mockResolvedValue([] as never);
+
+    await getMyRepositories('owner-1');
+
+    expect(mockedRepositoryFindMany).toHaveBeenCalledWith({
+      where: {
+        ownerId: 'owner-1',
+        organizationId: null,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   });
 
   it('only queries public repositories when listing repositories by username', async () => {

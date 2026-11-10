@@ -105,6 +105,22 @@ openApiRegistry.registerPath({
   },
 });
 
+openApiRegistry.registerPath({
+  method: 'get',
+  path: '/api/repositories',
+  tags: ['Repositories'],
+  summary: 'List my repositories',
+  description:
+    'Returns all public and private personal repositories owned by the authenticated user. Organization repositories are excluded.',
+  security: bearerSecurity,
+  operationId: 'listMyRepositories',
+  responses: {
+    200: jsonResponse('Repositories retrieved successfully', repositoryListResponseSchema),
+    401: commonErrors[401],
+    500: commonErrors[500],
+  },
+});
+
 // List public repositories
 openApiRegistry.registerPath({
   method: 'get',

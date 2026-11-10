@@ -95,6 +95,7 @@ import {
   update,
   updateCollaborator,
   removeCollaborator,
+  listMine,
 } from '../controllers/repositories/repository.controller.js';
 
 import {
@@ -114,6 +115,7 @@ import {
 const router = Router();
 
 router.post('/', authMiddleware, create);
+router.get('/', authMiddleware, listMine);
 router.get('/:username', listByUsername);
 router.get('/:username/:name/git/refs', optionalAuthMiddleware, getRefs);
 router.post('/:username/:name/git/branches', authMiddleware, createBranch);

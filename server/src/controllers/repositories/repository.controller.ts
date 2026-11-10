@@ -6,6 +6,7 @@ import type { AuthenticatedRequest } from '../../middleware/auth.middleware.js';
 import {
   createRepository,
   deleteRepository,
+  getMyRepositories,
   getRepositoryByUsernameAndName,
   getUserRepositories,
   updateRepository,
@@ -52,6 +53,19 @@ export const listByUsername = async (req: Request, res: Response): Promise<void>
   }
 
   const repositories = await getUserRepositories(username);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      repositories,
+    },
+  });
+};
+
+export const listMine = async (req: Request, res: Response): Promise<void> => {
+  const authenticatedReq = req as AuthenticatedRequest;
+
+  const repositories = await getMyRepositories(authenticatedReq.userId);
 
   res.status(200).json({
     success: true,
