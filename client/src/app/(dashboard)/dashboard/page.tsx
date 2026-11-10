@@ -54,19 +54,6 @@ export default function DashboardProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* GitHub uslubidagi Tab menyu */}
-      <div className="border-b border-[#30363d] flex gap-6 text-sm font-medium text-gray-300 overflow-x-auto">
-        <button className="pb-3 border-b-2 border-amber-500 text-white flex items-center gap-2 cursor-pointer">
-          <span>Overview</span>
-        </button>
-        <button className="pb-3 hover:text-white transition flex items-center gap-2 cursor-pointer">
-          <span>Repositories</span>
-          <span className="bg-[#30363d] text-xs px-2 py-0.5 rounded-full text-gray-300">
-            {contributions?.breakdown.repositories || 0}
-          </span>
-        </button>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* CHAP KOLONKA: Real Profil Ma'lumotlari */}
         <div className="lg:col-span-1 space-y-4">

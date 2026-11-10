@@ -58,6 +58,12 @@ export const repositoryService = {
     return response.data;
   },
 
+  // GET /api/repositories - List authenticated user's repositories
+  async getMyRepositories(): Promise<RepositoryListResponse> {
+    const response = await api.get<RepositoryListResponse>('/api/repositories');
+    return response.data;
+  },
+
   // GET /api/repositories/{username} - List public repositories of a user
   async getUserRepositories(username: string): Promise<RepositoryListResponse> {
     const response = await api.get<RepositoryListResponse>(`/api/repositories/${username}`);

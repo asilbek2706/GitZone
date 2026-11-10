@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FiBookOpen, FiChevronDown, FiLogOut, FiUser } from 'react-icons/fi';
+import { FiBookOpen, FiLogOut, FiUser } from 'react-icons/fi';
 
 import { authService } from '@/services/auth.service';
 import type { AuthUser } from '@/types/api';
