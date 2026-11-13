@@ -20,7 +20,7 @@ model User {
   website                     String?
 
   organizationMemberships          OrganizationMember[]
-  teamMemberships TeamMember[]
+  teamMemberships                  TeamMember[]
   organizationInvitationsSent      OrganizationInvitation[]   @relation("OrganizationInvitationInviter")
   organizationInvitationsReceived  OrganizationInvitation[]   @relation("OrganizationInvitationInvitee")
   sessions                         Session[]
@@ -28,6 +28,7 @@ model User {
   stars                            RepositoryStar[]
   watches                          RepositoryWatch[]
   personalAccessTokens             PersonalAccessToken[]
+  sshKeys                          SshKey[]
   repositoryCollaborations         RepositoryCollaborator[]
   twoFactorAuthentication          TwoFactorAuthentication?
   recoveryCodes                    RecoveryCode[]
@@ -40,8 +41,8 @@ model User {
   issuesCreated                    Issue[]                    @relation("IssueCreator")
   issueComments                    IssueComment[]             @relation("IssueCommentAuthor")
   issueAssignments                 IssueAssignee[]
-  notifications                    Notification[] @relation("NotificationRecipient")
-  notificationsActed               Notification[] @relation("NotificationActor")
+  notifications                    Notification[]             @relation("NotificationRecipient")
+  notificationsActed               Notification[]             @relation("NotificationActor")
   notificationPreference           NotificationPreference?
 
   createdAt DateTime @default(now())
@@ -140,6 +141,22 @@ model PersonalAccessToken {
   @@index([userId])
 }
 
+model SshKey {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  publicKey   String    @db.Text
+  fingerprint String    @unique
+  keyType     String
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model Repository {
   repositoryTransfer RepositoryTransfer?
   labels             Label[]
@@ -160,13 +177,13 @@ model Repository {
   owner        User?         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  collaborators RepositoryCollaborator[]
+  collaborators    RepositoryCollaborator[]
   teamRepositories TeamRepository[]
-  stars         RepositoryStar[]
-  watches       RepositoryWatch[]
-  pullRequests  PullRequest[]
-  issues        Issue[]
-  issueCounter  RepositoryIssueCounter?
+  stars            RepositoryStar[]
+  watches          RepositoryWatch[]
+  pullRequests     PullRequest[]
+  issues           Issue[]
+  issueCounter     RepositoryIssueCounter?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -533,7 +550,7 @@ model Organization {
   visibility                  OrganizationVisibility @default(PUBLIC)
 
   members      OrganizationMember[]
-  teams Team[]
+  teams        Team[]
   repositories Repository[]
   invitations  OrganizationInvitation[]
 
@@ -612,13 +629,13 @@ model RepositoryTransfer {
 }
 
 model Team {
-  id             String   @id @default(cuid())
+  id             String  @id @default(cuid())
   organizationId String
   name           String
   slug           String
   description    String?
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   members      TeamMember[]
   repositories TeamRepository[]
 
@@ -672,16 +689,16 @@ enum NotificationType {
 }
 
 model Notification {
-  id          String           @id @default(cuid())
-  userId      String
-  actorId     String?
-  type        NotificationType
-  title       String
-  message     String?
+  id           String           @id @default(cuid())
+  userId       String
+  actorId      String?
+  type         NotificationType
+  title        String
+  message      String?
   resourceType String?
   resourceId   String?
-  readAt      DateTime?
-  createdAt   DateTime         @default(now())
+  readAt       DateTime?
+  createdAt    DateTime         @default(now())
 
   user  User  @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
   actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
