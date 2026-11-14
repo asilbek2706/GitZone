@@ -1,8 +1,9 @@
-// src/components/ProtectedRoute.tsx
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+
+import { AUTH_EXPIRED_EVENT } from '@/lib/api';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -13,23 +14,44 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const handleAuthenticationExpired = () => {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsLoading(true);
+      router.replace('/login');
+    };
+
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthenticationExpired);
+
     const token = localStorage.getItem('accessToken');
 
     if (!token) {
-      router.push('/login');
+      router.replace('/login');
     } else {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
     }
+
+    return () => {
+      isMounted = false;
+
+      window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthenticationExpired);
+    };
   }, [router]);
 
-  // Token tekshirilguncha yuklanish animatsiyasini ko'rsatib turamiz
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm text-neutral-400">Tekshirilmoqda...</p>
+      <div
+        className="flex min-h-screen items-center justify-center bg-background text-foreground"
+        aria-busy="true"
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted">Session tekshirilmoqda...</p>
         </div>
       </div>
     );
