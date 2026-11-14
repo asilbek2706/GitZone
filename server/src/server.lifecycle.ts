@@ -3,6 +3,8 @@ import type { Server } from 'node:http';
 import { logger } from './config/logger.js';
 import prisma from './config/prisma.js';
 
+import { stopGitSshServer } from './services/git/git-ssh-server.service.js';
+
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
 let isShuttingDown = false;
@@ -47,27 +49,43 @@ export const shutdownServer = async (
 
   forceShutdownTimer.unref();
 
-  server.close(async () => {
+  try {
+    // HTTP va SSH serverlar parallel ravishda to'xtatiladi.
+    await Promise.all([
+      new Promise<void>((resolve, reject) => {
+        server.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        });
+      }),
+
+      stopGitSshServer(),
+    ]);
+
+    await prisma.$disconnect();
+
     clearTimeout(forceShutdownTimer);
 
-    try {
-      await prisma.$disconnect();
+    logger.info('Database connection closed');
+    logger.info('Server stopped');
 
-      logger.info('Database connection closed');
-      logger.info('Server stopped');
+    process.exit(exitCode);
+  } catch (error) {
+    clearTimeout(forceShutdownTimer);
 
-      process.exit(exitCode);
-    } catch (error) {
-      logger.error(
-        {
-          err: error,
-        },
-        'Failed to close database connection during shutdown',
-      );
+    logger.error(
+      {
+        err: error,
+      },
+      'Failed during graceful shutdown',
+    );
 
-      process.exit(1);
-    }
-  });
+    process.exit(1);
+  }
 };
 
 export const resetShutdownState = (): void => {
