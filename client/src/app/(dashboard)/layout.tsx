@@ -5,10 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 
-import ProtectedRoute from '@/components/ProtectedRoute';
 import UserProfileDropdown from '@/components/UserProfileDropdown';
 import RepositoryCreateCTA from '@/components/repositories/RepositoryCreateCTA';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
+import { AUTH_EXPIRED_EVENT } from '@/lib/api';
 
 import { authService } from '@/services/auth.service';
 import type { AuthUser } from '@/types/api';
@@ -16,14 +16,15 @@ import type { AuthUser } from '@/types/api';
 function DashboardLayoutContent({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const router = useRouter();
   const pathname = usePathname();
 
   const isOverviewActive = pathname === '/dashboard';
   const isRepositoriesActive = pathname.startsWith('/dashboard/repositories');
-  const isRepositoryDetail =
-    /^\/dashboard\/repositories\/[^/]+\/[^/]+(?:\/|$)/.test(pathname);
+  const isRepositoryDetail = /^\/dashboard\/repositories\/[^/]+\/[^/]+(?:\/|$)/.test(pathname);
 
   const [currentYear, setCurrentYear] = useState<number | null>(null);
 
@@ -35,17 +36,27 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    const handleAuthenticationExpired = () => {
+      if (!isMounted) return;
+
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsLoadingUser(true);
+
+      router.replace('/login');
+    };
+
+    window.addEventListener(
+      AUTH_EXPIRED_EVENT,
+      handleAuthenticationExpired,
+    );
+
     const loadDashboardData = async () => {
-      const token = localStorage.getItem('accessToken');
-
-      if (!token) {
-        if (isMounted) {
-          setIsLoadingUser(false);
-        }
-        return;
-      }
-
       try {
+        // Access token bo'lmasa ham refresh cookie orqali sessiya tiklanishi mumkin.
         const response = await authService.getCurrentUser();
         const currentUser = response.data.data.user;
 
@@ -56,16 +67,29 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
         if (!isMounted) return;
 
         setUser(currentUser);
+        setIsAuthenticated(true);
+
+        localStorage.setItem('user', JSON.stringify(currentUser));
       } catch (error) {
+        if (!isMounted) return;
+
         console.error('Dashboard foydalanuvchisini yuklashda xato:', error);
 
-        const status = (error as { response?: { status?: number } }).response?.status;
+        const status = (
+          error as { response?: { status?: number } }
+        ).response?.status;
 
-        if (status === 401) {
+        if (status === 401 || status === 403) {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('user');
+
           router.replace('/login');
+          return;
         }
+
+        setAuthError(
+          'GitZone serveriga ulanishda muammo yuz berdi. Backend ishlayotganini tekshirib, qayta urinib ko‘ring.',
+        );
       } finally {
         if (isMounted) {
           setIsLoadingUser(false);
@@ -77,11 +101,51 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
+
+      window.removeEventListener(
+        AUTH_EXPIRED_EVENT,
+        handleAuthenticationExpired,
+      );
     };
   }, [router]);
 
+  if (isLoadingUser) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center bg-background text-foreground"
+        aria-busy="true"
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted">Session tekshirilmoqda...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <div className="flex max-w-md flex-col items-center gap-4 px-6 text-center">
+          <p className="text-sm text-muted">
+            {authError ?? 'Login sahifasiga yo‘naltirilmoqda...'}
+          </p>
+
+          {authError && (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+            >
+              Qayta urinish
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <ProtectedRoute>
       <div className="flex min-h-screen flex-col bg-background text-foreground">
         <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-xl">
           <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 lg:px-8">
@@ -164,18 +228,14 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
         <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted">
           © {currentYear ?? 2026} GitZone. Built for developers.
         </footer>
-      </div>
-    </ProtectedRoute>
+  </div>
   );
 }
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <Suspense
-      fallback={<div className="min-h-screen bg-background" aria-busy="true" />}
-    >
+    <Suspense fallback={<div className="min-h-screen bg-background" aria-busy="true" />}>
       <DashboardLayoutContent>{children}</DashboardLayoutContent>
     </Suspense>
   );
 }
-
