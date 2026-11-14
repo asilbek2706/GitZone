@@ -6,10 +6,11 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 
 import UserProfileDropdown from '@/components/UserProfileDropdown';
+import UserSidebar from '@/components/shared/UserSidebar';
 import RepositoryCreateCTA from '@/components/repositories/RepositoryCreateCTA';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
-import { AUTH_EXPIRED_EVENT } from '@/lib/api';
 
+import { AUTH_EXPIRED_EVENT } from '@/lib/api';
 import { authService } from '@/services/auth.service';
 import type { AuthUser } from '@/types/api';
 
@@ -24,6 +25,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
 
   const isOverviewActive = pathname === '/dashboard';
   const isRepositoriesActive = pathname.startsWith('/dashboard/repositories');
+
   const isRepositoryDetail = /^\/dashboard\/repositories\/[^/]+\/[^/]+(?:\/|$)/.test(pathname);
 
   const [currentYear, setCurrentYear] = useState<number | null>(null);
@@ -49,14 +51,10 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
       router.replace('/login');
     };
 
-    window.addEventListener(
-      AUTH_EXPIRED_EVENT,
-      handleAuthenticationExpired,
-    );
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthenticationExpired);
 
     const loadDashboardData = async () => {
       try {
-        // Access token bo'lmasa ham refresh cookie orqali sessiya tiklanishi mumkin.
         const response = await authService.getCurrentUser();
         const currentUser = response.data.data.user;
 
@@ -75,9 +73,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
 
         console.error('Dashboard foydalanuvchisini yuklashda xato:', error);
 
-        const status = (
-          error as { response?: { status?: number } }
-        ).response?.status;
+        const status = (error as { response?: { status?: number } }).response?.status;
 
         if (status === 401 || status === 403) {
           localStorage.removeItem('accessToken');
@@ -102,10 +98,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
 
-      window.removeEventListener(
-        AUTH_EXPIRED_EVENT,
-        handleAuthenticationExpired,
-      );
+      window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthenticationExpired);
     };
   }, [router]);
 
@@ -146,51 +139,54 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
   }
 
   return (
-      <div className="flex min-h-screen flex-col bg-background text-foreground">
-        <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-xl">
-          <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 lg:px-8">
-            <Link
-              href="/dashboard"
-              className="group flex min-w-0 items-center gap-2.5"
-              aria-label="GitZone dashboard"
-            >
-              <Image
-                src="/brand/gitzone-mark.svg"
-                alt="GitZone"
-                width={32}
-                height={32}
-                priority
-                className="shrink-0"
-              />
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 lg:px-8">
+          <Link
+            href="/dashboard"
+            className="group flex min-w-0 items-center gap-2.5"
+            aria-label="GitZone dashboard"
+          >
+            <Image
+              src="/brand/gitzone-mark.svg"
+              alt="GitZone"
+              width={32}
+              height={32}
+              priority
+              className="shrink-0"
+            />
 
-              <span className="hidden truncate text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary sm:inline-block">
-                {pathname === '/new' ? 'New Repository' : user?.username || 'GitZone'}
-              </span>
-            </Link>
+            <span className="hidden truncate text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary sm:inline-block">
+              {pathname === '/new' ? 'New Repository' : user?.username || 'GitZone'}
+            </span>
+          </Link>
 
-            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-              <span className="hidden rounded-lg border border-border bg-background px-2.5 py-1.5 font-mono text-[11px] text-muted md:inline-flex">
-                v1.0.0
-              </span>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <span className="hidden rounded-lg border border-border bg-background px-2.5 py-1.5 font-mono text-[11px] text-muted md:inline-flex">
+              Beta
+            </span>
 
-              <ThemeSwitcher />
+            <ThemeSwitcher />
 
-              <div className="hidden h-7 w-px bg-border sm:block" />
+            <div className="hidden h-7 w-px bg-border sm:block" />
 
-              <RepositoryCreateCTA variant="header" />
+            <RepositoryCreateCTA variant="header" />
 
-              <div className="hidden h-7 w-px bg-border sm:block" />
+            <div className="hidden h-7 w-px bg-border sm:block" />
 
-              {isLoadingUser ? (
-                <div className="h-9 w-9 animate-pulse rounded-full bg-surface-hover" />
-              ) : (
-                <UserProfileDropdown user={user} />
-              )}
-            </div>
+            <UserProfileDropdown user={user} />
           </div>
-        </header>
+        </div>
+      </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 lg:px-8">
+      <div
+        className={`mx-auto grid w-full max-w-7xl flex-1 gap-6 px-4 py-6 lg:gap-8 lg:px-8 ${
+          isRepositoryDetail ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]'
+        }`}
+      >
+        {!isRepositoryDetail && <UserSidebar user={user} />}
+
+        <main className="min-w-0 py-2">
           {pathname !== '/new' && !isRepositoryDetail && (
             <nav
               aria-label="Dashboard navigation"
@@ -224,11 +220,12 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
 
           {children}
         </main>
+      </div>
 
-        <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted">
-          © {currentYear ?? 2026} GitZone. Built for developers.
-        </footer>
-  </div>
+      <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted">
+        © {currentYear ?? new Date().getFullYear()} GitZone. Built for developers.
+      </footer>
+    </div>
   );
 }
 
