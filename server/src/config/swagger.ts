@@ -3,6 +3,7 @@ import { OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi';
 import { openApiRegistry } from './openapi.registry.js';
 import '../docs/health/health.docs.js';
 import '../docs/auth/auth.docs.js';
+import '../docs/auth/ssh-key.docs.js';
 import '../docs/users/profile.docs.js';
 import '../docs/repositories/repository.docs.js';
 import '../docs/repositories/repository-collaborators.docs.js';
@@ -59,6 +60,7 @@ Features:
       { name: 'Sessions', description: 'Session management' },
       { name: 'Tokens', description: 'Personal access tokens' },
       { name: 'Two-Factor Authentication', description: '2FA' },
+      { name: 'SSH Keys', description: 'SSH public key management' },
       { name: 'Users', description: 'User profiles' },
       { name: 'Repositories', description: 'Repository management' },
       { name: 'Git', description: 'Git operations and transport' },
@@ -72,4 +74,3 @@ Features:
     ],
   });
 };
-
