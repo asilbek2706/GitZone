@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 
 import UserProfileDropdown from '@/components/UserProfileDropdown';
 import UserSidebar from '@/components/shared/UserSidebar';
+import { DashboardUserContext } from '@/contexts/dashboard-user-context';
 import RepositoryCreateCTA from '@/components/repositories/RepositoryCreateCTA';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 
@@ -25,6 +26,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
 
   const isOverviewActive = pathname === '/dashboard';
   const isRepositoriesActive = pathname.startsWith('/dashboard/repositories');
+  const isSettingsRoute = pathname.startsWith('/settings');
 
   const isRepositoryDetail = /^\/dashboard\/repositories\/[^/]+\/[^/]+(?:\/|$)/.test(pathname);
 
@@ -170,7 +172,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
 
             <div className="hidden h-7 w-px bg-border sm:block" />
 
-            <RepositoryCreateCTA variant="header" />
+            {!isSettingsRoute && <RepositoryCreateCTA variant="header" />}
 
             <div className="hidden h-7 w-px bg-border sm:block" />
 
@@ -181,13 +183,15 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
 
       <div
         className={`mx-auto grid w-full max-w-7xl flex-1 gap-6 px-4 py-6 lg:gap-8 lg:px-8 ${
-          isRepositoryDetail ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]'
+          isSettingsRoute || isRepositoryDetail
+            ? 'grid-cols-1'
+            : 'grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]'
         }`}
       >
-        {!isRepositoryDetail && <UserSidebar user={user} />}
+        {!isSettingsRoute && !isRepositoryDetail && <UserSidebar user={user} />}
 
         <main className="min-w-0 py-2">
-          {pathname !== '/new' && !isRepositoryDetail && (
+          {!isSettingsRoute && pathname !== '/new' && !isRepositoryDetail && (
             <nav
               aria-label="Dashboard navigation"
               className="mb-7 flex gap-6 overflow-x-auto border-b border-border text-sm font-medium"
@@ -218,7 +222,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
             </nav>
           )}
 
-          {children}
+          <DashboardUserContext.Provider value={user}>{children}</DashboardUserContext.Provider>
         </main>
       </div>
 
