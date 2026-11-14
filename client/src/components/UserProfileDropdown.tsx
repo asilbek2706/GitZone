@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FiBookOpen, FiLogOut, FiUser } from 'react-icons/fi';
+import { FiBookOpen, FiLogOut, FiSettings, FiUser } from 'react-icons/fi';
 
 import { authService } from '@/services/auth.service';
 import type { AuthUser } from '@/types/api';
@@ -150,6 +150,16 @@ export default function UserProfileDropdown({ user }: UserProfileDropdownProps) 
             >
               <FiBookOpen size={17} className="text-gray-400" />
               <span>Your repositories</span>
+            </Link>
+
+            <Link
+              href="/settings/ssh-keys"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-300 transition hover:bg-[#21262d] hover:text-white"
+            >
+              <FiSettings size={17} className="text-gray-400" />
+              <span>Settings</span>
             </Link>
           </div>
 
