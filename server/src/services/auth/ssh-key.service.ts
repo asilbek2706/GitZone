@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 
-import { utils } from 'ssh2';
-
 import prisma from '../../config/prisma.js';
 import { AppError } from '../../errors/app.error.js';
+import ssh2 from 'ssh2';
+
+const { utils } = ssh2;
 
 const SUPPORTED_KEY_TYPES = new Set([
   'ssh-ed25519',

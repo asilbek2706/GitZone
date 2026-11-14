@@ -40,6 +40,67 @@ const toRepositoryResponse = (repository: {
   };
 };
 
+export interface GitReference {
+  name: string;
+  fullName: string;
+  oid: string;
+  objectType: 'commit' | 'tag' | 'tree' | 'blob';
+}
+
+export interface GitRefsResponse {
+  success: boolean;
+  data: {
+    refs: {
+      objectFormat: 'sha1' | 'sha256';
+      symbolicHead: string;
+      defaultBranch: string;
+      head: GitReference | null;
+      branches: GitReference[];
+      tags: GitReference[];
+    };
+  };
+}
+
+export interface GitTreeEntry {
+  name: string;
+  path: string;
+  mode: string;
+  objectType: 'blob' | 'tree' | 'commit';
+  oid: string;
+  size: number | null;
+  kind: 'directory' | 'file' | 'symlink' | 'submodule';
+}
+
+export interface GitTreeResponse {
+  success: boolean;
+  data: {
+    tree: {
+      objectFormat: 'sha1' | 'sha256';
+      ref: {
+        name: string;
+        fullName: string;
+        oid: string | null;
+      };
+      path: string;
+      entries: GitTreeEntry[];
+    };
+  };
+}
+
+export interface GitContentResponse {
+  success: boolean;
+  data: {
+    content: {
+      path: string;
+      ref: string;
+      oid: string;
+      size: number;
+      encoding: 'utf-8';
+      content: string;
+    };
+  };
+}
+
 export const createRepository = async (
   ownerId: string,
   input: CreateRepositoryInput,

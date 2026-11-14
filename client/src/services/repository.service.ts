@@ -37,6 +37,67 @@ export interface RepositoryResponse {
   };
 }
 
+export interface GitReference {
+  name: string;
+  fullName: string;
+  oid: string;
+  objectType: string;
+}
+
+export interface GitRefsResponse {
+  success: boolean;
+  data: {
+    refs: {
+      objectFormat: string;
+      symbolicHead: string | null;
+      defaultBranch: string;
+      head: GitReference | null;
+      branches: GitReference[];
+      tags: GitReference[];
+    };
+  };
+}
+
+export interface GitTreeEntry {
+  name: string;
+  path: string;
+  mode: string;
+  objectType: string;
+  oid: string;
+  size: number | null;
+  kind: 'directory' | 'file' | 'symlink' | 'submodule';
+}
+
+export interface GitTreeResponse {
+  success: boolean;
+  data: {
+    tree: {
+      objectFormat: string;
+      ref: {
+        name: string;
+        fullName: string;
+        oid: string | null;
+      };
+      path: string;
+      entries: GitTreeEntry[];
+    };
+  };
+}
+
+export interface GitContentResponse {
+  success: boolean;
+  data: {
+    content: {
+      path: string;
+      ref: string;
+      oid: string;
+      size: number;
+      encoding: 'utf-8';
+      content: string;
+    };
+  };
+}
+
 export interface CreateRepositoryRequest {
   name: string;
   description?: string;
@@ -139,6 +200,39 @@ export const repositoryService = {
 
   async forkRepository(username: string, name: string) {
     const response = await api.post(`/api/repositories/${username}/${name}/fork`, {});
+    return response.data;
+  },
+
+  async getGitRefs(username: string, name: string): Promise<GitRefsResponse> {
+    const response = await api.get<GitRefsResponse>(
+      `/api/repositories/${encodeURIComponent(username)}/${encodeURIComponent(name)}/git/refs`,
+    );
+    return response.data;
+  },
+
+  async getGitTree(
+    username: string,
+    name: string,
+    ref?: string,
+    path = '',
+  ): Promise<GitTreeResponse> {
+    const response = await api.get<GitTreeResponse>(
+      `/api/repositories/${encodeURIComponent(username)}/${encodeURIComponent(name)}/git/tree`,
+      { params: { ref, path } },
+    );
+    return response.data;
+  },
+
+  async getGitContent(
+    username: string,
+    name: string,
+    ref: string,
+    path: string,
+  ): Promise<GitContentResponse> {
+    const response = await api.get<GitContentResponse>(
+      `/api/repositories/${encodeURIComponent(username)}/${encodeURIComponent(name)}/git/contents`,
+      { params: { ref, path } },
+    );
     return response.data;
   },
 };
