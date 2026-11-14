@@ -117,8 +117,8 @@ export default function DashboardProfilePage() {
           </span>
         </div>
 
-        <div className="overflow-x-auto pb-3">
-          <div className="grid min-w-[700px] grid-flow-col grid-rows-7 gap-1.5">
+        <div className="w-full min-w-0">
+          <div className="grid w-full min-w-0 grid-flow-col grid-cols-[repeat(53,minmax(0,1fr))] grid-rows-7 gap-0.5">
             {contributions?.days && contributions.days.length > 0
               ? contributions.days.map((day, index) => {
                   let levelClass = 'bg-[#21262d]';
@@ -134,13 +134,13 @@ export default function DashboardProfilePage() {
                   return (
                     <div
                       key={`${day.date}-${index}`}
-                      className={`h-3 w-3 rounded-xs ${levelClass}`}
+                      className={`aspect-square min-w-0 rounded-xs ${levelClass}`}
                       title={`${day.date}: ${day.count} contributions`}
                     />
                   );
                 })
               : Array.from({ length: 140 }).map((_, index) => (
-                  <div key={index} className="h-3 w-3 rounded-xs bg-[#21262d]" />
+                  <div key={index} className="aspect-square min-w-0 rounded-xs bg-[#21262d]" />
                 ))}
           </div>
         </div>
