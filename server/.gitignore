@@ -14,3 +14,6 @@ coverage/
 
 # Uploaded user avatars - never commit private upload files
 /storage/avatars/
+
+# Local SSH server host keys
+/storage/ssh/
