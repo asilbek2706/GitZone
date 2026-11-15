@@ -96,25 +96,25 @@ export const attachGitSshSessionHandler = (
        * request. Shells, PTYs, SFTP and arbitrary subsystems are
        * deliberately unavailable.
        */
-      session.on('shell', (_accept, reject) => reject());
-      session.on('pty', (_accept, reject) => reject());
-      session.on('sftp', (_accept, reject) => reject());
-      session.on('subsystem', (_accept, reject) => reject());
+      session.on('shell', (_accept, reject) => reject?.());
+      session.on('pty', (_accept, reject) => reject?.());
+      session.on('sftp', (_accept, reject) => reject?.());
+      session.on('subsystem', (_accept, reject) => reject?.());
 
       /*
        * Do not let a client inject environment variables into
        * Git child processes or request agent/X11 forwarding.
        */
-      session.on('env', (_accept, reject) => reject());
-      session.on('auth-agent', (_accept, reject) => reject());
-      session.on('x11', (_accept, reject) => reject());
+      session.on('env', (_accept, reject) => reject?.());
+      session.on('auth-agent', (_accept, reject) => reject?.());
+      session.on('x11', (_accept, reject) => reject?.());
 
       /*
        * Interactive terminal features are not part of Git
        * Smart SSH transport.
        */
-      session.on('window-change', (_accept, reject) => reject());
-      session.on('signal', (_accept, reject) => reject());
+      session.on('window-change', (_accept, reject) => reject?.());
+      session.on('signal', (_accept, reject) => reject?.());
 
       session.on('close', () => {
         logger.debug(
