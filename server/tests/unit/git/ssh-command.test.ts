@@ -43,6 +43,27 @@ describe('parseGitSshCommand', () => {
     });
   });
 
+  it('accepts Git client commands with one leading slash', () => {
+    expect(parseGitSshCommand("git-upload-pack '/asilbek/my-repo.git'")).toEqual({
+      service: 'UPLOAD_PACK',
+      namespace: 'asilbek',
+      repositoryName: 'my-repo',
+    });
+
+    expect(parseGitSshCommand("git-receive-pack '/asilbek/my-repo.git'")).toEqual({
+      service: 'RECEIVE_PACK',
+      namespace: 'asilbek',
+      repositoryName: 'my-repo',
+    });
+  });
+
+  it.each([
+    "git-upload-pack '//asilbek/repo.git'",
+    "git-receive-pack '///asilbek/repo.git'",
+  ])('rejects commands with multiple leading slashes: %s', (command) => {
+    expect(parseGitSshCommand(command)).toBeNull();
+  });
+
   it.each([
     '',
     'bash',

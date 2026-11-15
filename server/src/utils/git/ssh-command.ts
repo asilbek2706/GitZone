@@ -13,7 +13,7 @@ export type GitSshCommand =
 const MAX_SSH_COMMAND_BYTES = 4096;
 
 const GIT_SSH_COMMAND_PATTERN =
-  /^(git-upload-pack|git-receive-pack) '([a-zA-Z0-9._-]+)\/([a-zA-Z0-9._-]+)'$/;
+  /^(git-upload-pack|git-receive-pack) '\/?([a-zA-Z0-9._-]+)\/([a-zA-Z0-9._-]+)'$/;
 
 const isSafePathSegment = (value: string): boolean =>
   value.length > 0 && value !== '.' && value !== '..' && /^[a-zA-Z0-9._-]+$/.test(value);
