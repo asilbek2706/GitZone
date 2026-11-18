@@ -13,14 +13,43 @@ import {
   Code2,
 } from 'lucide-react';
 
+interface NavigationItem {
+  label: string;
+  segment: string;
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
+  meta?: {
+    title: string;
+  };
+}
+
 const navigation = [
-  { label: 'Overview', segment: '', icon: BookOpen },
-  { label: 'Code', segment: '/code', icon: Code2 },
-  { label: 'Branches', segment: '/branches', icon: GitBranch },
-  { label: 'Commits', segment: '/commits', icon: GitCommitHorizontal },
-  { label: 'Pull requests', segment: '/pulls', icon: GitPullRequest },
-  { label: 'Issues', segment: '/issues', icon: CircleDot },
-  { label: 'Settings', segment: '/settings', icon: Settings },
+  { label: 'Overview', segment: '', icon: BookOpen, meta: { title: 'Repository Overview' } },
+  { label: 'Code', segment: '/code', icon: Code2, meta: { title: 'Repository Code' } },
+  {
+    label: 'Branches',
+    segment: '/branches',
+    icon: GitBranch,
+    meta: { title: 'Repository Branches' },
+  },
+  {
+    label: 'Commits',
+    segment: '/commits',
+    icon: GitCommitHorizontal,
+    meta: { title: 'Repository Commits' },
+  },
+  {
+    label: 'Pull requests',
+    segment: '/pulls',
+    icon: GitPullRequest,
+    meta: { title: 'Repository Pull Requests' },
+  },
+  { label: 'Issues', segment: '/issues', icon: CircleDot, meta: { title: 'Repository Issues' } },
+  {
+    label: 'Settings',
+    segment: '/settings',
+    icon: Settings,
+    meta: { title: 'Repository Settings' },
+  },
 ];
 
 export default function RepositoryDetailLayout({ children }: { children: ReactNode }) {
